@@ -1,0 +1,39 @@
+services:
+ mysql:
+  image: mysql:9.3
+  container_name: ${MYSQL_CONTAINER_NAME:-mysql}
+  environment:
+   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+   MYSQL_DATABASE: ${MYSQL_DATABASE:-clinicdb}
+   MYSQL_USER: ${MYSQL_USER:-clinicuser}
+   MYSQL_PASSWORD: ${MYSQL_PASSWORD:-clinicpassword}
+  ports:
+   - "${MYSQL_PORT:-3307}:3306"
+  volumes:
+   - mysql_data:/var/lib/mysql
+
+ glassfish:
+  image: ghcr.io/eclipse-ee4j/glassfish
+  platform: linux/amd64
+  container_name: ${GLASSFISH_CONTAINER_NAME:-glassfish}
+  depends_on:
+   - mysql
+  environment:
+   JAVA_OPTS: "-Xmx1024m"
+   AS_ADMIN_MASTERPASSWORD: ${AS_ADMIN_MASTERPASSWORD:-changeit}
+   AS_ADMIN_PASSWORD: ${AS_ADMIN_PASSWORD:-adminadmin}
+   MYSQL_HOST: mysql
+   MYSQL_PORT: 3306
+   MYSQL_DATABASE: ${MYSQL_DATABASE:-clinicdb}
+   MYSQL_USER: ${MYSQL_USER:-clinicuser}
+   MYSQL_PASSWORD: ${MYSQL_PASSWORD:-clinicpassword}
+  ports:
+   - "8080:8080"
+   - "4848:4848"
+  volumes:
+   - ./deploy/artifacts:/opt/glassfish7/glassfish/domains/domain1/autodeploy
+   - ./uploads:/var/www/uploads
+   - ./deploy/glassfish_init:/opt/glassfish7/custom:ro
+
+volumes:
+ mysql_data:
