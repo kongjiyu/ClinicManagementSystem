@@ -1,4 +1,11 @@
-FROM eclipse-temurin:23-jdk AS build-env
+FROM eclipse-temurin:17-jdk AS build-env
+SHELL ["/bin/bash", "--login", "-i", "-c"]
+
+# Install node + NVM (optional, if you also need Node/Tailwind)
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+RUN . $HOME/.nvm/nvm.sh
+RUN nvm install 22
+
 WORKDIR /usr/app
 
 # Copy Maven wrapper and pom
@@ -9,9 +16,7 @@ COPY mvnw pom.xml ./
 COPY package.json package-lock.json ./
 
 # Install Node dependencies
-RUN apt-get update && \
-    apt-get install -y npm && \
-    npm install
+RUN npm install
 
 # Resolve Maven dependencies
 RUN ./mvnw dependency:resolve

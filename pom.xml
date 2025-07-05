@@ -12,17 +12,32 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>23</maven.compiler.target>
-    <maven.compiler.source>23</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
     <junit.version>5.11.0</junit.version>
   </properties>
 
   <dependencies>
-<dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.6.9.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>9.3.0</version>
+    </dependency>
+    <dependency>
       <groupId>jakarta.platform</groupId>
       <artifactId>jakarta.jakartaee-web-api</artifactId>
       <version>11.0.0-M4</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.34</version>
     </dependency>
 <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -38,6 +53,7 @@
       </dependency>  </dependencies>
 
   <build>
+    <finalName>ROOT</finalName>
     <plugins>
 <plugin>
         <groupId>org.apache.maven.plugins</groupId>
