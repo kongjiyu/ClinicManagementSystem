@@ -20,9 +20,17 @@ public class PatientRepositoryImpl implements PatientRepository {
   private EntityManager em;
 
   @Override
+  public Patient findById(int id){
+    return em.createQuery("select p from Patient p where p.id = id", Patient.class)
+      .getSingleResult();
+  }
+
+  @Override
   public List<Patient> findAll() {
       return em.createQuery("select p from Patient p", Patient.class)
         .getResultList();
+
+      //SELECT * FROM Patient
   }
 
   @Override
