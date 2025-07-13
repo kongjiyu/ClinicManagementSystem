@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Entity
@@ -13,26 +15,50 @@ import org.hibernate.annotations.GenericGenerator;
 @AllArgsConstructor
 @ToString
 public class Patient {
-  @Id
-  @GeneratedValue(generator = "prefix_id")
-  @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
-  private String patientID;
-  private String firstName;
-  private String lastName;
-  private String gender;
-  private String dateOfBirth;
-  private int age;
-  private String nationality;
+    @Id
+    @GeneratedValue(generator = "prefix_id")
+    @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
+    private String patientID;
+
+    private String firstName;
+
+    private String lastName;
+
+    private String gender;
+
+    private String dateOfBirth;
+
+    private int age;
+
+    private String nationality;
+
   private String idType;
+
   private String idNumber;
+
   private String studentId;
+
   private String staffId;
+
   private String contactNumber;
+
   @Email
   private String email;
+
   private String address;
+
   private String emergencyContactName;
+
   private String emergencyContactNumber;
+
   private String allergies;
+
   private char bloodType;
+
+  @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<Consultation> consultations;
+
+  @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<Appointment> appointments;
 }
+

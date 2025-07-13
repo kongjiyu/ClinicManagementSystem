@@ -32,10 +32,16 @@ public class Order {
     private Staff staff;
 
     private LocalDate orderDate;
+
     private String orderStatus;
+
     private double unitPrice;
+
     private int quantity;
+
     private double totalAmount;
+
     private LocalDate expiryDate;
+
     private int stock;
 }

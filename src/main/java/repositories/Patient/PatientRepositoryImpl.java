@@ -20,21 +20,18 @@ public class PatientRepositoryImpl implements PatientRepository {
   private EntityManager em;
 
   @Override
-  public Patient findById(int id){
-    return em.createQuery("select p from Patient p where p.id = id", Patient.class)
-      .getSingleResult();
+  public Patient findById(String id) {
+    return em.find(Patient.class, id);
   }
 
   @Override
   public List<Patient> findAll() {
       return em.createQuery("select p from Patient p", Patient.class)
         .getResultList();
-
-      //SELECT * FROM Patient
   }
 
   @Override
-  public void create(Patient patient){
+  public void save(Patient patient){
     em.persist(patient);
   }
 
@@ -46,5 +43,19 @@ public class PatientRepositoryImpl implements PatientRepository {
   @Override
   public void delete(Patient patient) {
     em.remove(patient);
+  }
+
+  @Override
+  public List<Patient> findMedicalHistoryByPatientId(String patientId) {
+    return em.createQuery("SELECT p FROM Patient p JOIN FETCH p.consultations WHERE p.patientID = :id", Patient.class)
+             .setParameter("id", patientId)
+             .getResultList();
+  }
+
+  @Override
+  public List<Patient> findPrescriptionsByPatientId(String patientId) {
+    return em.createQuery("SELECT DISTINCT p FROM Patient p JOIN FETCH p.consultations c JOIN FETCH c.prescriptions WHERE p.patientID = :id", Patient.class)
+             .setParameter("id", patientId)
+             .getResultList();
   }
 }

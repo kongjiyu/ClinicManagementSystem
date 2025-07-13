@@ -1,4 +1,45 @@
 package repositories.Bill;
 
-public class BillRepositoryImpl {
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import models.Bill;
+
+import java.util.List;
+
+@ApplicationScoped
+@Transactional
+public class BillRepositoryImpl implements BillRepository {
+
+  @PersistenceContext
+  private EntityManager em;
+
+  @Override
+  public void create(Bill bill) {
+    em.persist(bill);
+  }
+
+  @Override
+  public Bill findById(String billID) {
+    return em.find(Bill.class, billID);
+  }
+
+  @Override
+  public List<Bill> findAll() {
+    return em.createQuery("SELECT b FROM Bill b", Bill.class).getResultList();
+  }
+
+  @Override
+  public void update(Bill bill) {
+    em.merge(bill);
+  }
+
+  @Override
+  public void delete(String billID) {
+    Bill bill = em.find(Bill.class, billID);
+    if (bill != null) {
+        em.remove(bill);
+    }
+  }
 }

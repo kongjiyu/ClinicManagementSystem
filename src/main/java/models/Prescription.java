@@ -12,20 +12,26 @@ import org.hibernate.annotations.GenericGenerator;
 @AllArgsConstructor
 @ToString
 public class Prescription {
-  @Id
-  @GeneratedValue(generator = "prefix_id")
-  @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
-  private String prescriptionID;
+    @Id
+    @GeneratedValue(generator = "prefix_id")
+    @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
+    private String prescriptionID;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "consultationID", referencedColumnName = "consultationID")
-  private Consultation consultation;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "consultationID", referencedColumnName = "consultationID")
+    private Consultation consultation;
 
-  private int billID;
-  private String description;
-  private int dosage;
-  private int instruction;
-  private int servingPerDay;
-  private double price;
-  private String dosageUnit;
+    private int billID;
+
+    private String description;
+
+    private int dosage;
+
+    private int instruction;
+
+    private int servingPerDay;
+
+    private double price;
+
+    private String dosageUnit;
 }

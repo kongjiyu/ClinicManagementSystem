@@ -7,6 +7,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 
 import java.time.*;
+import java.util.List;
 
 @Entity
 @Table(name = "Staff")
@@ -19,19 +20,42 @@ public class Staff {
     @GeneratedValue(generator = "prefix_id")
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String staffID;
+
     private String firstName;
+
     private String lastName;
+
     private String gender;
+
     private LocalDate dateOfBirth;
+
     private String nationality;
+
     private String idType;
+
     private String idNumber;
+
     private String contactNumber;
+
     @Email
     private String email;
+
     private String address;
+
     private String position;
+
     private String medicalLicenseNumber;
+
     private String password;
+
     private LocalDate employmentDate;
+
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Schedule> schedules;
+
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Consultation> consultations;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Order> orders;
 }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Entity
@@ -13,16 +15,27 @@ import org.hibernate.annotations.GenericGenerator;
 @AllArgsConstructor
 @ToString
 public class Supplier {
-  @Id
-  @GeneratedValue(generator = "prefix_id")
-  @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
-  private String supplierId;
-  private String supplierName;
-  private String contactPerson;
-  private String phoneNumber;
-  @Email
-  private String email;
-  private String address;
-  private String bankName;
-  private String accountNumber;
+    @Id
+    @GeneratedValue(generator = "prefix_id")
+    @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
+    private String supplierId;
+
+    private String supplierName;
+
+    private String contactPerson;
+
+    private String phoneNumber;
+
+    @Email
+    private String email;
+
+    private String address;
+
+    private String bankName;
+
+    private String accountNumber;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Order> orders;
 }
+

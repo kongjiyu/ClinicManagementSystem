@@ -18,8 +18,12 @@ public class Schedule {
     @GeneratedValue(generator = "prefix_id")
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String scheduleID;
+
     private String doctorID;
+
     private LocalDate date;
+
     private LocalDateTime startTime;
+
     private LocalDateTime endTime;
 }

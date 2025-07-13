@@ -19,8 +19,12 @@ public class Appointment {
     @GeneratedValue(generator = "prefix_id")
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String appointmentID;
+
     private String patientID;
+
     private LocalDateTime appointmentTime;
+
     private LocalDate appointmentDate;
+
     private String status;
 }
