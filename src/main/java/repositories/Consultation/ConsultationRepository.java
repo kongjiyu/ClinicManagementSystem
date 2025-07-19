@@ -10,7 +10,6 @@ public interface ConsultationRepository {
     Consultation update(String id, Consultation consultation);
     boolean reschedule(String id, Consultation consultation);
     boolean cancel(String id);
-    boolean sendReminder(String id);
     List<Consultation> getUpcoming();
     boolean checkInPatient(String id);
     List<Consultation> findHistory(String id);

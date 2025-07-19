@@ -15,22 +15,22 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 public class Patient {
-    @Id
-    @GeneratedValue(generator = "prefix_id")
-    @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
-    private String patientID;
+  @Id
+  @GeneratedValue(generator = "prefix_id")
+  @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
+  private String patientID;
 
-    private String firstName;
+  private String firstName;
 
-    private String lastName;
+  private String lastName;
 
-    private String gender;
+  private String gender;
 
-    private String dateOfBirth;
+  private String dateOfBirth;
 
-    private int age;
+  private int age;
 
-    private String nationality;
+  private String nationality;
 
   private String idType;
 
@@ -53,12 +53,12 @@ public class Patient {
 
   private String allergies;
 
-  private char bloodType;
+  private String bloodType;
 
   @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Consultation> consultations;
 
-  @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Appointment> appointments;
 }
 

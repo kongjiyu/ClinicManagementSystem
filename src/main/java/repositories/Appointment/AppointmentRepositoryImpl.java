@@ -11,7 +11,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
-
 @ApplicationScoped
 @Transactional
 public class AppointmentRepositoryImpl implements AppointmentRepository {
@@ -31,7 +30,7 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
   @Override
   public List<Appointment> findByPatientId(String patientID) {
     TypedQuery<Appointment> query = em.createQuery(
-        "SELECT a FROM Appointment a WHERE a.patientID = :patientID", Appointment.class);
+        "SELECT a FROM Appointment a WHERE a.patient.id = :patientID", Appointment.class);
     query.setParameter("patientID", patientID);
     return query.getResultList();
   }
@@ -75,7 +74,7 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
   @Override
   public List<Appointment> findUpcomingByPatientId(String patientID) {
     return em.createQuery(
-      "SELECT a FROM Appointment a WHERE a.patientID = :patientID AND a.appointmentDate >= :today", Appointment.class)
+      "SELECT a FROM Appointment a WHERE a.patient.id = :patientID AND a.appointmentDate >= :today", Appointment.class)
       .setParameter("patientID", patientID)
       .setParameter("today", java.time.LocalDate.now())
       .getResultList();

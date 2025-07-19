@@ -1,16 +1,16 @@
 package repositories.Patient;
 
 import models.Patient;
-import java.util.List;
+import utils.ArrayList;
 
 public interface PatientRepository {
   Patient findById(String id);
-  List<Patient> findAll();
+  ArrayList<Patient> findAll();
   void save(Patient patient);
   void update(Patient patient);
   void delete(Patient patient);
 
   // Extra methods based on API list
-  List<Patient> findMedicalHistoryByPatientId(String patientId);
-  List<Patient> findPrescriptionsByPatientId(String patientId);
+  ArrayList<Patient> findMedicalHistoryByPatientId(String patientId);
+  ArrayList<Patient> findPrescriptionsByPatientId(String patientId);
 }

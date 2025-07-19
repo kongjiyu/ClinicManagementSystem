@@ -19,14 +19,10 @@ public class Bill {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String billID;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prescriptionID", referencedColumnName = "prescriptionID")
-    private Prescription prescription;
-
     private double totalAmount;
 
     private String paymentMethod;
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Prescription> prescriptions;
 }

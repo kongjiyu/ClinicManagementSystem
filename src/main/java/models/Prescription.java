@@ -21,7 +21,13 @@ public class Prescription {
     @JoinColumn(name = "consultationID", referencedColumnName = "consultationID")
     private Consultation consultation;
 
-    private int billID;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billID", referencedColumnName = "billID")
+    private Bill bill;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medicineID", referencedColumnName = "medicineID")
+    private Medicine medicine;
 
     private String description;
 
