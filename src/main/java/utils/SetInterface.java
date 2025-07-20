@@ -7,5 +7,5 @@ public interface SetInterface<T> {
   int size();
   boolean isEmpty();
   void clear();
-  T[] toArray();
+  Object[] toArray();
 }

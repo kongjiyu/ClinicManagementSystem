@@ -17,4 +17,5 @@ public interface ConsultationRepository {
     List<Consultation> findHistory(String id);
     boolean storeConsultationData(String id, Consultation consultation);
     ArrayList<Consultation> findAll();
-}
+    MultiMap<String, Consultation> groupByPatientID();
+  }

@@ -59,7 +59,7 @@ public class PatientRepositoryImpl implements PatientRepository {
 
   @Override
   public ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId) {
-    MultiMap<String, Consultation> patientConsultationMap = consultationRepository.findAll();
+    MultiMap<String, Consultation> patientConsultationMap = consultationRepository.groupByPatientID();
     return patientConsultationMap.get(patientId);
   }
 

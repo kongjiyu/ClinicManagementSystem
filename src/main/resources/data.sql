@@ -1,4 +1,4 @@
-INSERT INTO Patient (
+INSERT INTO clinicdb.Patient (
   patientID, firstName, lastName, gender, dateOfBirth, age, nationality,
   idType, idNumber, studentId, staffId, contactNumber, email, address,
   emergencyContactName, emergencyContactNumber, allergies, bloodType
