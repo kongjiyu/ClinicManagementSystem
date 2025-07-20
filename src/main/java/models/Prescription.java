@@ -17,17 +17,11 @@ public class Prescription {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String prescriptionID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "consultationID", referencedColumnName = "consultationID")
-    private Consultation consultation;
+    private String consultationID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "billID", referencedColumnName = "billID")
-    private Bill bill;
+    private String billID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "medicineID", referencedColumnName = "medicineID")
-    private Medicine medicine;
+    private String medicineID;
 
     private String description;
 

@@ -49,13 +49,4 @@ public class Staff {
     private String password;
 
     private LocalDate employmentDate;
-
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Schedule> schedules;
-
-    @OneToMany(mappedBy = "staff", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Consultation> consultations;
-
-    @OneToMany(mappedBy = "staff", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Order> orders;
 }

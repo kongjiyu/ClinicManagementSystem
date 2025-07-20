@@ -1,6 +1,6 @@
 package utils;
 
-public class ArraySet<T> {
+public class ArraySet<T> implements SetInterface<T> {
     private Object[] elements;
     private int size;
     private static final int INITIAL_CAPACITY = 10;

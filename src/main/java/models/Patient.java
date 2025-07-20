@@ -54,11 +54,5 @@ public class Patient {
   private String allergies;
 
   private String bloodType;
-
-  @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  private List<Consultation> consultations;
-
-  @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  private List<Appointment> appointments;
 }
 

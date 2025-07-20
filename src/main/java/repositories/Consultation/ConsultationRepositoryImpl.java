@@ -5,6 +5,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Consultation;
+import models.Patient;
+import utils.ArrayList;
+import utils.MultiMap;
 
 import java.util.List;
 
@@ -94,4 +97,23 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     }
     return false;
   }
+
+  @Override
+  public ArrayList<Consultation> findAll() {
+    return new ArrayList<>(em.createQuery("SELECT c FROM Consultation c", Consultation.class)
+      .getResultList());
+  }
+
+  public MultiMap<String, Consultation> groupByPatientID() {
+    ArrayList<Consultation> consultations = findAll();
+    MultiMap<String, Consultation> patientConsultationMap = new MultiMap<>();
+
+    for (Consultation consultation : consultations) {
+      patientConsultationMap.put(consultation.getPatientID(), consultation);
+    }
+
+    return patientConsultationMap;
+  }
+
+
 }

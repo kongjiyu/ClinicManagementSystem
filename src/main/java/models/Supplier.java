@@ -34,8 +34,5 @@ public class Supplier {
     private String bankName;
 
     private String accountNumber;
-
-    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Order> orders;
 }
 

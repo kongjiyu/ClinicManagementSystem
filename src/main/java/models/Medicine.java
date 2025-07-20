@@ -28,10 +28,4 @@ public class Medicine {
     private int reorderLevel;
 
     private double sellingPrice;
-
-    @OneToMany(mappedBy = "medicine", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Order> orders;
-
-    @OneToMany(mappedBy = "medicine", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Prescription> prescriptions;
 }

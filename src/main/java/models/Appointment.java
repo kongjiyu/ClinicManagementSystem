@@ -20,9 +20,7 @@ public class Appointment {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String appointmentID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patientID", referencedColumnName = "patientID")
-    private Patient patient;
+    private String patientID;
 
     private LocalDateTime appointmentTime;
 

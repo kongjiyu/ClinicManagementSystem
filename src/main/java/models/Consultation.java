@@ -21,17 +21,11 @@ public class Consultation {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String consultationID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patientID", referencedColumnName = "patientID")
-    private Patient patient;
+    private String patientID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctorID", referencedColumnName = "staffID")
-    private Staff doctor;
+    private String doctorID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staffID", referencedColumnName = "staffID")
-    private Staff staff;
+    private String staffID;
 
     private String symptoms;
 
@@ -53,6 +47,4 @@ public class Consultation {
 
     private LocalDate endDate;
 
-    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Prescription> prescriptions;
 }

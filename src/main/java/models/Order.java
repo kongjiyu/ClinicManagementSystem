@@ -19,17 +19,11 @@ public class Order {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String orderID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "medicineID", referencedColumnName = "medicineID")
-    private Medicine medicine;
+    private String medicineID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplierID", referencedColumnName = "supplierID")
-    private Supplier supplier;
+    private String supplierID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staffID", referencedColumnName = "staffID")
-    private Staff staff;
+    private String staffID;
 
     private LocalDate orderDate;
 

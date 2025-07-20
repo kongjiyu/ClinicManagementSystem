@@ -19,9 +19,7 @@ public class Schedule {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String scheduleID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staffID", referencedColumnName = "staffID")
-    private Staff doctor;
+    private String doctorID;
 
     private LocalDate date;
 

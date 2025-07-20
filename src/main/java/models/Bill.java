@@ -22,7 +22,4 @@ public class Bill {
     private double totalAmount;
 
     private String paymentMethod;
-
-    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Prescription> prescriptions;
 }

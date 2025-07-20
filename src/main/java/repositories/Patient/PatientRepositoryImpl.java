@@ -5,11 +5,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import javax.sql.DataSource;
 import java.sql.*;
 
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import models.Consultation;
 import models.Patient;
+import repositories.Consultation.ConsultationRepository;
 import utils.ArrayList;
+import utils.MultiMap;
 
 @ApplicationScoped
 @Transactional
@@ -18,9 +22,18 @@ public class PatientRepositoryImpl implements PatientRepository {
   @PersistenceContext
   private EntityManager em;
 
+  @Inject
+  private ConsultationRepository consultationRepository;
+
   @Override
   public Patient findById(String id) {
-    return em.find(Patient.class, id);
+    ArrayList<Patient> patients = findAll();
+    for(Patient patient : patients){
+      if(patient.getPatientID().equals(id)){
+        return patient;
+      }
+    }
+    return null;
   }
 
   @Override
@@ -45,10 +58,9 @@ public class PatientRepositoryImpl implements PatientRepository {
   }
 
   @Override
-  public ArrayList<Patient> findMedicalHistoryByPatientId(String patientId) {
-    return new ArrayList<>(em.createQuery("SELECT p FROM Patient p JOIN FETCH p.consultations WHERE p.patientID = :id", Patient.class)
-             .setParameter("id", patientId)
-             .getResultList());
+  public ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId) {
+    MultiMap<String, Consultation> patientConsultationMap = consultationRepository.findAll();
+    return patientConsultationMap.get(patientId);
   }
 
   @Override
@@ -57,4 +69,6 @@ public class PatientRepositoryImpl implements PatientRepository {
              .setParameter("id", patientId)
              .getResultList());
   }
+
+
 }

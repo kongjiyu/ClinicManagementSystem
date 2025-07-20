@@ -1,5 +1,6 @@
 package repositories.Patient;
 
+import models.Consultation;
 import models.Patient;
 import utils.ArrayList;
 
@@ -11,6 +12,6 @@ public interface PatientRepository {
   void delete(Patient patient);
 
   // Extra methods based on API list
-  ArrayList<Patient> findMedicalHistoryByPatientId(String patientId);
+  ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId);
   ArrayList<Patient> findPrescriptionsByPatientId(String patientId);
 }
