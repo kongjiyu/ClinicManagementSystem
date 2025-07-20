@@ -1,5 +1,6 @@
 package servlet;
 
+import com.google.gson.Gson;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -14,14 +15,18 @@ import DTO.AllergyInput;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class PatientsResource {
+
+  private final Gson gson = new Gson();
+
   @Inject
   private PatientRepository repo;
 
   @GET
   public Response getAllPatients() {
-      ArrayList<Patient> patients = new ArrayList<>();
-      patients.addAll(repo.findAll());
-      return Response.ok(patients.toList()).build();
+    ArrayList<Patient> patients = new ArrayList<>();
+    patients.addAll(repo.findAll());
+    String json = gson.toJson(patients.toList());
+    return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
 
   @GET
@@ -29,7 +34,8 @@ public class PatientsResource {
   public Response getPatient(@PathParam("id") String id) {
       Patient patient = repo.findById(id);
       if (patient != null) {
-          return Response.ok(patient).build();
+          String json = gson.toJson(patient);
+          return Response.ok(json, MediaType.APPLICATION_JSON).build();
       } else {
           return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Patient not found")).build();
       }
@@ -38,19 +44,22 @@ public class PatientsResource {
   @GET
   @Path("/{id}/medical-history")
   public Response getMedicalHistory(@PathParam("id") String id) {
-      return Response.ok(repo.findMedicalHistoryByPatientId(id)).build();
+      String json = gson.toJson(repo.findMedicalHistoryByPatientId(id));
+      return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
 
   @GET
   @Path("/{id}/prescriptions")
   public Response getPrescriptions(@PathParam("id") String id) {
-      return Response.ok(repo.findPrescriptionsByPatientId(id)).build();
+      String json = gson.toJson(repo.findPrescriptionsByPatientId(id));
+      return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
 
   @POST
   public Response createPatient(Patient patient) {
       repo.save(patient);
-      return Response.status(Response.Status.CREATED).entity(patient).build();
+      String json = gson.toJson(patient);
+      return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
   }
 
   @POST
@@ -58,7 +67,8 @@ public class PatientsResource {
   public Response updatePatient(@PathParam("id") String id, Patient patient) {
       patient.setPatientID(id);
       repo.update(patient);
-      return Response.ok(patient).build();
+      String json = gson.toJson(patient);
+      return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
 
   @POST
@@ -68,7 +78,8 @@ public class PatientsResource {
       if (patient != null) {
           patient.setAllergies(allergyData.getAllergies());
           repo.update(patient);
-          return Response.ok(patient).build();
+          String json = gson.toJson(patient);
+          return Response.ok(json, MediaType.APPLICATION_JSON).build();
       } else {
           return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Patient not found")).build();
       }
