@@ -19,8 +19,6 @@ public class Prescription {
 
     private String consultationID;
 
-    private String billID;
-
     private String medicineID;
 
     private String description;

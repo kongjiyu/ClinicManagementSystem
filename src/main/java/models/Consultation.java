@@ -27,6 +27,8 @@ public class Consultation {
 
     private String staffID;
 
+    private String billID;
+
     private String symptoms;
 
     private String diagnosis;

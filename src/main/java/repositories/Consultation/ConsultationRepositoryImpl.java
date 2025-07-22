@@ -19,9 +19,19 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
   private EntityManager em;
 
   @Override
-  public List<Consultation> getAvailableSlots() {
-    return em.createQuery("SELECT c FROM Consultation c WHERE c.status = 'AVAILABLE'", Consultation.class)
-             .getResultList();
+  public MultiMap<String, Consultation> groupByAvailability() {
+    ArrayList<Consultation> consultations = findAll();
+    MultiMap<String, Consultation> availabilityConsultationMap = new MultiMap<>();
+    for(Consultation consultation : consultations){
+      availabilityConsultationMap.put(consultation.getStatus(), consultation);
+    }
+    return availabilityConsultationMap;
+  }
+
+  @Override
+  public ArrayList<Consultation> getAvailableSlots(){
+    MultiMap<String, Consultation> availabilityConsultationMap = groupByAvailability();
+    return availabilityConsultationMap.get("Done");
   }
 
   @Override

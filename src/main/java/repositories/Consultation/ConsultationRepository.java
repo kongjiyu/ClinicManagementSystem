@@ -7,7 +7,8 @@ import utils.MultiMap;
 import java.util.List;
 
 public interface ConsultationRepository {
-    List<Consultation> getAvailableSlots();
+    ArrayList<Consultation> getAvailableSlots();
+    MultiMap<String, Consultation> groupByAvailability();
     Consultation create(Consultation consultation);
     Consultation update(String id, Consultation consultation);
     boolean reschedule(String id, Consultation consultation);

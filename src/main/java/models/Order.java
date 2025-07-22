@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
-@Table(name = "Order")
+@Table(name = "Orders")
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
@@ -17,7 +17,7 @@ public class Order {
     @Id
     @GeneratedValue(generator = "prefix_id")
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
-    private String orderID;
+    private String ordersID;
 
     private String medicineID;
 
