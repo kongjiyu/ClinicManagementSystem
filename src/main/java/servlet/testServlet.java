@@ -6,9 +6,11 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import models.Consultation;
-import models.Patient;
+import models.*;
+import repositories.Medicine.MedicineRepository;
+import repositories.Order.OrderRepository;
 import repositories.Patient.PatientRepository;
+import repositories.Supplier.SupplierRepository;
 import utils.ArrayList;
 
 import java.io.IOException;
@@ -17,13 +19,16 @@ import java.io.IOException;
 public class testServlet extends HttpServlet {
   @Inject
   PatientRepository patientRepository;
+  @Inject
+  SupplierRepository supplierRepository;
+  @Inject
+  OrderRepository orderRepository;
+  @Inject
+  MedicineRepository medicineRepository;
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    ArrayList<Patient> patients = patientRepository.findAll();
-    for (Patient patient : patients) {
-      System.out.println(patient.getPatientID());
-    }
+
 
   }
 }
