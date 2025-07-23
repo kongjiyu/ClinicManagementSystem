@@ -1,12 +1,14 @@
 package repositories.Supplier;
 
 import models.Supplier;
+import utils.ArrayList;
+
 import java.util.List;
 
 public interface SupplierRepository {
-    List<Supplier> findAll();
+    ArrayList<Supplier> findAll();
     Supplier findById(String id);
     void save(Supplier supplier);
-    void update(String id, Supplier updatedSupplier);
-    void delete(String id);
+    void update(Supplier updatedSupplier);
+    void delete(Supplier deletedSupplier);
 }

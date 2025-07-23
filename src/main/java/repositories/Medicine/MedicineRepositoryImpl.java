@@ -5,6 +5,8 @@ import models.Medicine;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import utils.ArrayList;
+
 import java.util.List;
 
 @ApplicationScoped
@@ -21,32 +23,61 @@ public class MedicineRepositoryImpl implements MedicineRepository {
   }
 
   @Override
-  public List<Medicine> findAll() {
-    return em.createQuery("SELECT m FROM Medicine m", Medicine.class).getResultList();
+  public ArrayList<Medicine> findAll() {
+    return new ArrayList<>(em.createQuery("SELECT m FROM Medicine m", Medicine.class)
+            .getResultList());
   }
 
   @Override
   public Medicine findById(String id) {
-    return em.find(Medicine.class, id);
+    ArrayList<Medicine> medicines = findAll();
+    for(Medicine medicine: medicines) {
+      if(medicine.getMedicineID().equals(id)) {
+        return medicine;
+      }
+    }
+    return null;
   }
 
   @Override
-  public List<Medicine> findByName(String name) {
-    return em.createQuery("SELECT m FROM Medicine m WHERE m.medicineName LIKE :name", Medicine.class)
-             .setParameter("name", "%" + name + "%")
-             .getResultList();
+  public ArrayList<Medicine> findByName(String name) {
+    ArrayList<Medicine> matchedMedicines = new ArrayList<>();
+    ArrayList<Medicine> medicines = findAll();
+
+    for (Medicine medicine : medicines) {
+      if (medicine.getMedicineName().toLowerCase().contains(name.toLowerCase())) {
+        matchedMedicines.add(medicine);
+      }
+    }
+    return matchedMedicines;
   }
 
   @Override
-  public List<Medicine> findOutOfStock() {
-    return em.createQuery("SELECT m FROM Medicine m WHERE m.totalStock = 0", Medicine.class)
-             .getResultList();
+  public ArrayList<Medicine> findOutOfStock() {
+    ArrayList<Medicine> medicines = findAll();
+    ArrayList<Medicine> outOfStock = new ArrayList<>();
+
+    for (Medicine medicine : medicines) {
+      if (medicine.getTotalStock() == 0) {
+        outOfStock.add(medicine);
+      }
+    }
+
+    return outOfStock;
   }
 
   @Override
-  public List<Medicine> findBelowReorderLevel() {
-    return em.createQuery("SELECT m FROM Medicine m WHERE m.totalStock < m.reorderLevel", Medicine.class)
-             .getResultList();
+  public ArrayList<Medicine> findBelowReorderLevel() {
+    ArrayList<Medicine> medicines = findAll();
+    ArrayList<Medicine> belowReorder = new ArrayList<>();
+
+    for (Medicine medicine : medicines) {
+      if (medicine.getTotalStock() < medicine.getReorderLevel()) {
+        belowReorder.add(medicine);
+      }
+    }
+
+    return belowReorder;
   }
 
   @Transactional
@@ -55,22 +86,17 @@ public class MedicineRepositoryImpl implements MedicineRepository {
     em.merge(medicine);
   }
 
-  @Transactional
-  @Override
-  public void updateStock(String medicineID, int newStock) {
-    Medicine medicine = em.find(Medicine.class, medicineID);
-    if (medicine != null) {
-      medicine.setTotalStock(newStock);
-      em.merge(medicine);
-    }
-  }
+//  @Transactional
+//  @Override
+//  public void updateStock(String medicineID, int newStock) {
+//    Medicine medicine = em.find(Medicine.class, medicineID);
+//    if (medicine != null) {
+//      medicine.setTotalStock(newStock);
+//      em.merge(medicine);
+//    }
+//  }
 
   @Transactional
   @Override
-  public void delete(String id) {
-    Medicine medicine = em.find(Medicine.class, id);
-    if (medicine != null) {
-      em.remove(medicine);
-    }
-  }
+  public void delete(Medicine medicine) {em.remove(medicine);}
 }
