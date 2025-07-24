@@ -50,6 +50,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     return null;
   }
 
+  //Can remove
   @Override
   public boolean reschedule(String id, Consultation consultation) {
     Consultation existing = em.find(Consultation.class, id);
@@ -71,11 +72,24 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     return false;
   }
 
+//  @Override
+//  public List<Consultation> getUpcoming() {
+//    return em.createQuery("SELECT c FROM Consultation c WHERE c.status = 'SCHEDULED'", Consultation.class)
+//             .getResultList();
+//  }
+
   @Override
-  public List<Consultation> getUpcoming() {
-    return em.createQuery("SELECT c FROM Consultation c WHERE c.status = 'SCHEDULED'", Consultation.class)
-             .getResultList();
+  public ArrayList<Consultation> getUpcoming() {
+    ArrayList<Consultation> consultations = findAll();
+    ArrayList<Consultation> upcoming = new ArrayList<>();
+    for (Consultation consultation : consultations) {
+      if ("SCHEDULED".equalsIgnoreCase(consultation.getStatus())) {
+        upcoming.add(consultation);
+      }
+    }
+    return upcoming;
   }
+
 
   @Override
   public boolean checkInPatient(String id) {
@@ -87,12 +101,19 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     return false;
   }
 
+//  @Override
+//  public List<Consultation> findHistory(String id) {
+//    return em.createQuery("SELECT c FROM Consultation c WHERE c.patient.patientID = :id", Consultation.class)
+//             .setParameter("id", id)
+//             .getResultList();
+//  }
+
   @Override
-  public List<Consultation> findHistory(String id) {
-    return em.createQuery("SELECT c FROM Consultation c WHERE c.patient.patientID = :id", Consultation.class)
-             .setParameter("id", id)
-             .getResultList();
+  public ArrayList<Consultation> findHistory(String id) {
+    MultiMap<String, Consultation> historyMap = groupByPatientID();
+    return historyMap.get(id);
   }
+  
 
   @Override
   public boolean storeConsultationData(String id, Consultation consultation) {
@@ -119,7 +140,8 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     MultiMap<String, Consultation> patientConsultationMap = new MultiMap<>();
 
     for (Consultation consultation : consultations) {
-      patientConsultationMap.put(consultation.getPatientID(), consultation);
+      String patientID = consultation.getPatientID();
+      patientConsultationMap.put(patientID, consultation);
     }
 
     return patientConsultationMap;
