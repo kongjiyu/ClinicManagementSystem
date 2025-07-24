@@ -24,6 +24,9 @@ RUN ./mvnw dependency:resolve
 # Copy the rest of your source code
 COPY . .
 
+# Tailwind build if needed
+RUN npx tailwindcss -i ./src/main/webapp/static/tailwind.css -o ./src/main/webapp/static/output.css
+
 # Build the WAR
 RUN --mount=type=cache,target=/root/.m2 ./mvnw clean package
 
