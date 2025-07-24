@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="data.sql" type="DatabaseScript" editBeforeRun="true" nameIsGenerated="true">
+    <script-file value="$PROJECT_DIR$/src/main/resources/data.sql" />
+    <script-mode>FILE</script-mode>
+    <data-source id="4a0a9013-0390-4f92-9a2d-2bc226d51c9f" namespace="schema/&quot;clinicdb&quot;" />
+    <method v="2" />
+  </configuration>
+</component>
