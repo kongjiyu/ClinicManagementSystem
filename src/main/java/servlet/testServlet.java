@@ -6,11 +6,9 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import models.*;
-import repositories.Medicine.MedicineRepository;
-import repositories.Order.OrderRepository;
-import repositories.Patient.PatientRepository;
-import repositories.Supplier.SupplierRepository;
+import models.Schedule;
+import repositories.Schedule.ScheduleRepository;
+
 import utils.ArrayList;
 
 import java.io.IOException;
@@ -18,28 +16,22 @@ import java.io.IOException;
 @WebServlet("/test/output")
 public class testServlet extends HttpServlet {
   @Inject
-  ConsultationRepository consultationRepository;
-
-  @Inject
-  PatientRepository patientRepository;
-  @Inject
-  SupplierRepository supplierRepository;
-  @Inject
-  OrderRepository orderRepository;
-  @Inject
-  MedicineRepository medicineRepository;
+  ScheduleRepository scheduleRepository;
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    String yearParam = req.getParameter("year");
+    String monthParam = req.getParameter("month");
+
+    Integer year = Integer.parseInt(yearParam);
+    Integer month = Integer.parseInt(monthParam);
+
+    ArrayList<Schedule> schedules = scheduleRepository.findByMonth(year, month);
+    for (Schedule schedule : schedules) {
+      System.out.println(schedule.getScheduleID());
+    }
 
 
-    if (consultations.isEmpty()) {
-      System.out.println("No consultations found for patient ID: " + id);
-      return;
-    }
-    for (Consultation consultation : consultations) {
-      System.out.println(consultation.getConsultationID());
-    }
   }
 
 }
