@@ -4,12 +4,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import models.Appointment;
 
+import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import utils.ArrayList;
+import utils.MultiMap;
 
 @ApplicationScoped
 @Transactional
@@ -24,28 +26,52 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
 
   @Override
   public Appointment findById(String appointmentID) {
-    return em.find(Appointment.class, appointmentID);
+    ArrayList<Appointment>appointments=findAll();
+    for(Appointment appointment:appointments){
+      if(appointmentID.equals(appointment.getAppointmentID())){
+        return appointment;
+      }
+    }
+    return null;
   }
 
   @Override
-  public List<Appointment> findByPatientId(String patientID) {
-    TypedQuery<Appointment> query = em.createQuery(
-        "SELECT a FROM Appointment a WHERE a.patient.id = :patientID", Appointment.class);
-    query.setParameter("patientID", patientID);
-    return query.getResultList();
+  public MultiMap<String,Appointment> groupByPatientId(){
+    ArrayList<Appointment> appointments = findAll();
+    MultiMap<String,Appointment> patientAppoinementMap = new MultiMap<>();
+    for(Appointment appointment : appointments){
+      patientAppoinementMap.put(appointment.getPatientID(), appointment);
+    }
+    return patientAppoinementMap;
   }
 
   @Override
-  public List<Appointment> findAll() {
-    return em.createQuery("SELECT a FROM Appointment a", Appointment.class).getResultList();
+  public ArrayList<Appointment> findByPatientId(String patientID) {
+    MultiMap<String,Appointment> patientAppoinementMap = groupByPatientId();
+    return patientAppoinementMap.get(patientID);
   }
 
   @Override
-  public List<Appointment> findByDate(LocalDate date) {
-    return em.createQuery(
-      "SELECT a FROM Appointment a WHERE a.appointmentDate = :date", Appointment.class)
-      .setParameter("date", date)
-      .getResultList();
+  public ArrayList<Appointment> findAll() {
+    return new ArrayList<>(em.createQuery("SELECT a FROM Appointment a", Appointment.class)
+            .getResultList());
+  }
+
+  @Override
+  public ArrayList<Appointment> findByDate(LocalDate date) {
+    ArrayList<Appointment> appointments = findAll();
+    ArrayList<Appointment> patientAppoinementList = new ArrayList<>();
+    for(Appointment appointment : appointments){
+      if (appointment.getAppointmentTime().toLocalDate().equals(date)){
+        patientAppoinementList.add(appointment);
+      }
+    }
+   return patientAppoinementList;
+  }
+
+  @Override
+  public MultiMap<String, Appointment> groupByAvailability() {
+    return null;
   }
 
   @Override
@@ -72,11 +98,16 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @Override
-  public List<Appointment> findUpcomingByPatientId(String patientID) {
-    return em.createQuery(
-      "SELECT a FROM Appointment a WHERE a.patient.id = :patientID AND a.appointmentDate >= :today", Appointment.class)
-      .setParameter("patientID", patientID)
-      .setParameter("today", java.time.LocalDate.now())
-      .getResultList();
+  public ArrayList<Appointment> findUpcomingByPatientId(String patientID) {
+    ArrayList<Appointment> appointments = findAll();
+    ArrayList<Appointment> patientAppoinementList = new ArrayList<>();
+    LocalDate now = LocalDate.now();
+    for(Appointment appointment : appointments){
+      if (appointment.getAppointmentTime().toLocalDate().isAfter(now) ||
+      appointment.getAppointmentTime().toLocalDate().equals(now)) {
+        patientAppoinementList.add(appointment);
+      }
+    }
+   return patientAppoinementList;
   }
 }
