@@ -7,10 +7,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import models.*;
+import repositories.Consultation.ConsultationRepository;
 import repositories.Medicine.MedicineRepository;
 import repositories.Order.OrderRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Supplier.SupplierRepository;
+
 import utils.ArrayList;
 
 import java.io.IOException;
@@ -30,16 +32,8 @@ public class testServlet extends HttpServlet {
   MedicineRepository medicineRepository;
 
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
 
-
-    if (consultations.isEmpty()) {
-      System.out.println("No consultations found for patient ID: " + id);
-      return;
-    }
-    for (Consultation consultation : consultations) {
-      System.out.println(consultation.getConsultationID());
-    }
   }
 
 }
