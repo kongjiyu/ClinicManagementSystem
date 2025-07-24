@@ -6,10 +6,11 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import models.Consultation;
-import models.Patient;
-import repositories.Consultation.ConsultationRepository;
+import models.*;
+import repositories.Medicine.MedicineRepository;
+import repositories.Order.OrderRepository;
 import repositories.Patient.PatientRepository;
+import repositories.Supplier.SupplierRepository;
 import utils.ArrayList;
 
 import java.io.IOException;
@@ -19,10 +20,18 @@ public class testServlet extends HttpServlet {
   @Inject
   ConsultationRepository consultationRepository;
 
+  @Inject
+  PatientRepository patientRepository;
+  @Inject
+  SupplierRepository supplierRepository;
+  @Inject
+  OrderRepository orderRepository;
+  @Inject
+  MedicineRepository medicineRepository;
+
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    String id = req.getParameter("id"); // Fetch "id" from request
-    ArrayList<Consultation> consultations = consultationRepository.findHistory(id); // Now pass the actual value
+
 
     if (consultations.isEmpty()) {
       System.out.println("No consultations found for patient ID: " + id);
