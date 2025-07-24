@@ -18,6 +18,9 @@ import java.io.IOException;
 @WebServlet("/test/output")
 public class testServlet extends HttpServlet {
   @Inject
+  ConsultationRepository consultationRepository;
+
+  @Inject
   PatientRepository patientRepository;
   @Inject
   SupplierRepository supplierRepository;
@@ -30,5 +33,13 @@ public class testServlet extends HttpServlet {
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 
+    if (consultations.isEmpty()) {
+      System.out.println("No consultations found for patient ID: " + id);
+      return;
+    }
+    for (Consultation consultation : consultations) {
+      System.out.println(consultation.getConsultationID());
+    }
   }
+
 }

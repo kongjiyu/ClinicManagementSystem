@@ -13,9 +13,10 @@ public interface ConsultationRepository {
     Consultation update(String id, Consultation consultation);
     boolean reschedule(String id, Consultation consultation);
     boolean cancel(String id);
-    List<Consultation> getUpcoming();
+    //List<Consultation> getUpcoming();
+    ArrayList<Consultation> getUpcoming();
     boolean checkInPatient(String id);
-    List<Consultation> findHistory(String id);
+    ArrayList<Consultation> findHistory(String id);
     boolean storeConsultationData(String id, Consultation consultation);
     ArrayList<Consultation> findAll();
     MultiMap<String, Consultation> groupByPatientID();
