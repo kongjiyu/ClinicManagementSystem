@@ -1,16 +1,22 @@
 package repositories.Prescription;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import models.Consultation;
 import models.Prescription;
+import repositories.Consultation.ConsultationRepository;
 import utils.ArrayList;
+import java.util.List;
 import utils.MultiMap;
 
 @ApplicationScoped
 @Transactional
 public class PrescriptionRepositoryImpl implements PrescriptionRepository {
+  @Inject
+  private ConsultationRepository consultationRepo;
 
   @PersistenceContext
   private EntityManager em;
@@ -46,15 +52,21 @@ public class PrescriptionRepositoryImpl implements PrescriptionRepository {
   }
 
   @Override
-  public MultiMap<String,Prescription> groupByPatientId(){
-    ArrayList<Prescription>prescriptions=findAll();
-    MultiMap<String,Prescription> patientPrecriptionmap=new MultiMap<>();
-    for(Prescription prescription:prescriptions){
-      if (prescription.getPrescriptionID()!=null) {
-        patientPrecriptionmap.put(prescription.getPrescriptionID(), prescription);
+  public MultiMap<String, Prescription> groupByPatientId() {
+    ArrayList<Prescription> prescriptions = findAll();
+    MultiMap<String, Prescription> patientPrescriptionMap = new MultiMap<>();
+
+    for (Prescription prescription : prescriptions) {
+      String consultationId = prescription.getConsultationID();
+      if (consultationId != null) {
+        Consultation consultation = consultationRepo.findById(consultationId);
+        if (consultation != null && consultation.getPatientID() != null) {
+          patientPrescriptionMap.put(consultation.getPatientID(), prescription);
+        }
       }
     }
-    return patientPrecriptionmap;
+
+    return patientPrescriptionMap;
   }
 
   @Override
@@ -79,11 +91,11 @@ public class PrescriptionRepositoryImpl implements PrescriptionRepository {
   @Override
   public MultiMap<String,Prescription> groupByConsultationId(){
     ArrayList<Prescription>prescriptions=findAll();
-    MultiMap<String,Prescription> consultationPrecriptionmap=new MultiMap<>();
+    MultiMap<String,Prescription> consultationPrescriptionMap=new MultiMap<>();
     for(Prescription prescription:prescriptions){
-      consultationPrecriptionmap.put(prescription.getPrescriptionID(), prescription);
+      consultationPrescriptionMap.put(prescription.getPrescriptionID(), prescription);
     }
-    return consultationPrecriptionmap;
+    return consultationPrescriptionMap;
   }
 
   @Override
@@ -108,5 +120,11 @@ public class PrescriptionRepositoryImpl implements PrescriptionRepository {
   @Override
   public ArrayList<Prescription> findHistory(String id) {
     return null;
+  }
+
+  @Override
+  public ArrayList<Prescription> findPrescriptionsByPatientId(String patientId) {
+    MultiMap<String,Prescription> patientPrescriptionMap = groupByPatientId();
+    return patientPrescriptionMap.get(patientId);
   }
 }

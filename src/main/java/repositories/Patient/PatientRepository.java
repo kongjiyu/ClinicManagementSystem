@@ -2,6 +2,7 @@ package repositories.Patient;
 
 import models.Consultation;
 import models.Patient;
+import models.Prescription;
 import utils.ArrayList;
 
 public interface PatientRepository {
@@ -13,5 +14,4 @@ public interface PatientRepository {
 
   // Extra methods based on API list
   ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId);
-  ArrayList<Patient> findPrescriptionsByPatientId(String patientId);
 }

@@ -1,48 +1,64 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" import="java.util.List, models.Patient" %>
-<%
-    List<Patient> patients = (List<Patient>) request.getAttribute("patients");
-%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Patient List</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Patient</title>
+  <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
+  <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
 </head>
-<body>
-<div class="container mt-5">
-    <h2 class="mb-4">Patient List</h2>
-    <a href="patientAdd.jsp" class="btn btn-primary mb-3">Add New Patient</a>
-    <table id="patientsTable" class="table table-striped table-bordered" style="width:100%">
-        <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Gender</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
+<body class="flex min-h-screen text-base-content">
+<%@ include file="/views/sidebar.jsp" %>
 
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  $(document).ready(function () {
-    $('#patientsTable').DataTable({
-      "ajax": {
-        "url": "<%=request.getContextPath()%>/api/patients",
-        "dataSrc": ""
+
+<main class="flex-1 p-6 ml-64 space-y-6">
+  <h1 class="text-2xl font-bold mb-4">Patient</h1>
+  <div class="overflow-x-auto">
+    <table id="example" class="display">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Gender</th>
+        <th>Age</th>
+        <th>Phone</th>
+        <th>Email</th>
+      </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <!-- DataTables JS and CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.tailwindcss.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.tailwindcss.css" />
+  <script>
+    new DataTable('#example', {
+      ajax: {
+        url: '<%= request.getContextPath() %>/api/patients',
+        dataSrc: ''
       },
-      "columns": [
-        { "data": "id" },
-        { "data": "name" },
-        { "data": "gender" }
-      ]
+      columns: [
+        { data: 'patientID', title: 'ID' },
+        { data: 'firstName', title: 'First Name' },
+        { data: 'lastName', title: 'Last Name' },
+        { data: 'gender', title: 'Gender' },
+        { data: 'age', title: 'Age' },
+        { data: 'contactNumber', title: 'Phone' },
+        { data: 'email', title: 'Email' }
+      ],
+      rowCallback: function(row, data) {
+        row.addEventListener('click', function() {
+          window.location.href = '<%= request.getContextPath() %>/patient/detail?id=' + data.patientID;
+        });
+        row.classList.add('cursor-pointer', 'hover:bg-gray-100'); // optional styling
+      }
     });
-  });
-</script>
+  </script>
 </body>
 </html>

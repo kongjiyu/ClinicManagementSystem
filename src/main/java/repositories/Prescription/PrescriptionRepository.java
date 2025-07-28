@@ -5,6 +5,8 @@ import utils.ArrayList;
 import utils.MultiMap;
 
 import java.nio.channels.MulticastChannel;
+import utils.ArrayList;
+
 import java.util.List;
 
 public interface PrescriptionRepository {
@@ -21,4 +23,6 @@ public interface PrescriptionRepository {
   void delete(String id);
 
   ArrayList<Prescription> findHistory(String id);
+  ArrayList<Prescription> findPrescriptionsByPatientId(String patientId);
+
 }

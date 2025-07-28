@@ -1,4 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@plugin "flyonui";
+@plugin "tailwindcss-motion";
+@plugin "@iconify/tailwind";
+@plugin "flyonui" {
+  themes: light --default;
+}

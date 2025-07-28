@@ -113,7 +113,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     MultiMap<String, Consultation> historyMap = groupByPatientID();
     return historyMap.get(id);
   }
-  
+
 
   @Override
   public boolean storeConsultationData(String id, Consultation consultation) {
@@ -145,6 +145,17 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     }
 
     return patientConsultationMap;
+  }
+
+  @Override
+  public Consultation findById(String id) {
+    ArrayList<Consultation> consultations = findAll();
+    for (Consultation consultation : consultations) {
+      if (consultation.getPatientID().equals(id)) {
+        return consultation;
+      }
+    }
+    return null;
   }
 
 

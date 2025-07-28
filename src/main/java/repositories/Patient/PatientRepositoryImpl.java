@@ -11,6 +11,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Consultation;
 import models.Patient;
+import models.Prescription;
 import repositories.Consultation.ConsultationRepository;
 import utils.ArrayList;
 import utils.MultiMap;
@@ -62,13 +63,4 @@ public class PatientRepositoryImpl implements PatientRepository {
     MultiMap<String, Consultation> patientConsultationMap = consultationRepository.groupByPatientID();
     return patientConsultationMap.get(patientId);
   }
-
-  @Override
-  public ArrayList<Patient> findPrescriptionsByPatientId(String patientId) {
-    return new ArrayList<>(em.createQuery("SELECT DISTINCT p FROM Patient p JOIN FETCH p.consultations c JOIN FETCH c.prescriptions WHERE p.patientID = :id", Patient.class)
-             .setParameter("id", patientId)
-             .getResultList());
-  }
-
-
 }

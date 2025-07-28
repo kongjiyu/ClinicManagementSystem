@@ -38,8 +38,6 @@ public class Patient {
 
   private String studentId;
 
-  private String staffId;
-
   private String contactNumber;
 
   @Email
