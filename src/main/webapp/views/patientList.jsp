@@ -8,7 +8,7 @@
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
 </head>
 <body class="flex min-h-screen text-base-content">
-<%@ include file="/views/sidebar.jsp" %>
+<%@ include file="/views/adminSidebar.jsp" %>
 
 
 <main class="flex-1 p-6 ml-64 space-y-6">
@@ -41,7 +41,7 @@
     new DataTable('#example', {
       ajax: {
         url: '<%= request.getContextPath() %>/api/patients',
-        dataSrc: ''
+        dataSrc: 'elements'
       },
       columns: [
         { data: 'patientID', title: 'ID' },

@@ -8,7 +8,7 @@
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
 </head>
 <body class="flex min-h-screen text-base-content">
-<%@ include file="/views/sidebar.jsp" %>
+<%@ include file="/views/adminSidebar.jsp" %>
 
 <main class="flex-1 p-6 ml-64 space-y-6 pr-6">
   <h1 class="text-2xl font-bold">Today's Queue</h1>

@@ -1,6 +1,5 @@
 package utils;
 
-
 public interface MultiMapInterface<K, V> {
   void put(K key, V value);
   void putAll(K key, Iterable<V> values);

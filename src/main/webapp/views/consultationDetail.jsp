@@ -13,7 +13,7 @@
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
 </head>
 <body>
-<%@ include file="/views/sidebar.jsp" %>
+<%@ include file="/views/adminSidebar.jsp" %>
 
 <main class="ml-64 p-6 space-y-8">
   <h1 class="text-3xl font-bold">Consultation Detail</h1>

@@ -13,7 +13,7 @@
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
 </head>
 <body>
-<%@ include file="/views/sidebar.jsp" %>
+<%@ include file="/views/adminSidebar.jsp" %>
 
 <main class="p-6 sm:ml-64">
   <h1 class="text-2xl font-semibold text-base-content mb-4">Dashboard Overview</h1>
