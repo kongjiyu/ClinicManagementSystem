@@ -5,8 +5,11 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Schedule;
+import utils.List;
 
-import java.util.List;
+import java.time.Month;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 @ApplicationScoped
 @Transactional
@@ -16,7 +19,7 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
   private EntityManager em;
 
   @Override
-  public void save(Schedule schedule) {
+  public void create(Schedule schedule) {
     em.persist(schedule);
   }
 
@@ -27,27 +30,42 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
 
   @Override
   public Schedule findById(String id) {
-    return em.find(Schedule.class, id);
+    List<Schedule> schedules = findAll();
+    for (Schedule schedule : schedules) {
+      if (schedule.getScheduleID().equals(id)) {
+        return schedule;
+      }
+    }
+    return null;
   }
 
   @Override
   public List<Schedule> findAll() {
-    return em.createQuery("SELECT s FROM Schedule s", Schedule.class).getResultList();
+    return new List<>(em.createQuery("SELECT s FROM Schedule s", Schedule.class).getResultList());
   }
 
   @Override
   public List<Schedule> findByMonth(int year, int month) {
-    return em.createQuery("SELECT s FROM Schedule s WHERE YEAR(s.date) = :year AND MONTH(s.date) = :month", Schedule.class)
-             .setParameter("year", year)
-             .setParameter("month", month)
-             .getResultList();
+    List<Schedule> schedules = findAll();
+    List<Schedule> results = new List<>();
+    for (Schedule schedule : schedules) {
+      if (schedule.getDate().getMonth() == Month.of(month) && schedule.getDate().getYear() == year) {
+        results.add(schedule);
+      }
+    }
+    return results;
   }
 
   @Override
   public List<Schedule> findByStaffId(String staffId) {
-    return em.createQuery("SELECT s FROM Schedule s WHERE s.doctor.staffID = :staffId", Schedule.class)
-             .setParameter("staffId", staffId)
-             .getResultList();
+    List<Schedule> schedules = findAll();
+    List<Schedule> results = new List<>();
+    for (Schedule schedule : schedules) {
+      if(schedule.getDoctorID().equals(staffId)) {
+        results.add(schedule);
+      }
+    }
+    return results;
   }
 
   @Override

@@ -13,7 +13,7 @@ import models.Consultation;
 import models.Patient;
 import models.Prescription;
 import repositories.Consultation.ConsultationRepository;
-import utils.ArrayList;
+import utils.List;
 import utils.MultiMap;
 
 @ApplicationScoped
@@ -28,7 +28,7 @@ public class PatientRepositoryImpl implements PatientRepository {
 
   @Override
   public Patient findById(String id) {
-    ArrayList<Patient> patients = findAll();
+    List<Patient> patients = findAll();
     for(Patient patient : patients){
       if(patient.getPatientID().equals(id)){
         return patient;
@@ -38,13 +38,13 @@ public class PatientRepositoryImpl implements PatientRepository {
   }
 
   @Override
-  public ArrayList<Patient> findAll() {
-      return new ArrayList<>(em.createQuery("select p from Patient p", Patient.class)
+  public List<Patient> findAll() {
+      return new List<>(em.createQuery("select p from Patient p", Patient.class)
         .getResultList());
   }
 
   @Override
-  public void save(Patient patient){
+  public void create(Patient patient){
     em.persist(patient);
   }
 
@@ -59,7 +59,7 @@ public class PatientRepositoryImpl implements PatientRepository {
   }
 
   @Override
-  public ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId) {
+  public List<Consultation>  findMedicalHistoryByPatientId(String patientId) {
     MultiMap<String, Consultation> patientConsultationMap = consultationRepository.groupByPatientID();
     return patientConsultationMap.get(patientId);
   }

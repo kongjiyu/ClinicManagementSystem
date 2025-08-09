@@ -1,23 +1,21 @@
 package repositories.Consultation;
 
 import models.Consultation;
-import utils.ArrayList;
+import utils.List;
 import utils.MultiMap;
 
-import java.util.List;
-
 public interface ConsultationRepository {
-    ArrayList<Consultation> getAvailableSlots();
+    List<Consultation> getAvailableSlots();
     MultiMap<String, Consultation> groupByAvailability();
     Consultation create(Consultation consultation);
     Consultation update(String id, Consultation consultation);
     boolean reschedule(String id, Consultation consultation);
     boolean cancel(String id);
-    ArrayList<Consultation> getUpcoming();
+    List<Consultation> getUpcoming();
     boolean checkInPatient(String id);
-    ArrayList<Consultation> findHistory(String id);
+    List<Consultation> findHistory(String id);
     boolean storeConsultationData(String id, Consultation consultation);
-    ArrayList<Consultation> findAll();
+    List<Consultation> findAll();
     MultiMap<String, Consultation> groupByPatientID();
     Consultation findById(String id);
   }

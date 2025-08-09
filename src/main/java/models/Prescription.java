@@ -16,7 +16,7 @@ public class Prescription {
     @GeneratedValue(generator = "prefix_id")
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String prescriptionID;
-    private String patientID;
+
     private String consultationID;
 
     private String medicineID;

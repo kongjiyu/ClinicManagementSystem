@@ -9,6 +9,6 @@ public interface MultiMapInterface<K, V> {
   boolean containsValue(K key, V value);
   int size();
   void clear();
-  ArrayList<V> get(K key);
+  List<V> get(K key);
   ArraySet<K> keySet();
 }

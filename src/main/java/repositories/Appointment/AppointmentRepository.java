@@ -1,12 +1,11 @@
 package repositories.Appointment;
 import models.Appointment;
 import models.Consultation;
-import utils.ArrayList;
+import utils.List;
 import utils.MultiMap;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface AppointmentRepository {
   // Create
@@ -17,9 +16,9 @@ public interface AppointmentRepository {
 
   MultiMap<String,Appointment> groupByPatientId();
 
-  ArrayList<Appointment> findByPatientId(String patientID);
-  ArrayList<Appointment> findAll();
-  ArrayList<Appointment> findByDate(LocalDate date); // For today's appointments
+  List<Appointment> findByPatientId(String patientID);
+  List<Appointment> findAll();
+  List<Appointment> findByDate(LocalDate date); // For today's appointments
   MultiMap<String, Appointment> groupByAvailability();
 
 
@@ -31,5 +30,5 @@ public interface AppointmentRepository {
   void updateStatus(String appointmentID, String newStatus);    // e.g. "Checked-in", "Cancelled"
 
   // Extra
-  ArrayList<Appointment> findUpcomingByPatientId(String patientID);
+  List<Appointment> findUpcomingByPatientId(String patientID);
 }

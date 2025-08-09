@@ -1,6 +1,7 @@
 package servlet;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -8,7 +9,7 @@ import jakarta.ws.rs.core.Response;
 import models.Patient;
 import repositories.Patient.PatientRepository;
 import repositories.Prescription.PrescriptionRepository;
-import utils.ArrayList;
+import utils.List;
 import utils.ErrorResponse;
 import DTO.AllergyInput;
 
@@ -17,7 +18,11 @@ import DTO.AllergyInput;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PatientsResource {
 
-  private final Gson gson = new Gson();
+  Gson gson = new GsonBuilder()
+    .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
+    .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
+     .registerTypeAdapter(java.time.LocalTime.class,  new utils.LocalTimeAdapter())
+    .create();
 
   @Inject
   private PatientRepository patientRepo;
@@ -27,7 +32,7 @@ public class PatientsResource {
 
   @GET
   public Response getAllPatients() {
-    ArrayList<Patient> patients = new ArrayList<>();
+    List<Patient> patients = new List<>();
     patients.addAll(patientRepo.findAll());
     String json = gson.toJson(patients);
     return Response.ok(json, MediaType.APPLICATION_JSON).build();
@@ -61,7 +66,7 @@ public class PatientsResource {
 
   @POST
   public Response createPatient(Patient patient) {
-    patientRepo.save(patient);
+    patientRepo.create(patient);
       String json = gson.toJson(patient);
       return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
   }

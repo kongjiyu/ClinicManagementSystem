@@ -13,8 +13,6 @@ import repositories.Order.OrderRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Supplier.SupplierRepository;
 
-import utils.ArrayList;
-
 import java.io.IOException;
 
 @WebServlet("/test/output")

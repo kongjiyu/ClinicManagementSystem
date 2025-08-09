@@ -1,12 +1,12 @@
 package repositories.Staff;
 
 import models.Staff;
-import java.util.List;
+import utils.List;
 
 public interface StaffRepository {
   List<Staff> findAll();
   Staff findById(String id);
-  void save(Staff staff);
+  void create(Staff staff);
   void update(String id, Staff updatedStaff);
   void delete(String id);
 }

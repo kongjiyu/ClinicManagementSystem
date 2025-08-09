@@ -1,11 +1,11 @@
 package repositories.Schedule;
 
 import models.Schedule;
-import java.time.LocalDate;
-import java.util.List;
+import utils.List;
+
 
 public interface ScheduleRepository {
-  void save(Schedule schedule);
+  void create(Schedule schedule);
   void update(Schedule schedule);
   Schedule findById(String id);
   List<Schedule> findAll();
