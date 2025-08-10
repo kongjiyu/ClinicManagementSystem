@@ -13,21 +13,13 @@ import repositories.Order.OrderRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Supplier.SupplierRepository;
 
+
 import java.io.IOException;
 
 @WebServlet("/test/output")
 public class testServlet extends HttpServlet {
   @Inject
-  ConsultationRepository consultationRepository;
-
-  @Inject
-  PatientRepository patientRepository;
-  @Inject
-  SupplierRepository supplierRepository;
-  @Inject
-  OrderRepository orderRepository;
-  @Inject
-  MedicineRepository medicineRepository;
+  ScheduleRepository scheduleRepository;
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
