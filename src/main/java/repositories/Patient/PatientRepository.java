@@ -2,16 +2,16 @@ package repositories.Patient;
 
 import models.Consultation;
 import models.Patient;
-import utils.ArrayList;
+import models.Prescription;
+import utils.List;
 
 public interface PatientRepository {
   Patient findById(String id);
-  ArrayList<Patient> findAll();
-  void save(Patient patient);
+  List<Patient> findAll();
+  void create(Patient patient);
   void update(Patient patient);
   void delete(Patient patient);
 
   // Extra methods based on API list
-  ArrayList<Consultation> findMedicalHistoryByPatientId(String patientId);
-  ArrayList<Patient> findPrescriptionsByPatientId(String patientId);
+  List<Consultation> findMedicalHistoryByPatientId(String patientId);
 }

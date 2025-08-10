@@ -1,19 +1,26 @@
 package repositories.Appointment;
 import models.Appointment;
+import models.Consultation;
+import utils.List;
+import utils.MultiMap;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface AppointmentRepository {
   // Create
   void create(Appointment appointment);
 
   // Read
-  Appointment findById(String appointmentID);
+  Appointment findById(String id);
+
+  MultiMap<String,Appointment> groupByPatientId();
+
   List<Appointment> findByPatientId(String patientID);
   List<Appointment> findAll();
   List<Appointment> findByDate(LocalDate date); // For today's appointments
+  MultiMap<String, Appointment> groupByAvailability();
+
 
   // Update
   void update(Appointment appointment);              // General update (e.g. PUT)

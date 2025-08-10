@@ -6,10 +6,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Consultation;
 import models.Patient;
-import utils.ArrayList;
+import utils.List;
 import utils.MultiMap;
-
-import java.util.List;
 
 @ApplicationScoped
 @Transactional
@@ -20,7 +18,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
 
   @Override
   public MultiMap<String, Consultation> groupByAvailability() {
-    ArrayList<Consultation> consultations = findAll();
+    List<Consultation> consultations = findAll();
     MultiMap<String, Consultation> availabilityConsultationMap = new MultiMap<>();
     for(Consultation consultation : consultations){
       availabilityConsultationMap.put(consultation.getStatus(), consultation);
@@ -29,7 +27,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
   }
 
   @Override
-  public ArrayList<Consultation> getAvailableSlots(){
+  public List<Consultation> getAvailableSlots(){
     MultiMap<String, Consultation> availabilityConsultationMap = groupByAvailability();
     return availabilityConsultationMap.get("Done");
   }
@@ -79,9 +77,9 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
 //  }
 
   @Override
-  public ArrayList<Consultation> getUpcoming() {
-    ArrayList<Consultation> consultations = findAll();
-    ArrayList<Consultation> upcoming = new ArrayList<>();
+  public List<Consultation> getUpcoming() {
+    List<Consultation> consultations = findAll();
+    List<Consultation> upcoming = new List<>();
     for (Consultation consultation : consultations) {
       if ("SCHEDULED".equalsIgnoreCase(consultation.getStatus())) {
         upcoming.add(consultation);
@@ -109,11 +107,11 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
 //  }
 
   @Override
-  public ArrayList<Consultation> findHistory(String id) {
+  public List<Consultation> findHistory(String id) {
     MultiMap<String, Consultation> historyMap = groupByPatientID();
     return historyMap.get(id);
   }
-  
+
 
   @Override
   public boolean storeConsultationData(String id, Consultation consultation) {
@@ -130,13 +128,13 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
   }
 
   @Override
-  public ArrayList<Consultation> findAll() {
-    return new ArrayList<>(em.createQuery("SELECT c FROM Consultation c", Consultation.class)
+  public List<Consultation> findAll() {
+    return new List<>(em.createQuery("SELECT c FROM Consultation c", Consultation.class)
       .getResultList());
   }
 
   public MultiMap<String, Consultation> groupByPatientID() {
-    ArrayList<Consultation> consultations = findAll();
+    List<Consultation> consultations = findAll();
     MultiMap<String, Consultation> patientConsultationMap = new MultiMap<>();
 
     for (Consultation consultation : consultations) {
@@ -145,6 +143,17 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     }
 
     return patientConsultationMap;
+  }
+
+  @Override
+  public Consultation findById(String id) {
+    List<Consultation> consultations = findAll();
+    for (Consultation consultation : consultations) {
+      if (consultation.getConsultationID().equals(id)) {
+        return consultation;
+      }
+    }
+    return null;
   }
 
 

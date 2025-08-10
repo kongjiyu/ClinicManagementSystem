@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Schedule;
+import utils.List;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,7 +20,7 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
   private EntityManager em;
 
   @Override
-  public void save(Schedule schedule) {
+  public void create(Schedule schedule) {
     em.persist(schedule);
   }
 
@@ -30,11 +31,17 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
 
   @Override
   public Schedule findById(String id) {
-    return em.find(Schedule.class, id);
+    List<Schedule> schedules = findAll();
+    for (Schedule schedule : schedules) {
+      if (schedule.getScheduleID().equals(id)) {
+        return schedule;
+      }
+    }
+    return null;
   }
 
   @Override
-  public ArrayList<Schedule> findAll() {
+  public List<Schedule> findAll() {
     return new ArrayList<>(em.createQuery("SELECT s FROM Schedule s", Schedule.class).getResultList());
   }
 

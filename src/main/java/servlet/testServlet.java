@@ -6,10 +6,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import models.Schedule;
-import repositories.Schedule.ScheduleRepository;
+import models.*;
+import repositories.Consultation.ConsultationRepository;
+import repositories.Medicine.MedicineRepository;
+import repositories.Order.OrderRepository;
+import repositories.Patient.PatientRepository;
+import repositories.Supplier.SupplierRepository;
 
-import utils.ArrayList;
 
 import java.io.IOException;
 
@@ -19,18 +22,7 @@ public class testServlet extends HttpServlet {
   ScheduleRepository scheduleRepository;
 
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    String yearParam = req.getParameter("year");
-    String monthParam = req.getParameter("month");
-
-    Integer year = Integer.parseInt(yearParam);
-    Integer month = Integer.parseInt(monthParam);
-
-    ArrayList<Schedule> schedules = scheduleRepository.findByMonth(year, month);
-    for (Schedule schedule : schedules) {
-      System.out.println(schedule.getScheduleID());
-    }
-
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
 
   }
 

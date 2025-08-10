@@ -1,6 +1,5 @@
 package utils;
 
-
 public interface MultiMapInterface<K, V> {
   void put(K key, V value);
   void putAll(K key, Iterable<V> values);
@@ -10,6 +9,6 @@ public interface MultiMapInterface<K, V> {
   boolean containsValue(K key, V value);
   int size();
   void clear();
-  ArrayList<V> get(K key);
+  List<V> get(K key);
   ArraySet<K> keySet();
 }

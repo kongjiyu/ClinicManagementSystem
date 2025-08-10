@@ -5,11 +5,10 @@ import jakarta.transaction.Transactional;
 import models.Order;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import utils.ArrayList;
+import utils.List;
 import utils.MultiMap;
 
 @ApplicationScoped
@@ -20,13 +19,13 @@ public class OrderRepositoryImpl implements OrderRepository {
   private EntityManager em;
 
   @Override
-  public ArrayList<Order> findAll() {
-    return new ArrayList<>(em.createQuery("SELECT o FROM Order o", Order.class).getResultList());
+  public List<Order> findAll() {
+    return new List<>(em.createQuery("SELECT o FROM Order o", Order.class).getResultList());
   }
 
   @Override
   public Order findById(String id) {
-    ArrayList<Order> orders = findAll();
+    List<Order> orders = findAll();
     for(Order order : orders) {
       if(order.getOrdersID().equals(id)) {
         return order;
@@ -37,9 +36,9 @@ public class OrderRepositoryImpl implements OrderRepository {
   }
 
   @Override
-  public ArrayList<Order> findByStatus(String status) {
-    ArrayList<Order> orders = findAll();
-    ArrayList<Order> matchedOrders = new ArrayList<>();
+  public List<Order> findByStatus(String status) {
+    List<Order> orders = findAll();
+    List<Order> matchedOrders = new List<>();
 
     for (Order order : orders) {
       if (order.getOrderStatus().equalsIgnoreCase(status)) {
@@ -51,9 +50,9 @@ public class OrderRepositoryImpl implements OrderRepository {
   }
 
   @Override
-  public ArrayList<Order> findBySupplier(String supplierId) {
-    ArrayList<Order> orders = findAll();
-    ArrayList<Order> matchedOrders = new ArrayList<>();
+  public List<Order> findBySupplier(String supplierId) {
+    List<Order> orders = findAll();
+    List<Order> matchedOrders = new List<>();
 
     for (Order order : orders) {
       if (order.getSupplierID().equals(supplierId)) {
@@ -65,9 +64,9 @@ public class OrderRepositoryImpl implements OrderRepository {
   }
 
   @Override
-  public ArrayList<Order> findByMedicine(String medicineId) {
-    ArrayList<Order> orders = findAll();
-    ArrayList<Order> matchedOrders = new ArrayList<>();
+  public List<Order> findByMedicine(String medicineId) {
+    List<Order> orders = findAll();
+    List<Order> matchedOrders = new List<>();
 
     for (Order order : orders) {
       if (order.getMedicineID().equals(medicineId)) {
@@ -79,9 +78,9 @@ public class OrderRepositoryImpl implements OrderRepository {
   }
 
   @Override
-  public ArrayList<Order> findByExpireDate(LocalDate date) {
-    ArrayList<Order> orders = findAll();
-    ArrayList<Order> matchedOrders = new ArrayList<>();
+  public List<Order> findByExpireDate(LocalDate date) {
+    List<Order> orders = findAll();
+    List<Order> matchedOrders = new List<>();
 
     for (Order order : orders) {
       if (order.getExpiryDate().equals(date)) {
@@ -94,14 +93,14 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   public MultiMap<String, Order> groupByOrderID(){
     MultiMap<String, Order> orderMap = new MultiMap<>();
-    ArrayList<Order> orders = findAll();
+    List<Order> orders = findAll();
     for (Order order : orders) {
       orderMap.put(order.getOrdersID(), order);
     }
     return orderMap;
   }
 
-  public MultiMap<String, Order> groupByOrderID(ArrayList<Order> orders){
+  public MultiMap<String, Order> groupByOrderID(List<Order> orders){
     MultiMap<String, Order> orderMap = new MultiMap<>();
     for (Order order : orders) {
       orderMap.put(order.getOrdersID(), order);
@@ -111,7 +110,7 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   public MultiMap<LocalDate, Order> groupByExpireDate(){
     MultiMap<LocalDate, Order> medicineExpireDateMap = new MultiMap<>();
-    ArrayList<Order> orders = findAll();
+    List<Order> orders = findAll();
     for (Order order : orders) {
       medicineExpireDateMap.put(order.getExpiryDate(), order);
     }
@@ -120,7 +119,7 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   public MultiMap<String, Order> groupBySupplier(){
     MultiMap<String, Order> supplierOrderMap = new MultiMap<>();
-    ArrayList<Order> orders = findAll();
+    List<Order> orders = findAll();
     for (Order order : orders) {
       supplierOrderMap.put(order.getSupplierID(), order);
     }
@@ -128,7 +127,7 @@ public class OrderRepositoryImpl implements OrderRepository {
   }
 
   @Override
-  public void save(Order order) {
+  public void create(Order order) {
     em.persist(order);
   }
 

@@ -1,11 +1,22 @@
 package utils;
 
-public class MultiMap<K, V> implements MultiMapInterface<K, V> {
-  private ArrayList<Entry<K, ArrayList<V>>> map = new ArrayList<>();
+import java.util.Iterator;
 
-  private Entry<K, ArrayList<V>> findEntry(K key) {
+public class MultiMap<K, V> implements MultiMapInterface<K, V>, Iterable<MultiMap.KeyValue<K, V>> {
+  private List<Entry<K, List<V>>> map = new List<>();
+  /** Lightweight pair exposed by the iterator() */
+  public static class KeyValue<K, V> {
+    public final K key;
+    public final V value;
+    public KeyValue(K key, V value) {
+      this.key = key;
+      this.value = value;
+    }
+  }
+
+  private Entry<K, List<V>> findEntry(K key) {
     for (int i = 0; i < map.size(); i++) {
-      Entry<K, ArrayList<V>> entry = map.get(i);
+      Entry<K, List<V>> entry = map.get(i);
       if (entry.key.equals(key)) {
         return entry;
       }
@@ -15,9 +26,9 @@ public class MultiMap<K, V> implements MultiMapInterface<K, V> {
 
   @Override
   public void put(K key, V value) {
-    Entry<K, ArrayList<V>> entry = findEntry(key);
+    Entry<K, List<V>> entry = findEntry(key);
     if (entry == null) {
-      ArrayList<V> values = new ArrayList<>();
+      List<V> values = new List<>();
       values.add(value);
       map.add(new Entry<>(key, values));
     } else {
@@ -34,7 +45,7 @@ public class MultiMap<K, V> implements MultiMapInterface<K, V> {
 
   @Override
   public boolean remove(K key, V value) {
-    Entry<K, ArrayList<V>> entry = findEntry(key);
+    Entry<K, List<V>> entry = findEntry(key);
     if (entry != null) {
       return entry.value.remove(value);
     }
@@ -59,7 +70,7 @@ public class MultiMap<K, V> implements MultiMapInterface<K, V> {
 
   @Override
   public boolean containsValue(K key, V value) {
-    Entry<K, ArrayList<V>> entry = findEntry(key);
+    Entry<K, List<V>> entry = findEntry(key);
     if (entry != null) {
       return entry.value.contains(value);
     }
@@ -81,12 +92,12 @@ public class MultiMap<K, V> implements MultiMapInterface<K, V> {
   }
 
   @Override
-  public ArrayList<V> get(K key) {
-    Entry<K, ArrayList<V>> entry = findEntry(key);
+  public List<V> get(K key) {
+    Entry<K, List<V>> entry = findEntry(key);
     if (entry != null) {
       return entry.value;
     }
-    return new ArrayList<>();
+    return new List<>();
   }
 
   @Override
@@ -96,6 +107,84 @@ public class MultiMap<K, V> implements MultiMapInterface<K, V> {
       set.add(map.get(i).key);
     }
     return set;
+  }
+
+  /** Iterate over ALL (key,value) pairs in the multimap (outer to inner). */
+  @Override
+  public Iterator<KeyValue<K, V>> iterator() {
+    return new AllPairsIterator();
+  }
+
+  /** Iterate over keys only (each key appears once). */
+  public Iterator<K> keyIterator() {
+    return new Iterator<K>() {
+      private int index = 0;
+      @Override public boolean hasNext() { return index < map.size(); }
+      @Override public K next() { return map.get(index++).key; }
+      @Override public void remove() { throw new UnsupportedOperationException(); }
+    };
+  }
+
+  /** Iterate over values for a single key (returns empty iterator if key absent). */
+  public Iterator<V> valuesIterator(K key) {
+    Entry<K, List<V>> e = findEntry(key);
+    final List<V> list = (e == null) ? new List<V>() : e.value;
+    return new Iterator<V>() {
+      private int i = 0;
+      @Override public boolean hasNext() { return i < list.size(); }
+      @Override public V next() { return list.get(i++); }
+      @Override public void remove() { throw new UnsupportedOperationException(); }
+    };
+  }
+
+  /** Iterate over all values across all keys (flattened). */
+  public Iterator<V> valuesIterator() {
+    return new Iterator<V>() {
+      private int outer = 0;
+      private int inner = 0;
+      @Override public boolean hasNext() {
+        while (outer < map.size()) {
+          if (inner < map.get(outer).value.size()) return true;
+          outer++; inner = 0;
+        }
+        return false;
+      }
+      @Override public V next() {
+        V v = map.get(outer).value.get(inner++);
+        // advance to next non-empty bucket on subsequent hasNext()
+        return v;
+      }
+      @Override public void remove() { throw new UnsupportedOperationException(); }
+    };
+  }
+
+  /** Internal iterator over all (key,value) pairs */
+  private class AllPairsIterator implements Iterator<KeyValue<K, V>> {
+    private int outer = 0;
+    private int inner = 0;
+
+    @Override
+    public boolean hasNext() {
+      // Skip empty value lists
+      while (outer < map.size()) {
+        if (inner < map.get(outer).value.size()) return true;
+        outer++;
+        inner = 0;
+      }
+      return false;
+    }
+
+    @Override
+    public KeyValue<K, V> next() {
+      Entry<K, List<V>> bucket = map.get(outer);
+      V v = bucket.value.get(inner++);
+      return new KeyValue<>(bucket.key, v);
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
   }
 
   private static class Entry<K, V> {

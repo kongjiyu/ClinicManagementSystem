@@ -26,4 +26,6 @@ public class Schedule {
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
+
+    private String shift;
 }

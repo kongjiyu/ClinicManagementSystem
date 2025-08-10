@@ -6,7 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Staff;
 
-import java.util.List;
+import utils.List;
 
 @ApplicationScoped
 @Transactional
@@ -17,7 +17,7 @@ public class StaffRepositoryImpl implements StaffRepository {
 
   @Override
   public List<Staff> findAll() {
-    return em.createQuery("SELECT s FROM Staff s", Staff.class).getResultList();
+    return new List<>(em.createQuery("SELECT s FROM Staff s", Staff.class).getResultList());
   }
 
   @Override
@@ -26,7 +26,7 @@ public class StaffRepositoryImpl implements StaffRepository {
   }
 
   @Override
-  public void save(Staff staff) {
+  public void create(Staff staff) {
     em.persist(staff);
   }
 

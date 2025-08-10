@@ -6,7 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import models.Bill;
 
-import java.util.List;
+import utils.List;
 
 @ApplicationScoped
 @Transactional
@@ -22,12 +22,19 @@ public class BillRepositoryImpl implements BillRepository {
 
   @Override
   public Bill findById(String billID) {
-    return em.find(Bill.class, billID);
+    List<Bill> bills=findAll();
+    for (Bill bill : bills) {
+      if (bill.getBillID().equals(billID)) {
+        return bill;
+      }
+    }
+    return null;
   }
 
   @Override
   public List<Bill> findAll() {
-    return em.createQuery("SELECT b FROM Bill b", Bill.class).getResultList();
+    return new List<>( em.createQuery("SELECT b FROM Bill b", Bill.class)
+            .getResultList());
   }
 
   @Override

@@ -2,16 +2,16 @@ package repositories.Schedule;
 
 import models.Schedule;
 import java.time.LocalDate;
-import utils.ArrayList;
 import utils.MultiMap;
+import utils.List;
 
 public interface ScheduleRepository {
-  void save(Schedule schedule);
+  void create(Schedule schedule);
   void update(Schedule schedule);
   Schedule findById(String id);
-  ArrayList<Schedule> findAll();
-  ArrayList<Schedule> findByMonth(int year, int month);
-  ArrayList<Schedule> findByStaffId(String staffId);
+  List<Schedule> findAll();
+  List<Schedule> findByMonth(int year, int month);
+  List<Schedule> findByStaffId(String staffId);
   void delete(String id);
   MultiMap<String, Schedule> groupByStaffID();
 }

@@ -1,7 +1,7 @@
 package repositories.Bill;
 
 import models.Bill;
-import java.util.List;
+import utils.List;
 
 public interface BillRepository {
     void create(Bill bill);

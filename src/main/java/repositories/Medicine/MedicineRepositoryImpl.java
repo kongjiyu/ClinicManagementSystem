@@ -5,9 +5,7 @@ import models.Medicine;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import utils.ArrayList;
-
-import java.util.List;
+import utils.List;
 
 @ApplicationScoped
 @Transactional
@@ -18,19 +16,19 @@ public class MedicineRepositoryImpl implements MedicineRepository {
 
   @Transactional
   @Override
-  public void save(Medicine medicine) {
+  public void create(Medicine medicine) {
     em.persist(medicine);
   }
 
   @Override
-  public ArrayList<Medicine> findAll() {
-    return new ArrayList<>(em.createQuery("SELECT m FROM Medicine m", Medicine.class)
+  public List<Medicine> findAll() {
+    return new List<>(em.createQuery("SELECT m FROM Medicine m", Medicine.class)
             .getResultList());
   }
 
   @Override
   public Medicine findById(String id) {
-    ArrayList<Medicine> medicines = findAll();
+    List<Medicine> medicines = findAll();
     for(Medicine medicine: medicines) {
       if(medicine.getMedicineID().equals(id)) {
         return medicine;
@@ -40,9 +38,9 @@ public class MedicineRepositoryImpl implements MedicineRepository {
   }
 
   @Override
-  public ArrayList<Medicine> findByName(String name) {
-    ArrayList<Medicine> matchedMedicines = new ArrayList<>();
-    ArrayList<Medicine> medicines = findAll();
+  public List<Medicine> findByName(String name) {
+    List<Medicine> matchedMedicines = new List<>();
+    List<Medicine> medicines = findAll();
 
     for (Medicine medicine : medicines) {
       if (medicine.getMedicineName().toLowerCase().contains(name.toLowerCase())) {
@@ -53,9 +51,9 @@ public class MedicineRepositoryImpl implements MedicineRepository {
   }
 
   @Override
-  public ArrayList<Medicine> findOutOfStock() {
-    ArrayList<Medicine> medicines = findAll();
-    ArrayList<Medicine> outOfStock = new ArrayList<>();
+  public List<Medicine> findOutOfStock() {
+    List<Medicine> medicines = findAll();
+    List<Medicine> outOfStock = new List<>();
 
     for (Medicine medicine : medicines) {
       if (medicine.getTotalStock() == 0) {
@@ -67,9 +65,9 @@ public class MedicineRepositoryImpl implements MedicineRepository {
   }
 
   @Override
-  public ArrayList<Medicine> findBelowReorderLevel() {
-    ArrayList<Medicine> medicines = findAll();
-    ArrayList<Medicine> belowReorder = new ArrayList<>();
+  public List<Medicine> findBelowReorderLevel() {
+    List<Medicine> medicines = findAll();
+    List<Medicine> belowReorder = new List<>();
 
     for (Medicine medicine : medicines) {
       if (medicine.getTotalStock() < medicine.getReorderLevel()) {

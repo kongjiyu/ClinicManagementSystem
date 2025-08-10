@@ -2,18 +2,17 @@ package utils;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.List;
 
-public class ArrayList<T> implements ListInterface<T> {
+public class List<T> implements ListInterface<T> {
   private Object[] elements;
   private int size;
 
-  public ArrayList() {
+  public List() {
     elements = new Object[10];
     size = 0;
   }
 
-  public ArrayList(java.util.List<T> list) {
+  public List(java.util.List<T> list) {
     elements = new Object[list.size()];
     size = 0;
     for (T item : list) {
@@ -123,14 +122,5 @@ public class ArrayList<T> implements ListInterface<T> {
       }
     }
     return true;
-  }
-
-  @Override
-  public List<T> toList() {
-    java.util.List<T> list = new java.util.ArrayList<>();
-    for (int i = 0; i < size; i++) {
-      list.add((T) elements[i]);
-    }
-    return list;
   }
 }

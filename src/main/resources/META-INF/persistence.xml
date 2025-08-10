@@ -14,8 +14,8 @@
       <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
 
       <!-- Schema generation -->
-      <property name="hibernate.hbm2ddl.auto" value="create"/>
-      <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
 
       <!-- Optional Hibernate settings for logging -->
       <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
