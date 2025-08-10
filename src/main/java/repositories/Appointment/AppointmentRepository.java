@@ -15,8 +15,10 @@ public interface AppointmentRepository {
   Appointment findById(String id);
 
   MultiMap<String,Appointment> groupByPatientId();
+  MultiMap<String,Appointment> groupByStatus();
 
   List<Appointment> findByPatientId(String patientID);
+  List<Appointment> findByStatus(String status);
   List<Appointment> findAll();
   List<Appointment> findByDate(LocalDate date); // For today's appointments
   MultiMap<String, Appointment> groupByAvailability();
@@ -27,7 +29,7 @@ public interface AppointmentRepository {
   void reschedule(String appointmentID, LocalDateTime newTime); // Specifically for rescheduling
 
   // Status
-  void updateStatus(String appointmentID, String newStatus);    // e.g. "Checked-in", "Cancelled"
+  void updateStatus(String appointmentID, String newStatus); // e.g. "Checked-in", "Cancelled"
 
   // Extra
   List<Appointment> findUpcomingByPatientId(String patientID);

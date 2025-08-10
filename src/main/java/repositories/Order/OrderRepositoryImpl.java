@@ -5,11 +5,13 @@ import jakarta.transaction.Transactional;
 import models.Order;
 
 import java.time.LocalDate;
+import java.util.Iterator;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import utils.List;
 import utils.MultiMap;
+import utils.ArraySet;
 
 @ApplicationScoped
 @Transactional
@@ -51,16 +53,13 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   @Override
   public List<Order> findBySupplier(String supplierId) {
-    List<Order> orders = findAll();
-    List<Order> matchedOrders = new List<>();
-
-    for (Order order : orders) {
-      if (order.getSupplierID().equals(supplierId)) {
-        matchedOrders.add(order);
-      }
+    MultiMap<String, Order> orderMap = groupBySupplier();
+    if(orderMap.containsKey(supplierId)) {
+      return orderMap.get(supplierId);
     }
-
-    return matchedOrders;
+    else {
+      return null;
+    }
   }
 
   @Override
@@ -79,18 +78,39 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   @Override
   public List<Order> findByExpireDate(LocalDate date) {
-    List<Order> orders = findAll();
-    List<Order> matchedOrders = new List<>();
+    MultiMap<LocalDate, Order> orderMap = groupByExpireDate();
+    if(orderMap.containsKey(date)){
+      return orderMap.get(date);
+    }
+    else {
+      return null;
+    }
+  }
 
-    for (Order order : orders) {
-      if (order.getExpiryDate().equals(date)) {
-        matchedOrders.add(order);
+  @Override
+  public List<Order> findByExpireDateRange(LocalDate dateAfter, LocalDate dateBefore) {
+    MultiMap<LocalDate, Order> orderMap = groupByExpireDate();
+    List<Order> result = new List<>();
+
+    Iterator<LocalDate> keyIterator = orderMap.keyIterator();
+
+    while (keyIterator.hasNext()) {
+      LocalDate expireDate = keyIterator.next();
+
+      if ((expireDate.isEqual(dateAfter) || expireDate.isAfter(dateAfter)) &&
+              (expireDate.isEqual(dateBefore) || expireDate.isBefore(dateBefore))) {
+
+        Iterator<Order> valuesIt = orderMap.valuesIterator(expireDate);
+        while (valuesIt.hasNext()) {
+          result.add(valuesIt.next());
+        }
       }
     }
 
-    return matchedOrders;
+    return result;
   }
 
+  @Override
   public MultiMap<String, Order> groupByOrderID(){
     MultiMap<String, Order> orderMap = new MultiMap<>();
     List<Order> orders = findAll();
@@ -100,6 +120,7 @@ public class OrderRepositoryImpl implements OrderRepository {
     return orderMap;
   }
 
+  @Override
   public MultiMap<String, Order> groupByOrderID(List<Order> orders){
     MultiMap<String, Order> orderMap = new MultiMap<>();
     for (Order order : orders) {
@@ -108,6 +129,7 @@ public class OrderRepositoryImpl implements OrderRepository {
     return orderMap;
   }
 
+  @Override
   public MultiMap<LocalDate, Order> groupByExpireDate(){
     MultiMap<LocalDate, Order> medicineExpireDateMap = new MultiMap<>();
     List<Order> orders = findAll();
@@ -117,6 +139,7 @@ public class OrderRepositoryImpl implements OrderRepository {
     return medicineExpireDateMap;
   }
 
+  @Override
   public MultiMap<String, Order> groupBySupplier(){
     MultiMap<String, Order> supplierOrderMap = new MultiMap<>();
     List<Order> orders = findAll();

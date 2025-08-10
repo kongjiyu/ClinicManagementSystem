@@ -9,6 +9,9 @@ import models.Patient;
 import utils.List;
 import utils.MultiMap;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
 @ApplicationScoped
 @Transactional
 public class ConsultationRepositoryImpl implements ConsultationRepository {
@@ -17,19 +20,19 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
   private EntityManager em;
 
   @Override
-  public MultiMap<String, Consultation> groupByAvailability() {
+  public MultiMap<String, Consultation> groupByStatus() {
     List<Consultation> consultations = findAll();
-    MultiMap<String, Consultation> availabilityConsultationMap = new MultiMap<>();
+    MultiMap<String, Consultation> consultationStatusMap = new MultiMap<>();
     for(Consultation consultation : consultations){
-      availabilityConsultationMap.put(consultation.getStatus(), consultation);
+      consultationStatusMap.put(consultation.getStatus(), consultation);
     }
-    return availabilityConsultationMap;
+    return consultationStatusMap;
   }
 
   @Override
-  public List<Consultation> getAvailableSlots(){
-    MultiMap<String, Consultation> availabilityConsultationMap = groupByAvailability();
-    return availabilityConsultationMap.get("Done");
+  public List<Consultation> getByStatus(String status){
+    MultiMap<String, Consultation> consultationStatusMap = groupByStatus();
+    return consultationStatusMap.get(status);
   }
 
   @Override
@@ -65,6 +68,16 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     Consultation consultation = em.find(Consultation.class, id);
     if (consultation != null) {
       consultation.setStatus("CANCELLED");
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean updateStatus(String id, String status) {
+    Consultation consultation = em.find(Consultation.class, id);
+    if (consultation != null) {
+      consultation.setStatus(status);
       return true;
     }
     return false;
@@ -154,6 +167,82 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
       }
     }
     return null;
+  }
+
+  @Override
+  public List<Consultation> findByPatientID(String id) {
+    MultiMap<String, Consultation> patientConsultationMap = groupByPatientID();
+    if(patientConsultationMap.containsKey(id)){
+      return patientConsultationMap.get(id);
+    }
+    else {
+      return null;
+    }
+  }
+
+  @Override
+  public Consultation findByMcID(String id){
+    List<Consultation> consultations = findAll();
+    for (Consultation consultation : consultations) {
+      if (consultation.getMcID().equals(id)) {
+        return consultation;
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public List<Consultation> findAllMc(){
+    List<Consultation> consultations = findAll();
+    List<Consultation> consultationWithMc = new List<>();
+    for (Consultation consultation : consultations) {
+      if (consultation.getMcID() != null) {
+        consultationWithMc.add(consultation);
+      }
+    }
+    return consultationWithMc;
+  }
+
+  @Override
+  public List<Consultation> findByMcStartDate(LocalDate startDate){
+    List<Consultation> consultations = findAll();
+    List<Consultation> mcAtStartDate = new List<>();
+    for (Consultation consultation : consultations) {
+      if (consultation.getStartDate().isEqual(startDate)) {
+        mcAtStartDate.add(consultation);
+      }
+    }
+    return mcAtStartDate;
+  }
+
+  @Override
+  public List<Consultation> findByMcDuration(Integer duration){
+    List<Consultation> consultations = findAll();
+    List<Consultation> consultationWithDuration = new List<>();
+    for (Consultation consultation : consultations) {
+      if (consultation.getStartDate() != null && consultation.getEndDate() != null) {
+        long days = ChronoUnit.DAYS.between(consultation.getStartDate(), consultation.getEndDate());
+        if (days == duration) {
+          consultationWithDuration.add(consultation);
+        }
+      }
+    }
+    return consultationWithDuration;
+  }
+
+  @Override
+  public List<Consultation> findByMcDateRange(LocalDate startDate, LocalDate endDate){
+    List<Consultation> consultations = findAll();
+    List<Consultation> consultationsInRange = new List<>();
+    for (Consultation consultation : consultations) {
+      if (consultation.getStartDate() != null &&
+              consultation.getEndDate() != null &&
+              !consultation.getEndDate().isBefore(startDate) &&
+              !consultation.getStartDate().isAfter(endDate)) {
+        consultationsInRange.add(consultation);
+      }
+    }
+    return consultationsInRange;
   }
 
 

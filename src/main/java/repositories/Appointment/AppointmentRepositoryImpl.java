@@ -45,9 +45,25 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @Override
+  public MultiMap<String,Appointment> groupByStatus(){
+    List<Appointment> appointments = findAll();
+    MultiMap<String,Appointment>statusAppointmentMap = new MultiMap<>();
+    for(Appointment appointment : appointments){
+      statusAppointmentMap.put(appointment.getStatus(), appointment);
+    }
+    return statusAppointmentMap;
+  }
+
+  @Override
   public List<Appointment> findByPatientId(String patientID) {
     MultiMap<String,Appointment> patientAppointmentMap = groupByPatientId();
     return patientAppointmentMap.get(patientID);
+  }
+
+  @Override
+  public List<Appointment> findByStatus(String status) {
+    MultiMap<String,Appointment> statusAppointmentMap = groupByStatus();
+    return statusAppointmentMap.get(status);
   }
 
   @Override
@@ -110,3 +126,4 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
    return patientAppoinementList;
   }
 }
+
