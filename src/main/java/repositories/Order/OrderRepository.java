@@ -17,11 +17,12 @@ public interface OrderRepository {
     List<Order> findByStatus(String status);
     List<Order> findBySupplier(String supplierId);
     List<Order> findByMedicine(String medicineId);
-    List<Order> findByExpireDate(LocalDate date); // use when find a specific date
+    List<Order> findByExpireDate(LocalDate date);
+    List<Order> findByExpireDateRange(LocalDate dateAfter, LocalDate dateBefore);
 
     MultiMap<String, Order> groupByOrderID();// using for all order
     MultiMap<String, Order> groupByOrderID(List<Order> orders);// only group the accepted order
-    MultiMap<LocalDate, Order> groupByExpireDate();// use when represent data in a table
+    MultiMap<LocalDate, Order> groupByExpireDate();
     MultiMap<String, Order> groupBySupplier();// use when represent data in a table
 
     // Update
