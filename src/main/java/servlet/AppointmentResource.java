@@ -59,7 +59,7 @@ public class AppointmentResource {
     }
 
     @GET
-    @Path("/by-patient/{patientid}")
+    @Path("/upcoming-by-patient/{patientid}")
     public Response getUpComingAppointment(@PathParam("patientid") String id) {
         List<Appointment> appointment = appointmentRepo.findUpcomingByPatientId(id);
         if (appointment != null) {
@@ -107,8 +107,8 @@ public class AppointmentResource {
         }
     }
 
-    @POST
-    @Path("/{id}")
+    @PUT
+    @Path("/{id}/reschedule")
     public Response rescheduleAppointment(@PathParam("id") String id, String newTimeStr) {
         try {
             LocalDateTime newTime = LocalDateTime.parse(newTimeStr);
@@ -130,7 +130,7 @@ public class AppointmentResource {
         }
     }
 
-    @POST
+    @PUT
     @Path("/{id}")
     public Response updateAppointment(@PathParam("id") String id, Appointment appointment) {
         Appointment existingAppointment = appointmentRepo.findById(id);
@@ -145,8 +145,8 @@ public class AppointmentResource {
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @POST
-    @Path("/{id}")
+    @PUT
+    @Path("/{id}/cancel")
     public Response cancelAppointment(@PathParam("id") String id, Appointment appointment) {
         Appointment existingAppointment = appointmentRepo.findById(id);
         if (existingAppointment == null) {
@@ -160,8 +160,8 @@ public class AppointmentResource {
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @POST
-    @Path("/{id}")
+    @PUT
+    @Path("/{id}/noshow")
     public Response patientNoShow(@PathParam("id") String id, Appointment appointment) {
         Appointment existingAppointment = appointmentRepo.findById(id);
         if (existingAppointment == null) {
@@ -175,8 +175,8 @@ public class AppointmentResource {
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @POST
-    @Path("/{id}")
+    @PUT
+    @Path("/{id}/checkin")
     public Response patientCheckIn(@PathParam("id") String id, Appointment appointment) {
         Appointment existingAppointment = appointmentRepo.findById(id);
         if (existingAppointment == null) {

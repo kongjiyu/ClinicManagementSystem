@@ -61,6 +61,7 @@ public class MedicineResource {
     }
 
     @GET
+    @Path("/out-of-stock")
     public Response getMedicineOutOfStock() {
         List<Medicine> medicine = medicineRepo.findOutOfStock();
         if (medicine != null) {
@@ -72,6 +73,7 @@ public class MedicineResource {
     }
 
     @GET
+    @Path("/below-reorder-level")
     public Response getMedicineBelowReorderLevel() {
         List<Medicine> medicine = medicineRepo.findBelowReorderLevel();
         if (medicine != null) {

@@ -8,8 +8,6 @@ import models.Schedule;
 import utils.List;
 
 import java.time.LocalDate;
-import java.util.List;
-import utils.ArrayList;
 import utils.MultiMap;
 
 @ApplicationScoped
@@ -42,13 +40,13 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
 
   @Override
   public List<Schedule> findAll() {
-    return new ArrayList<>(em.createQuery("SELECT s FROM Schedule s", Schedule.class).getResultList());
+    return new List<>(em.createQuery("SELECT s FROM Schedule s", Schedule.class).getResultList());
   }
 
   @Override
-  public ArrayList<Schedule> findByMonth(int year, int month) {
-    ArrayList<Schedule> schedules = findAll();
-    ArrayList<Schedule> monthResult = new ArrayList<>();
+  public List<Schedule> findByMonth(int year, int month) {
+    List<Schedule> schedules = findAll();
+    List<Schedule> monthResult = new List<>();
 
     for (Schedule schedule : schedules) {
       LocalDate date = schedule.getDate();
@@ -62,7 +60,7 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
 
 
   @Override
-  public ArrayList<Schedule> findByStaffId(String staffID) {
+  public List<Schedule> findByStaffId(String staffID) {
     MultiMap<String, Schedule> scheduleMap = groupByStaffID();
     return scheduleMap.get(staffID);
   }
@@ -76,7 +74,7 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
   }
 
   public MultiMap<String, Schedule> groupByStaffID() {
-    ArrayList<Schedule> schedules = findAll();
+    List<Schedule> schedules = findAll();
     MultiMap<String, Schedule> staffScheduleMap = new MultiMap<>();
 
     for (Schedule schedule : schedules) {
