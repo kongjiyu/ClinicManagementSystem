@@ -6,238 +6,227 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import models.Appointment;
 import models.Consultation;
 import models.Patient;
 import models.Staff;
 import repositories.Consultation.ConsultationRepository;
-import utils.ErrorResponse;
+import repositories.Patient.PatientRepository;
+import repositories.Staff.StaffRepository;
 import utils.List;
-import utils.MultiMap;
+import utils.ErrorResponse;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 
-@Path("/consultation")
+@Path("/consultations")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConsultationResource {
 
     Gson gson = new GsonBuilder()
-            .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
-            .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
-            .registerTypeAdapter(java.time.LocalTime.class, new utils.LocalTimeAdapter())
-            .create();
+        .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
+        .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
+        .registerTypeAdapter(java.time.LocalTime.class, new utils.LocalTimeAdapter())
+        .create();
 
     @Inject
-    private ConsultationRepository consultationRepo;
+    private ConsultationRepository consultationRepository;
 
-    @POST
-    public Response createConsultation(Consultation consultation) {
-       consultationRepo.create(consultation);
-        String json = gson.toJson(consultation);
-        return Response.status(Response.Status.CREATED)
-                .entity(json)
-                .type(MediaType.APPLICATION_JSON)
-                .build();
-    }
+    @Inject
+    private PatientRepository patientRepository;
 
-    @PUT
-    @Path("/{id}")
-    public Response update(@PathParam("id") String id, Consultation consultation) {
-       Consultation existingConsultation = consultationRepo.findById(id);
-        if (existingConsultation == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation Record not found"))
-                    .build();
-        }
+    @Inject
+    private StaffRepository staffRepository;
 
-        consultationRepo.update(id,consultation);
-        String json = gson.toJson(consultation);
+    @GET
+    public Response getAllConsultations() {
+        List<Consultation> consultations = consultationRepository.findAll();
+        String json = gson.toJson(consultations);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getConsultation(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
+        Consultation consultation = consultationRepository.findById(id);
         if (consultation != null) {
             String json = gson.toJson(consultation);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Patient not found")).build();
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("Consultation not found"))
+                .build();
         }
     }
 
     @GET
-    public Response getAllConsultations() {
-        List<Consultation> consultations = new List<>();
-        consultations.addAll(consultationRepo.findAll());
+    @Path("/patient/{patientId}")
+    public Response getConsultationsByPatient(@PathParam("patientId") String patientId) {
+        List<Consultation> consultations = consultationRepository.groupByPatientID().get(patientId);
         String json = gson.toJson(consultations);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @GET
-    @Path("/by-patient/{id}")
-    public Response getConsultationsByPatient(@PathParam("id") String id) {
-        List<Consultation> consultations = new List<>();
-        consultations.addAll(consultationRepo.findByPatientID(id));
-        String json = gson.toJson(consultations);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/by-status/{status}")
-    public Response getConsultationsByStatus(@PathParam("status") String status) {
-        List<Consultation> consultations = new List<>();
-        consultations.addAll(consultationRepo.getByStatus(status));
-        String json = gson.toJson(consultations);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    public Response getUpComingConsultation() {
-        List<Consultation> consultations = new List<>();
-        consultations.addAll(consultationRepo.getUpcoming());
-        String json = gson.toJson(consultations);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/by-mc")
-    public Response getAllMc() {
-        List<Consultation> consultations = new List<>();
-        consultations.addAll(consultationRepo.findAllMc());
-        String json = gson.toJson(consultations);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/by-mc/{id}")
-    public Response getConsultationsByMcId(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findByMcID(id);
-        if (consultation != null) {
+    @POST
+    public Response createConsultation(Consultation consultation) {
+        try {
+            consultationRepository.create(consultation);
             String json = gson.toJson(consultation);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Patient not found")).build();
-        }
-    }
-
-
-    @GET
-    @Path("/by-mc/startdate/{date}")
-    public Response getConsultationsByMcStartDate(@PathParam("date") String dateStr) {
-        try {
-            LocalDate date = LocalDate.parse(dateStr);
-            List<Consultation> consultations = consultationRepo.findByMcStartDate(date);
-            String json = gson.toJson(consultations);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (DateTimeParseException e) {
+            return Response.status(Response.Status.CREATED)
+                .entity(json)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+        } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(gson.toJson(new ErrorResponse("Invalid date format. Use YYYY-MM-DD")))
-                    .build();
+                .entity(new ErrorResponse("Error creating consultation: " + e.getMessage()))
+                .build();
         }
     }
 
-    @GET
-    @Path("/by-mc/duration/{days}")
-    public Response getConsultationsByMcDuration(@PathParam("days") Integer durationDays) {
-        List<Consultation> consultations = consultationRepo.findByMcDuration(durationDays);
-        String json = gson.toJson(consultations);
+    @PUT
+    @Path("/{id}")
+    public Response updateConsultation(@PathParam("id") String id, Consultation consultation) {
+        Consultation existingConsultation = consultationRepository.findById(id);
+        if (existingConsultation == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("Consultation not found"))
+                .build();
+        }
+
+        consultation.setConsultationID(id);
+        consultationRepository.update(id, consultation);
+        String json = gson.toJson(consultation);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @GET
-    @Path("/by-mc/daterange/{start}/{end}")
-    public Response getConsultationsByMcDateRange(@PathParam("start") String startStr, @PathParam("end") String endStr) {
+    @DELETE
+    @Path("/{id}")
+    public Response deleteConsultation(@PathParam("id") String id) {
+        Consultation existingConsultation = consultationRepository.findById(id);
+        if (existingConsultation == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("Consultation not found"))
+                .build();
+        }
+
+        consultationRepository.cancel(id);
+        return Response.ok("{\"message\": \"Consultation cancelled successfully\"}")
+            .type(MediaType.APPLICATION_JSON)
+            .build();
+    }
+
+    // MC-specific endpoints
+    @POST
+    @Path("/{id}/mc")
+    public Response createMC(@PathParam("id") String consultationId, MCDto mcData) {
         try {
-            LocalDate startDate = LocalDate.parse(startStr);
-            LocalDate endDate = LocalDate.parse(endStr);
-            List<Consultation> consultations = consultationRepo.findByMcDateRange(startDate, endDate);
-            String json = gson.toJson(consultations);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (DateTimeParseException e) {
+            Consultation consultation = consultationRepository.findById(consultationId);
+            if (consultation == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Consultation not found"))
+                    .build();
+            }
+
+            // Validate MC data
+            if (mcData.getStartDate() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Start date is required"))
+                    .build();
+            }
+            if (mcData.getEndDate() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("End date is required"))
+                    .build();
+            }
+            if (mcData.getStartDate().isAfter(mcData.getEndDate())) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Start date cannot be after end date"))
+                    .build();
+            }
+
+            // Generate MC ID (MC + consultation ID)
+            String mcId = "MC" + consultationId;
+
+            // Update consultation with MC data
+            consultation.setMcID(mcId);
+            consultation.setStartDate(mcData.getStartDate());
+            consultation.setEndDate(mcData.getEndDate());
+            // Use diagnosis and symptoms as description for MC
+            String mcDescription = "Diagnosis: " + (consultation.getDiagnosis() != null ? consultation.getDiagnosis() : "N/A") +
+                                 "\nSymptoms: " + (consultation.getSymptoms() != null ? consultation.getSymptoms() : "N/A");
+            if (mcData.getDescription() != null && !mcData.getDescription().trim().isEmpty()) {
+                mcDescription += "\nAdditional Notes: " + mcData.getDescription();
+            }
+
+            consultationRepository.update(consultationId, consultation);
+
+            String json = gson.toJson(consultation);
+            return Response.status(Response.Status.CREATED)
+                .entity(json)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+        } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(gson.toJson(new ErrorResponse("Invalid date format. Use YYYY-MM-DD")))
-                    .build();
+                .entity(new ErrorResponse("Error creating MC: " + e.getMessage()))
+                .build();
         }
     }
 
-    @POST
-    @Path("/{id}")
-    public Response cancelConsultation(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
+    @GET
+    @Path("/{id}/mc")
+    public Response getMC(@PathParam("id") String consultationId) {
+        Consultation consultation = consultationRepository.findById(consultationId);
         if (consultation == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation not found"))
-                    .build();
+                .entity(new ErrorResponse("Consultation not found"))
+                .build();
         }
 
-        consultationRepo.cancel(consultation.getConsultationID());
+        if (consultation.getMcID() == null || consultation.getMcID().isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("No MC found for this consultation"))
+                .build();
+        }
+
         String json = gson.toJson(consultation);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    @POST
-    @Path("/{id}")
-    public Response patientInQueue(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
+    @DELETE
+    @Path("/{id}/mc")
+    public Response deleteMC(@PathParam("id") String consultationId) {
+        Consultation consultation = consultationRepository.findById(consultationId);
         if (consultation == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation not found"))
-                    .build();
+                .entity(new ErrorResponse("Consultation not found"))
+                .build();
         }
 
-        consultationRepo.updateStatus(consultation.getConsultationID(), "WAITING");
-        String json = gson.toJson(consultation);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        // Clear MC data
+        consultation.setMcID(null);
+        consultation.setStartDate(null);
+        consultation.setEndDate(null);
+
+        consultationRepository.update(consultationId, consultation);
+
+        return Response.ok("{\"message\": \"MC deleted successfully\"}")
+            .type(MediaType.APPLICATION_JSON)
+            .build();
     }
 
-    @POST
-    @Path("/{id}")
-    public Response patientInConsultation(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
-        if (consultation == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation not found"))
-                    .build();
-        }
+    // DTO for MC creation
+    public static class MCDto {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private String description;
 
-        consultationRepo.updateStatus(consultation.getConsultationID(), "CONSULTING");
-        String json = gson.toJson(consultation);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        // Getters and setters
+        public LocalDate getStartDate() { return startDate; }
+        public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+        public LocalDate getEndDate() { return endDate; }
+        public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
     }
-
-    @POST
-    @Path("/{id}")
-    public Response billConsultation(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
-        if (consultation == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation not found"))
-                    .build();
-        }
-
-        consultationRepo.updateStatus(consultation.getConsultationID(), "BILL");
-        String json = gson.toJson(consultation);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
-    @POST
-    @Path("/{id}")
-    public Response finishConsultation(@PathParam("id") String id) {
-        Consultation consultation = consultationRepo.findById(id);
-        if (consultation == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse("Consultation not found"))
-                    .build();
-        }
-
-        consultationRepo.updateStatus(consultation.getConsultationID(), "COMPLETED");
-        String json = gson.toJson(consultation);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-    }
-
 }
