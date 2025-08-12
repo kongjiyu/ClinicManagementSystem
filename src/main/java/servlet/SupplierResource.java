@@ -21,6 +21,7 @@ public class SupplierResource {
             .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
             .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
             .registerTypeAdapter(java.time.LocalTime.class, new utils.LocalTimeAdapter())
+            .registerTypeAdapter(utils.List.class, new utils.UtilsListAdapter())
             .create();
 
     @Inject

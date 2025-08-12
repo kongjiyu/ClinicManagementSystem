@@ -24,11 +24,11 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="label">Patient Name</label>
-        <input type="text" id="patientName" class="input input-bordered w-full" readonly />
+        <input type="text" id="patientName" class="input input-bordered w-full" disabled />
       </div>
       <div>
         <label class="label">Age</label>
-        <input type="number" id="age" class="input input-bordered w-full" readonly />
+        <input type="number" id="age" class="input input-bordered w-full" disabled />
       </div>
       <div>
         <label class="label">Gender</label>
@@ -61,7 +61,7 @@
       </div>
       <div>
         <label class="label">Allergies</label>
-        <input type="text" id="allergies" class="input input-bordered w-full" readonly />
+        <input type="text" id="allergies" class="input input-bordered w-full" disabled />
       </div>
     </div>
   </section>
@@ -73,11 +73,11 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="label" for="consultationId">Consultation ID</label>
-          <input type="text" id="consultationId" name="consultationId" class="input input-bordered w-full" readonly />
+          <input type="text" id="consultationId" name="consultationId" class="input input-bordered w-full" disabled />
         </div>
         <div>
           <label class="label" for="consultationDate">Consultation Date</label>
-          <input type="date" id="consultationDate" name="consultationDate" class="input input-bordered w-full" readonly />
+          <input type="date" id="consultationDate" name="consultationDate" class="input input-bordered w-full" disabled />
         </div>
         <div>
           <label class="label" for="symptoms">Symptoms</label>
@@ -127,23 +127,23 @@
     <div id="mc-info" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display: none;">
       <div>
         <label class="label">MC ID</label>
-        <input type="text" id="mcId" class="input input-bordered w-full" readonly />
+        <input type="text" id="mcId" class="input input-bordered w-full" disabled />
       </div>
       <div>
         <label class="label">Start Date</label>
-        <input type="date" id="mcStartDate" class="input input-bordered w-full" readonly />
+        <input type="date" id="mcStartDate" class="input input-bordered w-full" disabled />
       </div>
       <div>
         <label class="label">End Date</label>
-        <input type="date" id="mcEndDate" class="input input-bordered w-full" readonly />
+        <input type="date" id="mcEndDate" class="input input-bordered w-full" disabled />
       </div>
       <div class="md:col-span-2">
         <label class="label">Diagnosis</label>
-        <input type="text" id="mcDiagnosis" class="input input-bordered w-full" readonly />
+        <input type="text" id="mcDiagnosis" class="input input-bordered w-full" disabled />
       </div>
       <div class="md:col-span-2">
         <label class="label">Symptoms</label>
-        <input type="text" id="mcSymptoms" class="input input-bordered w-full" readonly />
+        <input type="text" id="mcSymptoms" class="input input-bordered w-full" disabled />
       </div>
     </div>
   </section>
