@@ -7,11 +7,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import models.Medicine;
-import models.Patient;
-import models.Staff;
 import repositories.Medicine.MedicineRepository;
 import utils.ErrorResponse;
 import utils.List;
+import utils.ListAdapter;
 
 @Path("/medicine")
 @Produces(MediaType.APPLICATION_JSON)
@@ -23,6 +22,7 @@ public class MedicineResource {
             .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
             .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
             .registerTypeAdapter(java.time.LocalTime.class,  new utils.LocalTimeAdapter())
+            .registerTypeAdapter(utils.List.class, new ListAdapter())
             .create();
 
     @Inject
@@ -100,6 +100,22 @@ public class MedicineResource {
                 .build();
     }
 
+    @POST
+    public Response createMedicine(Medicine medicine) {
+        try {
+            medicineRepo.create(medicine);
+            String json = gson.toJson(medicine);
+            return Response.status(Response.Status.CREATED)
+                    .entity(json)
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Error creating medicine: " + e.getMessage()))
+                    .build();
+        }
+    }
+
     @PUT
     @Path("/{id}")
     public Response updateMedicine(@PathParam("id") String id, Medicine medicine) {
@@ -110,6 +126,7 @@ public class MedicineResource {
                     .build();
         }
 
+        medicine.setMedicineID(id);
         medicineRepo.update(medicine);
         String json = gson.toJson(medicine);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();

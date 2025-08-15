@@ -13,6 +13,7 @@ import models.Consultation;
 import models.Patient;
 import models.Prescription;
 import repositories.Consultation.ConsultationRepository;
+import repositories.Prescription.PrescriptionRepository;
 import utils.List;
 import utils.MultiMap;
 
@@ -25,6 +26,9 @@ public class PatientRepositoryImpl implements PatientRepository {
 
   @Inject
   private ConsultationRepository consultationRepository;
+
+  @Inject
+  private PrescriptionRepository prescriptionRepository;
 
   @Override
   public Patient findById(String id) {
@@ -59,8 +63,7 @@ public class PatientRepositoryImpl implements PatientRepository {
   }
 
   @Override
-  public List<Consultation>  findMedicalHistoryByPatientId(String patientId) {
-    MultiMap<String, Consultation> patientConsultationMap = consultationRepository.groupByPatientID();
-    return patientConsultationMap.get(patientId);
+  public List<Prescription>  findPrescriptionHistoryByPatientId(String patientId) {
+    return prescriptionRepository.findByPatientId(patientId);
   }
 }

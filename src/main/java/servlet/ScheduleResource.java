@@ -8,14 +8,12 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import models.Schedule;
-import models.Staff;
 import repositories.Schedule.ScheduleRepository;
 import repositories.Staff.StaffRepository;
 import utils.List;
+import utils.ListAdapter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Path("/schedules")
 @Produces(MediaType.APPLICATION_JSON)
@@ -25,6 +23,7 @@ public class ScheduleResource {
     .registerTypeAdapter(java.time.LocalDate.class,     new utils.LocalDateAdapter())
     .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
     .registerTypeAdapter(java.time.LocalTime.class,  new utils.LocalTimeAdapter())
+    .registerTypeAdapter(utils.List.class, new ListAdapter())
     .create();
 
   @Inject
@@ -71,18 +70,18 @@ public class ScheduleResource {
     try {
       // Parse the date
       LocalDate date = LocalDate.parse(request.getDate());
-      
+
       // Find existing schedule for this date and shift
       List<Schedule> existingSchedules = scheduleRepository.findAll();
       Schedule existingSchedule = null;
-      
+
       for (Schedule s : existingSchedules) {
         if (s.getDate().equals(date) && request.getShift().equals(s.getShift())) {
           existingSchedule = s;
           break;
         }
       }
-      
+
       if (existingSchedule != null) {
         // Update existing schedule
         existingSchedule.setDoctorID(request.getDoctorID());
@@ -94,7 +93,7 @@ public class ScheduleResource {
         newSchedule.setDate(date);
         newSchedule.setShift(request.getShift());
         newSchedule.setDoctorID(request.getDoctorID());
-        
+
         // Set start and end times based on shift
         if ("morning".equals(request.getShift())) {
           newSchedule.setStartTime(date.atTime(8, 0));
@@ -103,7 +102,7 @@ public class ScheduleResource {
           newSchedule.setStartTime(date.atTime(14, 0));
           newSchedule.setEndTime(date.atTime(20, 0));
         }
-        
+
         scheduleRepository.create(newSchedule);
         return Response.status(Response.Status.CREATED).entity(gson.toJson(newSchedule)).type(MediaType.APPLICATION_JSON).build();
       }
@@ -119,7 +118,7 @@ public class ScheduleResource {
   public Response clearAssignment(@QueryParam("date") String dateStr, @QueryParam("shift") String shift) {
     try {
       LocalDate date = LocalDate.parse(dateStr);
-      
+
       List<Schedule> schedules = scheduleRepository.findAll();
       for (Schedule s : schedules) {
         if (s.getDate().equals(date) && shift.equals(s.getShift())) {
@@ -128,7 +127,7 @@ public class ScheduleResource {
             .type(MediaType.APPLICATION_JSON).build();
         }
       }
-      
+
       return Response.status(Response.Status.NOT_FOUND)
         .entity("{\"error\": \"Schedule not found\"}")
         .type(MediaType.APPLICATION_JSON).build();
@@ -148,10 +147,10 @@ public class ScheduleResource {
     // Getters and setters
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
-    
+
     public String getShift() { return shift; }
     public void setShift(String shift) { this.shift = shift; }
-    
+
     public String getDoctorID() { return doctorID; }
     public void setDoctorID(String doctorID) { this.doctorID = doctorID; }
   }
