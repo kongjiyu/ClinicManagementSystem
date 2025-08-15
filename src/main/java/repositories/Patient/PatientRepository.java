@@ -13,5 +13,5 @@ public interface PatientRepository {
   void delete(Patient patient);
 
   // Extra methods based on API list
-  List<Consultation> findMedicalHistoryByPatientId(String patientId);
+  List<Prescription> findPrescriptionHistoryByPatientId(String patientId);
 }

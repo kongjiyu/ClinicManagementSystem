@@ -46,8 +46,8 @@ public class PrescriptionRepositoryImpl implements PrescriptionRepository {
 
   @Override
   public List<Prescription> findByPatientId(String patientId) {
-      MultiMap<String,Prescription> patientPrecriptionMap=groupByPatientId();
-      return patientPrecriptionMap.get(patientId);
+      MultiMap<String,Prescription> patientPrescriptionMap = groupByPatientId();
+      return patientPrescriptionMap.get(patientId);
   }
 
   @Override

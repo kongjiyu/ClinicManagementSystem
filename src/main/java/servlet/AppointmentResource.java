@@ -11,6 +11,7 @@ import models.Appointment;
 import repositories.Appointment.AppointmentRepository;
 import utils.ErrorResponse;
 import utils.List;
+import utils.ListAdapter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ public class AppointmentResource {
             .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
             .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
             .registerTypeAdapter(java.time.LocalTime.class,  new utils.LocalTimeAdapter())
-            .registerTypeAdapter(utils.List.class, new utils.UtilsListAdapter())
+            .registerTypeAdapter(utils.List.class, new ListAdapter())
             .create();
 
     @Inject

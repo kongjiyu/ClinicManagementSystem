@@ -7,13 +7,12 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import models.Consultation;
-import models.Patient;
-import models.Staff;
 import repositories.Consultation.ConsultationRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Staff.StaffRepository;
 import utils.List;
 import utils.ErrorResponse;
+import utils.ListAdapter;
 
 import java.time.LocalDate;
 
@@ -26,7 +25,7 @@ public class ConsultationResource {
         .registerTypeAdapter(java.time.LocalDate.class, new utils.LocalDateAdapter())
         .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
         .registerTypeAdapter(java.time.LocalTime.class, new utils.LocalTimeAdapter())
-        .registerTypeAdapter(utils.List.class, new utils.UtilsListAdapter())
+        .registerTypeAdapter(utils.List.class, new ListAdapter())
         .create();
 
     @Inject

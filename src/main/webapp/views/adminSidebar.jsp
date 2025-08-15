@@ -37,7 +37,7 @@
             <li><a href="#"><span class="icon-[tabler--syringe] size-5"></span>Medicine Dispensing</a></li>
           </ul>
         </li>
-        <li><a href="<%= request.getContextPath() %>/views/staffList.jsp"><span class="icon-[tabler--user-star] size-5"></span>Doctor</a></li>
+        <li><a href="<%= request.getContextPath() %>/views/staffList.jsp"><span class="icon-[tabler--user-star] size-5"></span>Staff</a></li>
       </div>
       <div class="mt-6">
         <li>

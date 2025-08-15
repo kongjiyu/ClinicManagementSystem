@@ -47,9 +47,24 @@
         }
       },
       columns: [
-        { data: 'consultationID' },
-        { data: 'patientID' },
-        { data: 'doctorID' },
+        { 
+          data: 'consultationID',
+          render: function(data) {
+            return data || 'N/A';
+          }
+        },
+        { 
+          data: 'patientID',
+          render: function(data) {
+            return data || 'N/A';
+          }
+        },
+        { 
+          data: 'doctorID',
+          render: function(data) {
+            return data || 'N/A';
+          }
+        },
         { 
           data: 'consultationDate',
           render: function(data) {

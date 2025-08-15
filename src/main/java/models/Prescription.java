@@ -25,7 +25,7 @@ public class Prescription {
 
     private int dosage;
 
-    private int instruction;
+    private String instruction;
 
     private int servingPerDay;
 

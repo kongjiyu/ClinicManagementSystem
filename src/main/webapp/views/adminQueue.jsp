@@ -5,7 +5,142 @@
   <meta charset="UTF-8">
   <title>Queue Management</title>
   <link href="<% out.print(request.getContextPath()); %>/static/output.css" rel="stylesheet">
-  <script defer src="<% out.print(request.getContextPath()); %>/static/flyonui.js"></script>
+  <style>
+    /* Custom Modal Styles */
+    .custom-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .custom-modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: auto;
+      padding: 0;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 20px 24px 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 20px 24px;
+    }
+
+    .modal-footer {
+      padding: 0 24px 20px 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e5e7eb;
+    }
+
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      background-color: white;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+  </style>
 </head>
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
@@ -26,8 +161,7 @@
         <thead>
         <tr>
           <th>Consultation ID</th>
-          <th>Arrival Time</th>
-          <th>Waiting Time</th>
+          <th>Appointment Time</th>
           <th>Name</th>
           <th>Actions</th>
         </tr>
@@ -99,9 +233,7 @@
         <tr>
           <th>Consultation ID</th>
           <th>Arrival Time</th>
-          <th>Waiting Time</th>
           <th>Name</th>
-          <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -111,14 +243,14 @@
     </div>
   </div>
 
-  <!-- Dynamic Modals Container -->
+  <!-- Custom Modals Container -->
   <div id="modals-container">
     <!-- Modals will be generated dynamically -->
   </div>
 </main>
 
 <script>
-  const API_BASE = '<% out.print(request.getContextPath()); %>/api';
+  const API_BASE = '<%= request.getContextPath() %>/api';
   let queueData = {};
 
   // Load queue data from API
@@ -140,11 +272,11 @@
 
   // Render all tables
   function renderAllTables() {
-    renderTable('appointments-table', queueData.appointments || []);
-    renderTable('waiting-table', queueData.waiting || []);
-    renderTable('in-progress-table', queueData.inProgress || []);
-    renderTable('billing-table', queueData.billing || []);
-    renderTable('completed-table', queueData.completed || []);
+    renderTable('appointments-table', queueData.appointments?.elements || []);
+    renderTable('waiting-table', queueData.waiting?.elements || []);
+    renderTable('in-progress-table', queueData.inProgress?.elements || []);
+    renderTable('billing-table', queueData.billing?.elements || []);
+    renderTable('completed-table', queueData.completed?.elements || []);
 
     // Generate modals for all consultations
     generateModals();
@@ -157,46 +289,67 @@
     tbody.innerHTML = '';
 
     if (!data || !Array.isArray(data) || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No items in this queue</td></tr>';
+      let colspan = '5'; // Default for most tables
+      if (tableId === 'completed-table') {
+        colspan = '3'; // Completed table has no waiting time and no actions
+      } else if (tableId === 'appointments-table') {
+        colspan = '4'; // Appointments table has no waiting time column
+      }
+      tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="text-center text-gray-500">No items in this queue</td></tr>';
       return;
     }
 
-         data.forEach(item => {
-       const row = document.createElement('tr');
-       const consultationId = item.consultationId || 'N/A';
-       const status = item.status || 'Waiting';
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      
+      // Handle QueueItem DTO objects
+      let consultationId = item.consultationId;
+      let status = item.status || 'Waiting';
+      let checkInTime = item.checkInTime;
+      let patientName = item.patientName || 'Unknown';
 
-       // Different button for appointments vs consultations
-       let actionButton;
-       if (status === 'Appointment') {
-         actionButton =
-           '<button type="button" class="btn btn-circle btn-text btn-sm" ' +
-                   'aria-haspopup="dialog" ' +
-                   'aria-expanded="false" ' +
-                   'aria-controls="checkin-appointment-modal-' + consultationId + '" ' +
-                   'data-overlay="#checkin-appointment-modal-' + consultationId + '">' +
-             '<span class="icon-[tabler--check] size-5"></span>' +
-           '</button>';
-       } else {
-         actionButton =
-           '<button type="button" class="btn btn-circle btn-text btn-sm" ' +
-                   'aria-haspopup="dialog" ' +
-                   'aria-expanded="false" ' +
-                   'aria-controls="update-status-modal-' + consultationId + '" ' +
-                   'data-overlay="#update-status-modal-' + consultationId + '"' +
-                   'onclick="openUpdateModal(\'' + consultationId + '\', \'' + status + '\')">' +
-             '<span class="icon-[tabler--pencil] size-5"></span>' +
-           '</button>';
-       }
+      // Different button for appointments vs consultations
+      let actionButton;
+      if (status === 'Appointment') {
+        actionButton =
+          '<button type="button" class="btn btn-circle btn-text btn-sm checkin-appointment-btn" ' +
+                  'data-appointment-id="' + consultationId + '">' +
+            '<span class="icon-[tabler--check] size-5"></span>' +
+          '</button>';
+      } else {
+        actionButton =
+          '<button type="button" class="btn btn-circle btn-text btn-sm update-status-btn" ' +
+                  'data-consultation-id="' + consultationId + '" ' +
+                  'data-status="' + status + '">' +
+            '<span class="icon-[tabler--pencil] size-5"></span>' +
+          '</button>';
+      }
 
-       row.innerHTML =
-         '<td>' + consultationId + '</td>' +
-         '<td>' + (formatTime(item.checkInTime) || 'N/A') + '</td>' +
-         '<td>' + (item.waitingTime || '00:00') + '</td>' +
-         '<td>' + (item.patientName || 'Unknown') + '</td>' +
-         '<td>' + actionButton + '</td>';
-       tbody.appendChild(row);
-     });
+      // Different row structure for completed table (no waiting time and no actions)
+      if (tableId === 'completed-table') {
+        row.innerHTML =
+          '<td>' + consultationId + '</td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>';
+      } else if (status === 'Appointment') {
+        // Appointments don't show waiting time
+        row.innerHTML =
+          '<td>' + consultationId + '</td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>' +
+          '<td>' + actionButton + '</td>';
+      } else {
+        // Consultations show waiting time
+        row.innerHTML =
+          '<td>' + consultationId + '</td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td class="waiting-time" data-checkin="' + (checkInTime || '') + '"><span class="time-text">' + calculateWaitingTime(checkInTime) + '</span></td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>' +
+          '<td>' + actionButton + '</td>';
+      }
+      
+      tbody.appendChild(row);
+    });
   }
 
   // Format time for display
@@ -214,6 +367,49 @@
     }
   }
 
+  // Calculate waiting time in real-time from check-in time
+  function calculateWaitingTime(checkInTimeString) {
+    if (!checkInTimeString) return '00:00:00';
+    
+    try {
+      const checkInTime = new Date(checkInTimeString);
+      const now = new Date();
+      const diffMs = now - checkInTime;
+      
+      if (diffMs < 0) {
+        return '00:00:00';
+      }
+      
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      const seconds = Math.floor((diffMs / 1000) % 60);
+      
+      return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    } catch (error) {
+      return '00:00:00';
+    }
+  }
+
+  // Update all waiting times in real-time
+  function updateWaitingTimes() {
+    const waitingTimeCells = document.querySelectorAll('.waiting-time');
+    waitingTimeCells.forEach(cell => {  
+      const checkInTime = cell.getAttribute('data-checkin');
+      if (checkInTime) {
+        // Only update the text content, not the entire cell
+        const timeSpan = cell.querySelector('.time-text') || cell;
+        timeSpan.textContent = calculateWaitingTime(checkInTime);
+      }
+    });
+  }
+
+  // Start real-time updates
+  function startRealTimeUpdates() {
+    // Update waiting times every second
+    setInterval(updateWaitingTimes, 1000);
+  }
+
   // Generate modals for all consultations
   function generateModals() {
     const container = document.getElementById('modals-container');
@@ -223,46 +419,44 @@
     const allConsultations = [];
 
     // Add consultations from each category
-    if (queueData.appointments && Array.isArray(queueData.appointments)) {
-      allConsultations.push(...queueData.appointments);
+    if (queueData.appointments?.elements && Array.isArray(queueData.appointments.elements)) {
+      allConsultations.push(...queueData.appointments.elements);
     }
-    if (queueData.waiting && Array.isArray(queueData.waiting)) {
-      allConsultations.push(...queueData.waiting);
+    if (queueData.waiting?.elements && Array.isArray(queueData.waiting.elements)) {
+      allConsultations.push(...queueData.waiting.elements);
     }
-    if (queueData.inProgress && Array.isArray(queueData.inProgress)) {
-      allConsultations.push(...queueData.inProgress);
+    if (queueData.inProgress?.elements && Array.isArray(queueData.inProgress.elements)) {
+      allConsultations.push(...queueData.inProgress.elements);
     }
-    if (queueData.billing && Array.isArray(queueData.billing)) {
-      allConsultations.push(...queueData.billing);
+    if (queueData.billing?.elements && Array.isArray(queueData.billing.elements)) {
+      allConsultations.push(...queueData.billing.elements);
     }
-    if (queueData.completed && Array.isArray(queueData.completed)) {
-      allConsultations.push(...queueData.completed);
+    if (queueData.completed?.elements && Array.isArray(queueData.completed.elements)) {
+      allConsultations.push(...queueData.completed.elements);
     }
 
     allConsultations.forEach(item => {
-      const consultationId = item.consultationId;
-      const currentStatus = item.status || 'Waiting';
+      let consultationId = item.consultationId;
+      let currentStatus = item.status || 'Waiting';
+      
+      console.log('Generating modal for:', consultationId, currentStatus);
 
       // Different modal for appointments vs consultations
       if (currentStatus === 'Appointment') {
         // Modal for checking in appointments
         const modalHtml =
-          '<div id="checkin-appointment-modal-' + consultationId + '" class="overlay modal modal-middle overlay-open:opacity-100 overlay-open:duration-300 hidden overflow-y-auto backdrop-blur-sm [--body-scroll:true] z-0" role="dialog" tabindex="-1">' +
-            '<div class="modal-dialog overlay-open:opacity-100 overlay-open:duration-300 max-w-xl w-full">' +
-              '<div class="modal-content max-w-xl break-words whitespace-normal">' +
-                '<div class="modal-header">' +
-                  '<h3 class="modal-title">Check In Appointment</h3>' +
-                  '<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close" data-overlay="#checkin-appointment-modal-' + consultationId + '">' +
-                    '<span class="icon-[tabler--x] size-4"></span>' +
-                  '</button>' +
-                '</div>' +
-                '<div class="modal-body">' +
-                  '<p>Are you sure you want to check in this appointment? This will create a consultation and move the patient to the waiting queue.</p>' +
-                '</div>' +
-                '<div class="modal-footer p-6">' +
-                  '<button type="button" class="btn btn-soft btn-secondary" data-overlay="#checkin-appointment-modal-' + consultationId + '">Cancel</button>' +
-                  '<button type="button" class="btn btn-primary checkin-appointment-btn" data-appointment-id="' + consultationId + '">Check In</button>' +
-                '</div>' +
+          '<div id="checkin-appointment-modal-' + consultationId + '" class="custom-modal">' +
+            '<div class="modal-content">' +
+              '<div class="modal-header">' +
+                '<h3 class="modal-title">Check In Appointment</h3>' +
+                '<button type="button" class="modal-close" onclick="closeModal(\'checkin-appointment-modal-' + consultationId + '\')">&times;</button>' +
+              '</div>' +
+              '<div class="modal-body">' +
+                '<p>Are you sure you want to check in this appointment? This will create a consultation and move the patient to the waiting queue.</p>' +
+              '</div>' +
+              '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" onclick="closeModal(\'checkin-appointment-modal-' + consultationId + '\')">Cancel</button>' +
+                '<button type="button" class="btn btn-primary" onclick="handleAppointmentCheckIn(\'' + consultationId + '\')">Check In</button>' +
               '</div>' +
             '</div>' +
           '</div>';
@@ -271,19 +465,17 @@
       } else {
         // Modal for updating consultation status
         const modalHtml =
-          '<div id="update-status-modal-' + consultationId + '" class="overlay modal modal-middle overlay-open:opacity-100 overlay-open:duration-300 hidden overflow-y-auto backdrop-blur-sm [--body-scroll:true] z-0" role="dialog" tabindex="-1">' +
-            '<div class="modal-dialog overlay-open:opacity-100 overlay-open:duration-300 max-w-xl w-full">' +
-              '<div class="modal-content max-w-xl break-words whitespace-normal">' +
-                '<div class="modal-header">' +
-                  '<h3 class="modal-title">Update Status</h3>' +
-                  '<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close" data-overlay="#update-status-modal-' + consultationId + '">' +
-                    '<span class="icon-[tabler--x] size-4"></span>' +
-                  '</button>' +
-                '</div>' +
-                '<form class="status-update-form" data-consultation-id="' + consultationId + '">' +
-                  '<div class="modal-body">' +
-                    '<label for="modal-status-' + consultationId + '" class="block text-sm font-medium text-gray-700">Status</label>' +
-                    '<select name="status" id="modal-status-' + consultationId + '" class="form-select w-full">' +
+          '<div id="update-status-modal-' + consultationId + '" class="custom-modal">' +
+            '<div class="modal-content">' +
+              '<div class="modal-header">' +
+                '<h3 class="modal-title">Update Status</h3>' +
+                '<button type="button" class="modal-close" onclick="closeModal(\'update-status-modal-' + consultationId + '\')">&times;</button>' +
+              '</div>' +
+              '<form class="status-update-form" data-consultation-id="' + consultationId + '">' +
+                '<div class="modal-body">' +
+                  '<div class="form-group">' +
+                    '<label class="form-label">Status</label>' +
+                    '<select name="status" id="modal-status-' + consultationId + '" class="form-select">' +
                       '<option value="Waiting"' + (currentStatus === 'Waiting' ? ' selected' : '') + '>Waiting</option>' +
                       '<option value="In Progress"' + (currentStatus === 'In Progress' ? ' selected' : '') + '>In Progress</option>' +
                       '<option value="Billing"' + (currentStatus === 'Billing' ? ' selected' : '') + '>Billing</option>' +
@@ -291,12 +483,12 @@
                       '<option value="Cancelled"' + (currentStatus === 'Cancelled' ? ' selected' : '') + '>Cancelled</option>' +
                     '</select>' +
                   '</div>' +
-                  '<div class="modal-footer p-6">' +
-                    '<button type="button" class="btn btn-soft btn-secondary" data-overlay="#update-status-modal-' + consultationId + '">Cancel</button>' +
-                    '<button type="submit" class="btn btn-primary">Save changes</button>' +
-                  '</div>' +
-                '</form>' +
-              '</div>' +
+                '</div>' +
+                '<div class="modal-footer">' +
+                  '<button type="button" class="btn btn-secondary" onclick="closeModal(\'update-status-modal-' + consultationId + '\')">Cancel</button>' +
+                  '<button type="submit" class="btn btn-primary">Save changes</button>' +
+                '</div>' +
+              '</form>' +
             '</div>' +
           '</div>';
 
@@ -304,16 +496,58 @@
       }
     });
 
+    console.log('Generated modals for', allConsultations.length, 'items');
+
     // Add event listeners to all forms
     document.querySelectorAll('.status-update-form').forEach(form => {
       form.addEventListener('submit', handleStatusUpdate);
     });
 
-    // Add event listeners to check-in buttons
-    document.querySelectorAll('.checkin-appointment-btn').forEach(btn => {
-      btn.addEventListener('click', handleAppointmentCheckIn);
+    // Add event delegation for update status buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.update-status-btn')) {
+        console.log('Update status button clicked');
+        const btn = e.target.closest('.update-status-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        const status = btn.getAttribute('data-status');
+        console.log('Button data:', { consultationId, status });
+        openUpdateModal(consultationId, status);
+      }
+    });
+
+    // Add event delegation for checkin appointment buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.checkin-appointment-btn')) {
+        console.log('Checkin appointment button clicked');
+        const btn = e.target.closest('.checkin-appointment-btn');
+        const appointmentId = btn.getAttribute('data-appointment-id');
+        console.log('Button data:', { appointmentId });
+        openCheckinModal(appointmentId);
+      }
     });
   }
+
+  // Modal functions
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('show');
+    }
+  }
+
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('show');
+    }
+  }
+
+  // Close modal when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('custom-modal')) {
+      e.target.classList.remove('show');
+    }
+  });
 
   // Handle status update form submission
   async function handleStatusUpdate(e) {
@@ -334,6 +568,7 @@
 
       if (response.ok) {
         alert('Status updated successfully!');
+        closeModal('update-status-modal-' + consultationId);
         // Reload queue data
         await loadQueueData();
       } else {
@@ -346,9 +581,7 @@
   }
 
   // Handle appointment check-in
-  async function handleAppointmentCheckIn(e) {
-    const appointmentId = e.target.getAttribute('data-appointment-id');
-
+  async function handleAppointmentCheckIn(appointmentId) {
     try {
       const response = await fetch(API_BASE + '/queue/checkin-appointment/' + appointmentId, {
         method: 'POST',
@@ -360,10 +593,7 @@
       if (response.ok) {
         alert('Appointment checked in successfully! A consultation has been created.');
         // Close the modal
-        const modal = document.getElementById('checkin-appointment-modal-' + appointmentId);
-        if (modal) {
-          modal.classList.add('hidden');
-        }
+        closeModal('checkin-appointment-modal-' + appointmentId);
         // Reload queue data
         await loadQueueData();
       } else {
@@ -375,19 +605,26 @@
     }
   }
 
-  // Open update modal (now just sets the form data)
+  // Open update modal
   function openUpdateModal(consultationId, currentStatus) {
-    // The modal will be opened by FlyonUI via data-overlay attribute
-    // Form data is already set in the generated modal
+    console.log('Opening update modal for:', consultationId, currentStatus);
+    openModal('update-status-modal-' + consultationId);
   }
 
-
+  // Open checkin modal
+  function openCheckinModal(appointmentId) {
+    console.log('Opening checkin modal for:', appointmentId);
+    openModal('checkin-appointment-modal-' + appointmentId);
+  }
 
   // Auto-refresh every 30 seconds
-  setInterval(loadQueueData, 30000);
+  setInterval(loadQueueData, 15000);
 
   // Load data when page loads
-  document.addEventListener('DOMContentLoaded', loadQueueData);
+  document.addEventListener('DOMContentLoaded', function() {
+    loadQueueData();
+    startRealTimeUpdates();
+  });
 </script>
 </body>
 </html>
