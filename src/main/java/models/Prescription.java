@@ -29,6 +29,8 @@ public class Prescription {
 
     private int servingPerDay;
 
+    private int quantityDispensed;
+
     private double price;
 
     private String dosageUnit;

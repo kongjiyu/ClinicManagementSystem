@@ -106,4 +106,42 @@ public class StaffResource {
       .type(MediaType.APPLICATION_JSON)
       .build();
   }
+
+  @PUT
+  @Path("/{id}/password")
+  public Response changePassword(@PathParam("id") String id, String requestBody) {
+    try {
+      Staff existingStaff = staffRepository.findById(id);
+      if (existingStaff == null) {
+        return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse("Staff member not found"))
+          .build();
+      }
+
+      // Parse the request body to get current and new password
+      com.google.gson.JsonObject jsonObject = gson.fromJson(requestBody, com.google.gson.JsonObject.class);
+      String currentPassword = jsonObject.get("currentPassword").getAsString();
+      String newPassword = jsonObject.get("newPassword").getAsString();
+
+      // Verify current password
+      if (!currentPassword.equals(existingStaff.getPassword())) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new ErrorResponse("Current password is incorrect"))
+          .build();
+      }
+
+      // Update password
+      existingStaff.setPassword(newPassword);
+      staffRepository.update(id, existingStaff);
+
+      return Response.ok("{\"message\": \"Password changed successfully\"}")
+        .type(MediaType.APPLICATION_JSON)
+        .build();
+
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+        .entity(new ErrorResponse("Error changing password: " + e.getMessage()))
+        .build();
+    }
+  }
 }

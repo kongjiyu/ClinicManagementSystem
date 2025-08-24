@@ -148,10 +148,16 @@
 <main class="flex-1 p-6 ml-64 space-y-6 pr-6">
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold">Today's Queue</h1>
-    <button id="refresh-btn" class="btn btn-primary" onclick="loadQueueData()">
-      <span class="icon-[tabler--refresh] size-4 mr-2"></span>
-      Refresh Queue
-    </button>
+    <div class="flex gap-2">
+      <button id="create-consultation-btn" class="btn btn-success" onclick="openCreateConsultationModal()">
+        <span class="icon-[tabler--plus] size-4 mr-2"></span>
+        Create Consultation
+      </button>
+      <button id="refresh-btn" class="btn btn-primary" onclick="loadQueueData()">
+        <span class="icon-[tabler--refresh] size-4 mr-2"></span>
+        Refresh Queue
+      </button>
+    </div>
   </div>
 
   <div class="space-y-8">
@@ -197,8 +203,25 @@
         <tr>
           <th>Consultation ID</th>
           <th>Arrival Time</th>
-          <th>Waiting Time</th>
           <th>Name</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="text-xl font-semibold mb-2">Treatment</h2>
+    <div class="border-base-content/25 w-full overflow-x-auto border">
+      <table class="table" id="treatment-table">
+        <thead>
+        <tr>
+          <th>Consultation ID</th>
+          <th>Arrival Time</th>
+          <th>Name</th>
+          <th>Treatment Count</th>
           <th>Actions</th>
         </tr>
         </thead>
@@ -215,8 +238,8 @@
         <tr>
           <th>Consultation ID</th>
           <th>Arrival Time</th>
-          <th>Waiting Time</th>
           <th>Name</th>
+          <th>Invoice ID</th>
           <th>Actions</th>
         </tr>
         </thead>
@@ -241,11 +264,80 @@
         </tbody>
       </table>
     </div>
+
+    <h2 class="text-xl font-semibold mb-2">Cancelled</h2>
+    <div class="border-base-content/25 w-full overflow-x-auto border">
+      <table class="table" id="cancelled-table">
+        <thead>
+        <tr>
+          <th>Consultation ID</th>
+          <th>Arrival Time</th>
+          <th>Name</th>
+        </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Custom Modals Container -->
   <div id="modals-container">
     <!-- Modals will be generated dynamically -->
+  </div>
+
+  <!-- Create Consultation Modal -->
+  <div id="create-consultation-modal" class="custom-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Consultation for Walk-in Patient</h3>
+        <button type="button" class="modal-close" onclick="closeCreateConsultationModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="patient-search-form">
+          <div class="form-group">
+            <label class="form-label">ID Type</label>
+            <select id="id-type" name="idType" class="form-select" required>
+              <option value="">Select ID Type</option>
+              <option value="IC">IC</option>
+              <option value="Passport">Passport</option>
+              <option value="Student ID">Student ID</option>
+              <option value="Driver License">Driver License</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ID Number</label>
+            <input type="text" id="id-number" name="idNumber" class="form-select" placeholder="Enter ID number" required>
+          </div>
+        </form>
+        
+        <!-- Patient Search Results -->
+        <div id="patient-search-results" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">Found Patient</label>
+            <div id="patient-info" class="p-3 bg-gray-50 rounded border">
+              <!-- Patient info will be populated here -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- No Patient Found Message -->
+        <div id="no-patient-found" style="display: none;">
+          <div class="alert alert-warning">
+            <span class="icon-[tabler--alert-triangle] size-4 mr-2"></span>
+            No patient found with the provided ID. Please check the ID type and number.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateConsultationModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="searchPatient()">Search Patient</button>
+        <button type="button" class="btn btn-success" id="create-consultation-confirm-btn" onclick="createConsultation()" style="display: none;">
+          Create Consultation
+        </button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -275,8 +367,10 @@
     renderTable('appointments-table', queueData.appointments?.elements || []);
     renderTable('waiting-table', queueData.waiting?.elements || []);
     renderTable('in-progress-table', queueData.inProgress?.elements || []);
+    renderTable('treatment-table', queueData.treatment?.elements || []);
     renderTable('billing-table', queueData.billing?.elements || []);
     renderTable('completed-table', queueData.completed?.elements || []);
+    renderTable('cancelled-table', queueData.cancelled?.elements || []);
 
     // Generate modals for all consultations
     generateModals();
@@ -289,11 +383,15 @@
     tbody.innerHTML = '';
 
     if (!data || !Array.isArray(data) || data.length === 0) {
-      let colspan = '5'; // Default for most tables
+      let colspan = '4'; // Default for most tables
       if (tableId === 'completed-table') {
-        colspan = '3'; // Completed table has no waiting time and no actions
-      } else if (tableId === 'appointments-table') {
-        colspan = '4'; // Appointments table has no waiting time column
+        colspan = '3'; // Completed table has no actions
+      } else if (tableId === 'cancelled-table') {
+        colspan = '3'; // Cancelled table has no actions
+      } else if (tableId === 'waiting-table') {
+        colspan = '5'; // Waiting table has waiting time column
+      } else if (tableId === 'treatment-table') {
+        colspan = '5'; // Treatment table has treatment count column
       }
       tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="text-center text-gray-500">No items in this queue</td></tr>';
       return;
@@ -316,7 +414,42 @@
                   'data-appointment-id="' + consultationId + '">' +
             '<span class="icon-[tabler--check] size-5"></span>' +
           '</button>';
+      } else if (tableId === 'waiting-table') {
+        // Waiting table: Start Consult button
+        actionButton =
+          '<button type="button" class="btn btn-primary btn-soft start-consult-btn" ' +
+                  'data-consultation-id="' + consultationId + '">' +
+            'Start Consult' +
+          '</button>';
+      } else if (tableId === 'in-progress-table') {
+        // In Progress table: Move to Treatment button
+        actionButton =
+          '<button type="button" class="btn btn-primary btn-soft move-to-treatment-btn" ' +
+                  'data-consultation-id="' + consultationId + '">' +
+            'Move to Treatment' +
+          '</button>';
+      } else if (tableId === 'treatment-table') {
+        // Treatment table: Manage Treatments and Move to Billing buttons
+        actionButton =
+          '<div class="flex gap-2">' +
+            '<button type="button" class="btn btn-info btn-soft manage-treatments-btn" ' +
+                    'data-consultation-id="' + consultationId + '">' +
+              'Manage Treatments' +
+            '</button>' +
+            '<button type="button" class="btn btn-success btn-soft move-to-billing-btn" ' +
+                    'data-consultation-id="' + consultationId + '">' +
+              'Move to Billing' +
+            '</button>' +
+          '</div>';
+      } else if (tableId === 'billing-table') {
+        // Billing table: Paid button
+        actionButton =
+          '<button type="button" class="btn btn-success btn-soft paid-btn" ' +
+                  'data-consultation-id="' + consultationId + '">' +
+            'Paid' +
+          '</button>';
       } else {
+        // Other tables: generic update status button
         actionButton =
           '<button type="button" class="btn btn-circle btn-text btn-sm update-status-btn" ' +
                   'data-consultation-id="' + consultationId + '" ' +
@@ -325,25 +458,61 @@
           '</button>';
       }
 
-      // Different row structure for completed table (no waiting time and no actions)
+      // Different row structure based on table type
       if (tableId === 'completed-table') {
+        // Completed table: no actions
         row.innerHTML =
-          '<td>' + consultationId + '</td>' +
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
           '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
           '<td>' + (patientName || 'Unknown') + '</td>';
-      } else if (status === 'Appointment') {
-        // Appointments don't show waiting time
+      } else       if (tableId === 'cancelled-table') {
+        // Cancelled table: no actions
         row.innerHTML =
-          '<td>' + consultationId + '</td>' +
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>';
+      } else if (tableId === 'waiting-table') {
+        // Waiting table: includes waiting time
+        row.innerHTML =
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td class="waiting-time" data-checkin="' + (checkInTime || '') + '"><span class="time-text">' + calculateWaitingTime(checkInTime) + '</span></td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>' +
+          '<td>' + actionButton + '</td>';
+      } else if (tableId === 'treatment-table') {
+        // Treatment table: includes treatment count
+        const treatmentCount = item.treatmentCount || 0;
+        row.innerHTML =
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>' +
+          '<td><span class="badge badge-soft badge-info">' + treatmentCount + ' treatments</span></td>' +
+          '<td>' + actionButton + '</td>';
+      } else if (tableId === 'billing-table') {
+        // Billing table: includes invoice ID
+        const invoiceId = item.invoiceID || 'N/A';
+        const invoiceLink = invoiceId !== 'N/A' ? 
+          '<a href="<%= request.getContextPath() %>/views/invoiceDetail.jsp?id=' + invoiceId + '" class="link link-primary hover:underline">' + invoiceId + '</a>' : 
+          'N/A';
+        
+        row.innerHTML =
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
+          '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
+          '<td>' + (patientName || 'Unknown') + '</td>' +
+          '<td>' + invoiceLink + '</td>' +
+          '<td>' + actionButton + '</td>';
+      } else if (status === 'Appointment') {
+        // Appointments table: link to appointment detail
+        row.innerHTML =
+          '<td><a href="<%= request.getContextPath() %>/views/appointmentDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
           '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
           '<td>' + (patientName || 'Unknown') + '</td>' +
           '<td>' + actionButton + '</td>';
       } else {
-        // Consultations show waiting time
+        // All other tables: link to consultation detail
         row.innerHTML =
-          '<td>' + consultationId + '</td>' +
+          '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
           '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
-          '<td class="waiting-time" data-checkin="' + (checkInTime || '') + '"><span class="time-text">' + calculateWaitingTime(checkInTime) + '</span></td>' +
           '<td>' + (patientName || 'Unknown') + '</td>' +
           '<td>' + actionButton + '</td>';
       }
@@ -434,6 +603,9 @@
     if (queueData.completed?.elements && Array.isArray(queueData.completed.elements)) {
       allConsultations.push(...queueData.completed.elements);
     }
+    if (queueData.cancelled?.elements && Array.isArray(queueData.cancelled.elements)) {
+      allConsultations.push(...queueData.cancelled.elements);
+    }
 
     allConsultations.forEach(item => {
       let consultationId = item.consultationId;
@@ -502,29 +674,6 @@
     document.querySelectorAll('.status-update-form').forEach(form => {
       form.addEventListener('submit', handleStatusUpdate);
     });
-
-    // Add event delegation for update status buttons
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('.update-status-btn')) {
-        console.log('Update status button clicked');
-        const btn = e.target.closest('.update-status-btn');
-        const consultationId = btn.getAttribute('data-consultation-id');
-        const status = btn.getAttribute('data-status');
-        console.log('Button data:', { consultationId, status });
-        openUpdateModal(consultationId, status);
-      }
-    });
-
-    // Add event delegation for checkin appointment buttons
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('.checkin-appointment-btn')) {
-        console.log('Checkin appointment button clicked');
-        const btn = e.target.closest('.checkin-appointment-btn');
-        const appointmentId = btn.getAttribute('data-appointment-id');
-        console.log('Button data:', { appointmentId });
-        openCheckinModal(appointmentId);
-      }
-    });
   }
 
   // Modal functions
@@ -546,6 +695,11 @@
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('custom-modal')) {
       e.target.classList.remove('show');
+      // Also close payment method modal if it exists
+      const paymentModal = document.getElementById('payment-method-modal');
+      if (paymentModal) {
+        paymentModal.remove();
+      }
     }
   });
 
@@ -605,6 +759,276 @@
     }
   }
 
+  // Handle start consult (move from waiting to in progress)
+  async function handleStartConsult(consultationId) {
+    if (!confirm('Are you sure you want to start consultation for this patient? This will move them to In Progress.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'In Progress' })
+      });
+
+      if (response.ok) {
+        alert('Consultation started successfully! Patient moved to In Progress.');
+        // Reload queue data
+        await loadQueueData();
+      } else {
+        const error = await response.json();
+        alert('Error starting consultation: ' + error.error);
+      }
+    } catch (error) {
+      alert('Error starting consultation: ' + error.message);
+    }
+  }
+
+  // Handle paid button (mark consultation as completed)
+  async function handlePaid(consultationId) {
+    // Find the consultation to get the bill ID
+    const consultation = findConsultationById(consultationId);
+    if (!consultation || !consultation.billID) {
+      alert('No bill found for this consultation');
+      return;
+    }
+
+    // Show payment method selection modal
+    openPaymentMethodModal(consultation.billID, consultationId);
+  }
+
+  // Find consultation by ID from queue data
+  function findConsultationById(consultationId) {
+    const allConsultations = [
+      ...(queueData.appointments?.elements || []),
+      ...(queueData.waiting?.elements || []),
+      ...(queueData.inProgress?.elements || []),
+      ...(queueData.billing?.elements || []),
+      ...(queueData.completed?.elements || []),
+      ...(queueData.cancelled?.elements || [])
+    ];
+    
+    return allConsultations.find(c => c.consultationId === consultationId);
+  }
+
+  // Open payment method selection modal
+  function openPaymentMethodModal(billId, consultationId) {
+    const modalHtml = 
+      '<div id="payment-method-modal" class="custom-modal show">' +
+        '<div class="modal-content">' +
+          '<div class="modal-header">' +
+            '<h3 class="modal-title">Select Payment Method</h3>' +
+            '<button type="button" class="modal-close" onclick="closePaymentMethodModal()">&times;</button>' +
+          '</div>' +
+          '<div class="modal-body">' +
+            '<div class="form-group">' +
+              '<label class="form-label">Payment Method</label>' +
+              '<select id="payment-method-select" class="form-select">' +
+                '<option value="">Select Payment Method</option>' +
+                '<option value="Cash">Cash</option>' +
+                '<option value="Credit Card">Credit Card</option>' +
+                '<option value="Debit Card">Debit Card</option>' +
+                '<option value="Online Banking">Online Banking</option>' +
+                '<option value="E-Wallet">E-Wallet</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div class="modal-footer">' +
+            '<button type="button" class="btn btn-secondary" onclick="closePaymentMethodModal()">Cancel</button>' +
+            '<button type="button" class="btn btn-primary" onclick="confirmPayment(\'' + billId + '\', \'' + consultationId + '\')">Confirm Payment</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('payment-method-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  // Close payment method modal
+  function closePaymentMethodModal() {
+    const modal = document.getElementById('payment-method-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  // Confirm payment with selected method
+  async function confirmPayment(billId, consultationId) {
+    const paymentMethod = document.getElementById('payment-method-select').value;
+    
+    if (!paymentMethod) {
+      alert('Please select a payment method');
+      return;
+    }
+
+    try {
+      // First, update the payment method
+      const paymentResponse = await fetch(API_BASE + '/bills/' + billId + '/payment-method', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paymentMethod: paymentMethod })
+      });
+
+      if (!paymentResponse.ok) {
+        const error = await paymentResponse.json();
+        throw new Error('Error updating payment method: ' + error.error);
+      }
+
+      // Then, update consultation status to completed
+      const statusResponse = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Completed' })
+      });
+
+      if (statusResponse.ok) {
+        alert('Payment confirmed with ' + paymentMethod + '! Patient moved to Completed.');
+        closePaymentMethodModal();
+        // Reload queue data
+        await loadQueueData();
+      } else {
+        const error = await statusResponse.json();
+        alert('Error confirming payment: ' + error.error);
+      }
+    } catch (error) {
+      alert('Error confirming payment: ' + error.message);
+    }
+  }
+
+  // Handle move to treatment stage
+  async function handleMoveToTreatment(consultationId) {
+    if (!confirm('Move this consultation to the Treatment stage?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Treatment' })
+      });
+
+      if (response.ok) {
+        alert('Consultation moved to Treatment stage successfully!');
+        await loadQueueData();
+      } else {
+        const error = await response.json();
+        alert('Error moving to treatment stage: ' + error.error);
+      }
+    } catch (error) {
+      alert('Error moving to treatment stage: ' + error.message);
+    }
+  }
+
+  // Handle manage treatments (navigate to consultation detail page)
+  function handleManageTreatments(consultationId) {
+    // Navigate to consultation detail page where treatment can be managed
+    window.location.href = '<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId;
+  }
+
+  // Handle move to billing stage
+  async function handleMoveToBilling(consultationId) {
+    if (!confirm('Move this consultation to the Billing stage? This will create an invoice.')) {
+      return;
+    }
+
+    try {
+      // First, update consultation status to Billing
+      const statusResponse = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Billing' })
+      });
+
+      if (!statusResponse.ok) {
+        const error = await statusResponse.json();
+        throw new Error('Error updating consultation status: ' + error.error);
+      }
+
+      // Then, create an invoice for the consultation
+      const invoiceResponse = await fetch(API_BASE + '/bills/from-consultation/' + consultationId, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (invoiceResponse.ok) {
+        const invoiceData = await invoiceResponse.json();
+        alert('Consultation moved to Billing stage successfully! Invoice created with ID: ' + invoiceData.billID);
+        await loadQueueData();
+      } else {
+        const error = await invoiceResponse.json();
+        alert('Consultation status updated but failed to create invoice: ' + error.error);
+        await loadQueueData();
+      }
+    } catch (error) {
+      alert('Error moving to billing stage: ' + error.message);
+    }
+  }
+
+  // Handle done consult (move from in progress to billing and create invoice)
+  async function handleDoneConsult(consultationId) {
+    if (!confirm('Are you sure you want to mark this consultation as done? This will move the patient to Billing and create an invoice.')) {
+      return;
+    }
+
+    try {
+      // First, update consultation status to Billing
+      const statusResponse = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Billing' })
+      });
+
+      if (!statusResponse.ok) {
+        const error = await statusResponse.json();
+        throw new Error('Error updating consultation status: ' + error.error);
+      }
+
+      // Then, create an invoice for the consultation
+      const invoiceResponse = await fetch(API_BASE + '/bills/from-consultation/' + consultationId, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (invoiceResponse.ok) {
+        const invoiceData = await invoiceResponse.json();
+        alert('Consultation completed successfully! Patient moved to Billing. Invoice created with ID: ' + invoiceData.billID);
+        // Reload queue data
+        await loadQueueData();
+      } else {
+        const error = await invoiceResponse.json();
+        alert('Consultation status updated but failed to create invoice: ' + error.error);
+        // Still reload to show updated status
+        await loadQueueData();
+      }
+    } catch (error) {
+      alert('Error completing consultation: ' + error.message);
+    }
+  }
+
   // Open update modal
   function openUpdateModal(consultationId, currentStatus) {
     console.log('Opening update modal for:', consultationId, currentStatus);
@@ -617,6 +1041,122 @@
     openModal('checkin-appointment-modal-' + appointmentId);
   }
 
+  // Create Consultation Modal Functions
+  function openCreateConsultationModal() {
+    const modal = document.getElementById('create-consultation-modal');
+    if (modal) {
+      modal.classList.add('show');
+      // Reset form and hide results
+      document.getElementById('patient-search-form').reset();
+      document.getElementById('patient-search-results').style.display = 'none';
+      document.getElementById('no-patient-found').style.display = 'none';
+      document.getElementById('create-consultation-confirm-btn').style.display = 'none';
+    }
+  }
+
+  function closeCreateConsultationModal() {
+    const modal = document.getElementById('create-consultation-modal');
+    if (modal) {
+      modal.classList.remove('show');
+    }
+  }
+
+  // Search patient by ID type and number
+  async function searchPatient() {
+    const idType = document.getElementById('id-type').value;
+    const idNumber = document.getElementById('id-number').value;
+
+    if (!idType || !idNumber) {
+      alert('Please select ID type and enter ID number');
+      return;
+    }
+
+    try {
+      // First, get all patients and search locally
+      const response = await fetch(API_BASE + '/patients');
+      if (!response.ok) {
+        throw new Error('Failed to fetch patients');
+      }
+
+      const data = await response.json();
+      const patients = data.elements || data || [];
+
+      // Find patient by ID type and number
+      const patient = patients.find(p => 
+        p.idType === idType && p.idNumber === idNumber
+      );
+
+      if (patient) {
+        // Show patient info
+        document.getElementById('patient-info').innerHTML = 
+          '<div class="grid grid-cols-2 gap-2 text-sm">' +
+            '<div><strong>Name:</strong> ' + patient.firstName + ' ' + patient.lastName + '</div>' +
+            '<div><strong>Age:</strong> ' + patient.age + '</div>' +
+            '<div><strong>Gender:</strong> ' + patient.gender + '</div>' +
+            '<div><strong>Contact:</strong> ' + patient.contactNumber + '</div>' +
+            '<div><strong>Email:</strong> ' + patient.email + '</div>' +
+            '<div><strong>Blood Type:</strong> ' + patient.bloodType + '</div>' +
+          '</div>';
+
+        document.getElementById('patient-search-results').style.display = 'block';
+        document.getElementById('no-patient-found').style.display = 'none';
+        document.getElementById('create-consultation-confirm-btn').style.display = 'inline-block';
+        
+        // Store patient data for consultation creation
+        window.selectedPatientForConsultation = patient;
+      } else {
+        // Show no patient found message
+        document.getElementById('patient-search-results').style.display = 'none';
+        document.getElementById('no-patient-found').style.display = 'block';
+        document.getElementById('create-consultation-confirm-btn').style.display = 'none';
+        window.selectedPatientForConsultation = null;
+      }
+    } catch (error) {
+      console.error('Error searching patient:', error);
+      alert('Error searching patient: ' + error.message);
+    }
+  }
+
+  // Create consultation for the found patient
+  async function createConsultation() {
+    if (!window.selectedPatientForConsultation) {
+      alert('No patient selected');
+      return;
+    }
+
+    try {
+      const consultationData = {
+        patientID: window.selectedPatientForConsultation.patientID,
+        consultationDate: new Date().toISOString().split('T')[0], // Today's date
+        consultationTime: new Date().toISOString(),
+        status: 'Waiting',
+        reason: 'Walk-in consultation'
+      };
+
+      const response = await fetch(API_BASE + '/consultations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(consultationData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('Consultation created successfully! Consultation ID: ' + result.consultationID);
+        closeCreateConsultationModal();
+        // Reload queue data to show the new consultation
+        await loadQueueData();
+      } else {
+        const error = await response.json();
+        alert('Error creating consultation: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error creating consultation:', error);
+      alert('Error creating consultation: ' + error.message);
+    }
+  }
+
   // Auto-refresh every 30 seconds
   setInterval(loadQueueData, 15000);
 
@@ -624,6 +1164,82 @@
   document.addEventListener('DOMContentLoaded', function() {
     loadQueueData();
     startRealTimeUpdates();
+    
+    // Add event delegation for all buttons (only once)
+    document.addEventListener('click', function(e) {
+      // Update status buttons
+      if (e.target.closest('.update-status-btn')) {
+        console.log('Update status button clicked');
+        const btn = e.target.closest('.update-status-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        const status = btn.getAttribute('data-status');
+        console.log('Button data:', { consultationId, status });
+        openUpdateModal(consultationId, status);
+      }
+      
+      // Checkin appointment buttons
+      if (e.target.closest('.checkin-appointment-btn')) {
+        console.log('Checkin appointment button clicked');
+        const btn = e.target.closest('.checkin-appointment-btn');
+        const appointmentId = btn.getAttribute('data-appointment-id');
+        console.log('Button data:', { appointmentId });
+        openCheckinModal(appointmentId);
+      }
+      
+      // Start consult buttons
+      if (e.target.closest('.start-consult-btn')) {
+        console.log('Start consult button clicked');
+        const btn = e.target.closest('.start-consult-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handleStartConsult(consultationId);
+      }
+      
+      // Done consult buttons
+      if (e.target.closest('.done-consult-btn')) {
+        console.log('Done consult button clicked');
+        const btn = e.target.closest('.done-consult-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handleDoneConsult(consultationId);
+      }
+      
+      // Move to treatment buttons
+      if (e.target.closest('.move-to-treatment-btn')) {
+        console.log('Move to treatment button clicked');
+        const btn = e.target.closest('.move-to-treatment-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handleMoveToTreatment(consultationId);
+      }
+      
+      // Manage treatments buttons
+      if (e.target.closest('.manage-treatments-btn')) {
+        console.log('Manage treatments button clicked');
+        const btn = e.target.closest('.manage-treatments-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handleManageTreatments(consultationId);
+      }
+      
+      // Move to billing buttons
+      if (e.target.closest('.move-to-billing-btn')) {
+        console.log('Move to billing button clicked');
+        const btn = e.target.closest('.move-to-billing-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handleMoveToBilling(consultationId);
+      }
+      
+      // Paid buttons
+      if (e.target.closest('.paid-btn')) {
+        console.log('Paid button clicked');
+        const btn = e.target.closest('.paid-btn');
+        const consultationId = btn.getAttribute('data-consultation-id');
+        console.log('Button data:', { consultationId });
+        handlePaid(consultationId);
+      }
+    });
   });
 </script>
 </body>

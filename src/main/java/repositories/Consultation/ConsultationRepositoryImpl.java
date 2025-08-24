@@ -132,8 +132,6 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     if (existing != null) {
       existing.setSymptoms(consultation.getSymptoms());
       existing.setDiagnosis(consultation.getDiagnosis());
-      existing.setFollowUpRequired(consultation.isFollowUpRequired());
-      existing.setFollowUpDate(consultation.getFollowUpDate());
       existing.setStatus(consultation.getStatus());
       return true;
     }
@@ -245,5 +243,15 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     return consultationsInRange;
   }
 
+  @Override
+  public Consultation findByBillId(String billId) {
+    List<Consultation> consultations = findAll();
+    for (Consultation consultation : consultations) {
+      if (billId.equals(consultation.getBillID())) {
+        return consultation;
+      }
+    }
+    return null;
+  }
 
 }

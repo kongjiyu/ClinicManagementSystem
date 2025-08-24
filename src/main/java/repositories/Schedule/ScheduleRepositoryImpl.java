@@ -8,6 +8,7 @@ import models.Schedule;
 import utils.List;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import utils.MultiMap;
 
 @ApplicationScoped
@@ -63,6 +64,19 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
   public List<Schedule> findByStaffId(String staffID) {
     MultiMap<String, Schedule> scheduleMap = groupByStaffID();
     return scheduleMap.get(staffID);
+  }
+
+  @Override
+  public Schedule findByDateAndTime(LocalDate date, LocalDateTime time) {
+    List<Schedule> schedules = findAll();
+    for (Schedule schedule : schedules) {
+      if (schedule.getDate().equals(date) &&
+          time.isAfter(schedule.getStartTime()) &&
+          time.isBefore(schedule.getEndTime())) {
+        return schedule;
+      }
+    }
+    return null;
   }
 
   @Override

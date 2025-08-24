@@ -8,16 +8,23 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import models.Appointment;
+import models.Patient;
+import models.Schedule;
+import models.Staff;
 import repositories.Appointment.AppointmentRepository;
+import repositories.Patient.PatientRepository;
+import repositories.Schedule.ScheduleRepository;
+import repositories.Staff.StaffRepository;
 import utils.ErrorResponse;
 import utils.List;
 import utils.ListAdapter;
+import DTO.AppointmentWithPatientDTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 
-@Path("/appoinments")
+@Path("/appointments")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
@@ -33,19 +40,85 @@ public class AppointmentResource {
     @Inject
     private AppointmentRepository appointmentRepo;
 
+    @Inject
+    private PatientRepository patientRepo;
+
+    @Inject
+    private ScheduleRepository scheduleRepo;
+
+    @Inject
+    private StaffRepository staffRepo;
+
+    private List<AppointmentWithPatientDTO> convertToDTOWithPatientNames(List<Appointment> appointments) {
+        List<AppointmentWithPatientDTO> dtos = new List<>();
+        for (Appointment appointment : appointments) {
+            // Get patient name
+            Patient patient = patientRepo.findById(appointment.getPatientID());
+            String patientName = patient != null ?
+                patient.getFirstName() + " " + patient.getLastName() :
+                "Unknown Patient";
+
+            // Get doctor name from schedule
+            String doctorName = "Unknown Doctor";
+            String doctorID = null;
+            try {
+                Schedule schedule = scheduleRepo.findByDateAndTime(
+                    appointment.getAppointmentTime().toLocalDate(),
+                    appointment.getAppointmentTime()
+                );
+                if (schedule != null) {
+                    doctorID = schedule.getDoctorID();
+                    Staff doctor = staffRepo.findById(doctorID);
+                    if (doctor != null) {
+                        doctorName = doctor.getFirstName() + " " + doctor.getLastName();
+                    }
+                }
+            } catch (Exception e) {
+                // If there's any error getting doctor info, use default
+                doctorName = "Unknown Doctor";
+            }
+
+            AppointmentWithPatientDTO dto = AppointmentWithPatientDTO.fromAppointment(appointment, patientName, doctorName);
+            dto.setDoctorID(doctorID);
+            dtos.add(dto);
+        }
+        return dtos;
+    }
+
     @POST
     public Response createAppointment(Appointment appointment) {
-        appointmentRepo.create(appointment);
-        appointmentRepo.updateStatus(appointment.getAppointmentID(),"SCHEDULED");
-        String json = gson.toJson(appointment);
-        return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
+        try {
+            appointmentRepo.create(appointment);
+            appointmentRepo.updateStatus(appointment.getAppointmentID(), "SCHEDULED");
+            String json = gson.toJson(appointment);
+            return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Error creating appointment: " + e.getMessage()))
+                    .build();
+        }
     }
 
     @GET
     public Response getAllAppointments() {
         List<Appointment> appointments = appointmentRepo.findAll();
-        String json = gson.toJson(appointments);
+        List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointments);
+        String json = gson.toJson(dtos);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/{id}")
+    public Response getAppointmentById(@PathParam("id") String id) {
+        Appointment appointment = appointmentRepo.findById(id);
+        if (appointment != null) {
+            String json = gson.toJson(appointment);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Appointment not found"))
+                    .build();
+        }
     }
 
     @GET
@@ -53,7 +126,8 @@ public class AppointmentResource {
     public Response getAppointment(@PathParam("patientid") String id) {
         List<Appointment> appointment = appointmentRepo.findByPatientId(id);
         if (appointment != null) {
-            String json = gson.toJson(appointment);
+            List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointment);
+            String json = gson.toJson(dtos);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Appointment not found")).build();
@@ -65,7 +139,8 @@ public class AppointmentResource {
     public Response getUpComingAppointment(@PathParam("patientid") String id) {
         List<Appointment> appointment = appointmentRepo.findUpcomingByPatientId(id);
         if (appointment != null) {
-            String json = gson.toJson(appointment);
+            List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointment);
+            String json = gson.toJson(dtos);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Appointment not found")).build();
@@ -77,7 +152,8 @@ public class AppointmentResource {
     public Response getAppointmentByStatus(@PathParam("status") String status) {
         List<Appointment> appointment = appointmentRepo.findByStatus(status);
         if (appointment != null) {
-            String json = gson.toJson(appointment);
+            List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointment);
+            String json = gson.toJson(dtos);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Appointment not found")).build();
@@ -95,7 +171,8 @@ public class AppointmentResource {
             List<Appointment> appointments = appointmentRepo.findByDate(date);
 
             if (appointments != null && !appointments.isEmpty()) {
-                String json = gson.toJson(appointments);
+                List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointments);
+                String json = gson.toJson(dtos);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
@@ -142,9 +219,16 @@ public class AppointmentResource {
                     .build();
         }
 
-        appointmentRepo.update(appointment);
-        String json = gson.toJson(appointment);
-        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        try {
+            appointment.setAppointmentID(id); // Ensure the ID is set correctly
+            appointmentRepo.update(appointment);
+            String json = gson.toJson(appointment);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Error updating appointment: " + e.getMessage()))
+                    .build();
+        }
     }
 
     @PUT
@@ -190,6 +274,81 @@ public class AppointmentResource {
         appointmentRepo.updateStatus(appointment.getAppointmentID(),"CHECK IN");
         String json = gson.toJson(appointment);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deleteAppointment(@PathParam("id") String id) {
+        Appointment existingAppointment = appointmentRepo.findById(id);
+        if (existingAppointment == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Appointment not found"))
+                    .build();
+        }
+
+        try {
+            appointmentRepo.delete(id);
+            return Response.ok("{\"message\": \"Appointment deleted successfully\"}")
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Error deleting appointment: " + e.getMessage()))
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/{id}/status")
+    public Response updateAppointmentStatus(@PathParam("id") String id, String status) {
+        Appointment existingAppointment = appointmentRepo.findById(id);
+        if (existingAppointment == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Appointment not found"))
+                    .build();
+        }
+
+        try {
+            appointmentRepo.updateStatus(id, status);
+            Appointment updatedAppointment = appointmentRepo.findById(id);
+            String json = gson.toJson(updatedAppointment);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Error updating appointment status: " + e.getMessage()))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/today")
+    public Response getTodayAppointments() {
+        try {
+            LocalDate today = LocalDate.now();
+            List<Appointment> appointments = appointmentRepo.findByDate(today);
+            List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointments);
+            String json = gson.toJson(dtos);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Error fetching today's appointments: " + e.getMessage()))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/upcoming")
+    public Response getUpcomingAppointments() {
+        try {
+            List<Appointment> appointments = appointmentRepo.findUpcoming();
+            List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointments);
+            String json = gson.toJson(dtos);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Error fetching upcoming appointments: " + e.getMessage()))
+                    .build();
+        }
     }
 
 }

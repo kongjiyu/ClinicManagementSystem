@@ -10,15 +10,19 @@ import jakarta.ws.rs.core.Response;
 import models.Appointment;
 import models.Consultation;
 import models.Patient;
+import models.Treatment;
 import repositories.Appointment.AppointmentRepository;
 import repositories.Consultation.ConsultationRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Staff.StaffRepository;
+import repositories.Treatment.TreatmentRepository;
+import servlet.MedicineStockService;
 import utils.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import utils.TimeUtils;
 
 @Path("/queue")
 @Produces(MediaType.APPLICATION_JSON)
@@ -44,6 +48,12 @@ public class QueueResource {
 
   @Inject
   private StaffRepository staffRepository;
+
+  @Inject
+  private MedicineStockService medicineStockService;
+
+  @Inject
+  private TreatmentRepository treatmentRepository;
 
 
   @GET
@@ -93,8 +103,10 @@ public class QueueResource {
       // Group consultations by status
       List<Consultation> waitingConsultations = new List<>();
       List<Consultation> inProgressConsultations = new List<>();
+      List<Consultation> treatmentConsultations = new List<>();
       List<Consultation> billingConsultations = new List<>();
       List<Consultation> completedConsultations = new List<>();
+      List<Consultation> cancelledConsultations = new List<>();
 
       for (Consultation consultation : todayConsultations) {
         String status = consultation.getStatus();
@@ -109,11 +121,17 @@ public class QueueResource {
           case "in progress":
             inProgressConsultations.add(consultation);
             break;
+          case "treatment":
+            treatmentConsultations.add(consultation);
+            break;
           case "billing":
             billingConsultations.add(consultation);
             break;
           case "completed":
             completedConsultations.add(consultation);
+            break;
+          case "cancelled":
+            cancelledConsultations.add(consultation);
             break;
           default:
             waitingConsultations.add(consultation);
@@ -125,17 +143,21 @@ public class QueueResource {
       List<QueueItem> appointmentItems = createQueueItemsFromAppointments(todayAppointments);
       List<QueueItem> waitingItems = createQueueItemsFromConsultations(waitingConsultations);
       List<QueueItem> inProgressItems = createQueueItemsFromConsultations(inProgressConsultations);
+      List<QueueItem> treatmentItems = createQueueItemsFromConsultations(treatmentConsultations);
       List<QueueItem> billingItems = createQueueItemsFromConsultations(billingConsultations);
       List<QueueItem> completedItems = createQueueItemsFromConsultations(completedConsultations);
+      List<QueueItem> cancelledItems = createQueueItemsFromConsultations(cancelledConsultations);
 
       // Create response object
       JsonObject response = new JsonObject();
       response.add("appointments", gson.toJsonTree(appointmentItems));
       response.add("waiting", gson.toJsonTree(waitingItems));
       response.add("inProgress", gson.toJsonTree(inProgressItems));
+      response.add("treatment", gson.toJsonTree(treatmentItems));
       response.add("billing", gson.toJsonTree(billingItems));
       response.add("completed", gson.toJsonTree(completedItems));
-
+      response.add("cancelled", gson.toJsonTree(cancelledItems));
+      
       String json = gson.toJson(response);
       return Response.ok(json, MediaType.APPLICATION_JSON).build();
     } catch (Exception e) {
@@ -156,15 +178,34 @@ public class QueueResource {
           .build();
       }
 
-      // Update status
-      consultation.setStatus(request.getStatus());
+      String oldStatus = consultation.getStatus();
+      String newStatus = request.getStatus();
 
-      // Update check-in time if status is "In Progress"
-      if ("In Progress".equalsIgnoreCase(request.getStatus()) && consultation.getCheckInTime() == null) {
-        consultation.setCheckInTime(LocalDateTime.now());
+      // Update status
+      consultation.setStatus(newStatus);
+
+      // Update check-in time if status is "In Progress" (Malaysia timezone)
+      if ("In Progress".equalsIgnoreCase(newStatus) && consultation.getCheckInTime() == null) {
+        consultation.setCheckInTime(TimeUtils.nowMalaysia());
       }
 
       consultationRepository.update(consultationId, consultation);
+
+      // If status changed from "Billing" to "Completed", deduct medicine stock from prescriptions
+      if ("Completed".equalsIgnoreCase(newStatus) && "Billing".equalsIgnoreCase(oldStatus)) {
+        try {
+          boolean stockDeductionSuccess = medicineStockService.deductMedicineStock(consultationId);
+          if (!stockDeductionSuccess) {
+            return Response.status(Response.Status.BAD_REQUEST)
+              .entity(new ErrorResponse("Failed to deduct medicine stock. Please check stock availability."))
+              .build();
+          }
+        } catch (Exception e) {
+          return Response.status(Response.Status.BAD_REQUEST)
+            .entity(new ErrorResponse("Error processing medicine stock deduction: " + e.getMessage()))
+            .build();
+        }
+      }
 
       String json = gson.toJson(consultation);
       return Response.ok(json, MediaType.APPLICATION_JSON).build();
@@ -195,7 +236,7 @@ public class QueueResource {
       consultation.setPatientID(appointment.getPatientID());
       consultation.setConsultationDate(appointment.getAppointmentTime().toLocalDate());
       consultation.setStatus("Waiting");
-      consultation.setCheckInTime(LocalDateTime.now());
+      consultation.setCheckInTime(TimeUtils.nowMalaysia());
 
       // ID will be automatically generated by Hibernate using @GeneratedValue
 
@@ -225,6 +266,9 @@ public class QueueResource {
     private LocalDate consultationDate;
     private LocalDateTime checkInTime;
     private String waitingTime;
+    private String invoiceID;
+    private String billID;
+    private int treatmentCount;
 
     // Getters and setters
     public String getConsultationId() {
@@ -281,6 +325,30 @@ public class QueueResource {
 
     public void setWaitingTime(String waitingTime) {
       this.waitingTime = waitingTime;
+    }
+
+    public String getInvoiceID() {
+      return invoiceID;
+    }
+
+    public void setInvoiceID(String invoiceID) {
+      this.invoiceID = invoiceID;
+    }
+
+    public String getBillID() {
+      return billID;
+    }
+
+    public void setBillID(String billID) {
+      this.billID = billID;
+    }
+
+    public int getTreatmentCount() {
+      return treatmentCount;
+    }
+
+    public void setTreatmentCount(int treatmentCount) {
+      this.treatmentCount = treatmentCount;
     }
   }
 
@@ -340,6 +408,21 @@ public class QueueResource {
         item.setPatientName("Unknown");
       }
 
+      // Get invoice information if consultation has a bill
+      if (consultation.getBillID() != null && !consultation.getBillID().isEmpty()) {
+        item.setInvoiceID(consultation.getBillID());
+        item.setBillID(consultation.getBillID());
+      }
+
+      // Get treatment count for this consultation
+      try {
+        List<Treatment> treatments = treatmentRepository.findByConsultationId(consultation.getConsultationID());
+        item.setTreatmentCount(treatments.size());
+      } catch (Exception e) {
+        // If treatment repository is not available, set count to 0
+        item.setTreatmentCount(0);
+      }
+
       items.add(item);
     }
     
@@ -355,6 +438,138 @@ public class QueueResource {
 
     public void setStatus(String status) {
       this.status = status;
+    }
+  }
+
+  @GET
+  @Path("/patient/{patientId}")
+  public Response getPatientQueueStatus(@PathParam("patientId") String patientId) {
+    try {
+      LocalDate today = LocalDate.now();
+      
+      // Get today's appointments for this patient
+      List<Appointment> allAppointments = appointmentRepository.findAll();
+      List<Appointment> patientAppointments = new List<>();
+      
+      for (Appointment appointment : allAppointments) {
+        if (appointment.getPatientID() != null && 
+            appointment.getPatientID().equals(patientId) &&
+            appointment.getAppointmentTime() != null &&
+            appointment.getAppointmentTime().toLocalDate().equals(today) &&
+            "SCHEDULED".equals(appointment.getStatus())) {
+          patientAppointments.add(appointment);
+        }
+      }
+      
+      // Get today's consultations for this patient
+      List<Consultation> allConsultations = consultationRepository.findAll();
+      List<Consultation> patientConsultations = new List<>();
+      
+      for (Consultation consultation : allConsultations) {
+        if (consultation.getPatientID() != null && 
+            consultation.getPatientID().equals(patientId) &&
+            consultation.getConsultationDate() != null &&
+            consultation.getConsultationDate().equals(today)) {
+          patientConsultations.add(consultation);
+        }
+      }
+      
+      // If patient has no appointments or consultations today, return not found
+      if (patientAppointments.isEmpty() && patientConsultations.isEmpty()) {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("No appointments or consultations found for today"))
+                .build();
+      }
+      
+      // Get all appointments and consultations for today to calculate queue position
+      List<Appointment> todayAppointments = new List<>();
+      for (Appointment appointment : allAppointments) {
+        if (appointment.getAppointmentTime() != null &&
+            appointment.getAppointmentTime().toLocalDate().equals(today) &&
+            "SCHEDULED".equals(appointment.getStatus())) {
+          todayAppointments.add(appointment);
+        }
+      }
+      
+      List<Consultation> todayConsultations = new List<>();
+      for (Consultation consultation : allConsultations) {
+        if (consultation.getConsultationDate() != null &&
+            consultation.getConsultationDate().equals(today)) {
+          todayConsultations.add(consultation);
+        }
+      }
+      
+      // Calculate queue position
+      int queuePosition = 0;
+      int estimatedWaitTime = 0;
+      
+      // Check if patient has a consultation today
+      if (!patientConsultations.isEmpty()) {
+        Consultation patientConsultation = patientConsultations.get(0);
+        
+        // Count consultations before this patient's consultation
+        for (Consultation consultation : todayConsultations) {
+          if (consultation.getConsultationDate().equals(today)) {
+            if (consultation.getCheckInTime() != null && 
+                patientConsultation.getCheckInTime() != null &&
+                consultation.getCheckInTime().isBefore(patientConsultation.getCheckInTime())) {
+              queuePosition++;
+            }
+          }
+        }
+        
+        // Estimate wait time (15 minutes per person in queue)
+        estimatedWaitTime = queuePosition * 15;
+      } else if (!patientAppointments.isEmpty()) {
+        // Patient has appointment but no consultation yet
+        Appointment patientAppointment = patientAppointments.get(0);
+        
+        // Count appointments before this patient's appointment
+        for (Appointment appointment : todayAppointments) {
+          if (appointment.getAppointmentTime() != null &&
+              appointment.getAppointmentTime().isBefore(patientAppointment.getAppointmentTime())) {
+            queuePosition++;
+          }
+        }
+        
+        // Estimate wait time (20 minutes per person in queue for appointments)
+        estimatedWaitTime = queuePosition * 20;
+      }
+      
+      // Create response object
+      JsonObject response = new JsonObject();
+      response.addProperty("patientId", patientId);
+      response.addProperty("queuePosition", queuePosition);
+      response.addProperty("estimatedWaitTime", estimatedWaitTime);
+      response.addProperty("hasAppointment", !patientAppointments.isEmpty());
+      response.addProperty("hasConsultation", !patientConsultations.isEmpty());
+      
+      // Add patient's appointment/consultation details
+      if (!patientAppointments.isEmpty()) {
+        Appointment appointment = patientAppointments.get(0);
+        JsonObject appointmentInfo = new JsonObject();
+        appointmentInfo.addProperty("appointmentId", appointment.getAppointmentID());
+        appointmentInfo.addProperty("appointmentTime", appointment.getAppointmentTime().toString());
+        appointmentInfo.addProperty("status", appointment.getStatus());
+        response.add("appointment", appointmentInfo);
+      }
+      
+      if (!patientConsultations.isEmpty()) {
+        Consultation consultation = patientConsultations.get(0);
+        JsonObject consultationInfo = new JsonObject();
+        consultationInfo.addProperty("consultationId", consultation.getConsultationID());
+        consultationInfo.addProperty("checkInTime", consultation.getCheckInTime() != null ? consultation.getCheckInTime().toString() : "");
+        consultationInfo.addProperty("status", consultation.getStatus());
+        response.add("consultation", consultationInfo);
+      }
+      
+      String json = gson.toJson(response);
+      return Response.ok(json, MediaType.APPLICATION_JSON).build();
+      
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+              .entity(new ErrorResponse("Error getting patient queue status: " + e.getMessage()))
+              .build();
     }
   }
 }

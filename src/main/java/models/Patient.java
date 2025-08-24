@@ -52,5 +52,7 @@ public class Patient {
   private String allergies;
 
   private String bloodType;
+
+  private String password;
 }
 

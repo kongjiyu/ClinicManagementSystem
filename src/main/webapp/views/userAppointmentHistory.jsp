@@ -16,8 +16,11 @@
 
 <%@ include file="/views/userSidebar.jsp" %>
 
-<div class="p-8 ml-64">
-  <h1 class="text-3xl font-bold mb-6">Appointment History</h1>
+<div class="flex flex-col gap-6 p-8 pt-[5.5rem] backdrop-blur-lg min-h-screen md:ml-64">
+  <div class="bg-base-100 p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-2">Appointment History</h1>
+    <p class="text-sm text-base-content/70">View all your past and current appointments</p>
+  </div>
 
   <!-- Loading Spinner -->
   <div id="loadingSpinner" class="flex justify-center items-center py-8">
@@ -25,19 +28,24 @@
   </div>
 
   <div id="appointmentHistoryContent" class="hidden">
-    <div class="overflow-x-auto bg-white rounded-lg shadow-md">
-      <table class="table table-zebra w-full text-left">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="px-6 py-3">Appointment ID</th>
-            <th class="px-6 py-3">Date &amp; Time</th>
-            <th class="px-6 py-3">Status</th>
-          </tr>
-        </thead>
-        <tbody id="appointmentHistoryTableBody">
-          <!-- Data will be populated by JavaScript -->
-        </tbody>
-      </table>
+    <div class="bg-base-100 p-6 rounded-lg shadow-md">
+      <h3 class="text-xl font-semibold mb-4">Your Appointment History</h3>
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="appointmentHistoryTableBody">
+            <!-- Data will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -52,16 +60,31 @@
   const API_BASE = '<%= request.getContextPath() %>/api';
   let patientId = null;
 
-  // Get patient ID from session or URL parameter
-  function getPatientId() {
-    // For now, we'll use a default patient ID
-    // In a real application, this would come from the user's session
-    return 'PT0001'; // Default patient ID for testing
+  // Get patient ID from session
+  async function getPatientId() {
+    try {
+      const response = await fetch(API_BASE + '/auth/session');
+      if (response.ok) {
+        const session = await response.json();
+        if (session.authenticated && session.userType === 'patient' && session.userId) {
+          return session.userId;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting patient ID from session:', error);
+    }
+    return null;
   }
 
   // Load appointment history data
   async function loadAppointmentHistory() {
-    patientId = getPatientId();
+    patientId = await getPatientId();
+    
+    if (!patientId) {
+      showError('You must be logged in as a patient to access this page');
+      hideLoading();
+      return;
+    }
     
     try {
       const response = await fetch(API_BASE + '/patients/' + patientId + '/appointment-history');
@@ -93,7 +116,7 @@
     }
 
     if (!appointmentArray || appointmentArray.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500">No appointment history found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No appointment history found</td></tr>';
       return;
     }
 
@@ -102,10 +125,8 @@
       
       // Format appointment date and time
       const appointmentDateTime = appointment.appointmentTime ? new Date(appointment.appointmentTime) : null;
-      const dateTime = appointmentDateTime ? appointmentDateTime.toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
+      const date = appointmentDateTime ? appointmentDateTime.toLocaleDateString() : 'N/A';
+      const time = appointmentDateTime ? appointmentDateTime.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit'
       }) : 'N/A';
@@ -114,9 +135,11 @@
       const statusBadge = getStatusBadge(appointment.status);
 
       row.innerHTML = 
-        '<td class="px-6 py-4">' + (appointment.appointmentID || 'N/A') + '</td>' +
-        '<td class="px-6 py-4">' + dateTime + '</td>' +
-        '<td class="px-6 py-4">' + statusBadge + '</td>';
+        '<td>' + date + '</td>' +
+        '<td>' + time + '</td>' +
+        '<td>' + (appointment.appointmentType || 'Consultation') + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td>' + (appointment.description || '-') + '</td>';
       
       tbody.appendChild(row);
     });

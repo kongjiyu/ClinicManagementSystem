@@ -36,10 +36,6 @@ public class Consultation {
 
     private LocalDateTime checkInTime;
 
-    private boolean isFollowUpRequired;
-
-    private LocalDate followUpDate;
-
     private String status;
 
     private String mcID;

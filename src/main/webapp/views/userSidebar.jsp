@@ -16,7 +16,7 @@
 <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 h-screen w-64 border-r sm:flex hidden flex-col" role="dialog" tabindex="-1">
   <div class="drawer-header">
     <div class="flex items-center gap-3">
-      <h3 class="drawer-title text-xl font-semibold">Admin</h3>
+      <h3 class="drawer-title text-xl font-semibold">Patient Portal</h3>
     </div>
   </div>
   <div class="drawer-body px-2">
@@ -25,8 +25,7 @@
         <li><a href="<%= request.getContextPath() %>/views/userDashboard.jsp"><span class="icon-[tabler--home] size-5"></span>Dashboard</a></li>
         <li><a href="<%= request.getContextPath() %>/views/userCreateAppointment.jsp"><span class="icon-[tabler--calendar-plus] size-5"></span>Create Appointment</a></li>
         <li><a href="<%= request.getContextPath() %>/views/userAppointmentHistory.jsp"><span class="icon-[tabler--history] size-5"></span>Appointment History</a></li>
-        <li><a href="<%= request.getContextPath() %>/views/userInvoiceList.jsp"><span class="icon-[tabler--receipt-2] size-5"></span>Invoice</a></li>
-        <li><a href="<%= request.getContextPath() %>/views/userMedicalHistory.jsp"><span class="icon-[tabler--notes] size-5"></span>Medical History</a></li>
+        <li><a href="<%= request.getContextPath() %>/views/userTreatmentHistory.jsp"><span class="icon-[tabler--medical-cross] size-5"></span>Treatment History</a></li>
         <li><a href="<%= request.getContextPath() %>/views/userQueue.jsp"><span class="icon-[tabler--clock-hour-5] size-5"></span>Your Queue</a></li>
       </div>
       <div class="mt-6">
@@ -35,15 +34,61 @@
             <div class="flex items-center gap-3">
               <div class="avatar"><div class="w-8 rounded-full"><img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="profile"/></div></div>
               <div>
-                <div class="text-sm font-semibold">User</div>
+                <div class="text-sm font-semibold" id="userName">User</div>
                 <div class="text-xs text-base-content/50">Profile</div>
               </div>
             </div>
+          </a>
+        </li>
+        <li>
+          <a href="#" onclick="logout()" class="text-red-600 hover:bg-red-50">
+            <span class="icon-[tabler--logout] size-5"></span>
+            Logout
           </a>
         </li>
       </div>
     </ul>
   </div>
 </aside>
+
+<script>
+  // Load user session info
+  async function loadUserSession() {
+    try {
+      const response = await fetch('<%= request.getContextPath() %>/api/auth/session');
+      if (response.ok) {
+        const session = await response.json();
+        if (session.authenticated && session.userName) {
+          document.getElementById('userName').textContent = session.userName;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading session:', error);
+    }
+  }
+
+  // Logout function
+  async function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        const response = await fetch('<%= request.getContextPath() %>/api/auth/logout', {
+          method: 'POST'
+        });
+        
+        if (response.ok) {
+          window.location.href = '<%= request.getContextPath() %>/login.jsp';
+        } else {
+          alert('Logout failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert('An error occurred during logout.');
+      }
+    }
+  }
+
+  // Load session when page loads
+  document.addEventListener('DOMContentLoaded', loadUserSession);
+</script>
 </body>
 </html>
