@@ -13,6 +13,7 @@ public interface ConsultationRepository {
     Consultation update(String id, Consultation consultation);
     boolean reschedule(String id, Consultation consultation);
     boolean cancel(String id);
+
     boolean updateStatus(String id, String status);
     List<Consultation> getUpcoming();
     boolean checkInPatient(String id);
@@ -27,4 +28,5 @@ public interface ConsultationRepository {
     List<Consultation> findByMcStartDate(LocalDate startDate);
     List<Consultation> findByMcDuration(Integer duration);
     List<Consultation> findByMcDateRange(LocalDate startDate, LocalDate endDate);
+    Consultation findByBillId(String billId);
   }

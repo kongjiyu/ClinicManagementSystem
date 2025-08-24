@@ -22,8 +22,18 @@
     <url-pattern>/api/*</url-pattern>
   </servlet-mapping>
 
+  <!-- Session Configuration -->
+  <session-config>
+    <session-timeout>480</session-timeout> <!-- 8 hours in minutes -->
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>false</secure> <!-- Set to true in production with HTTPS -->
+    </cookie-config>
+  </session-config>
+
   <!-- Default Welcome File -->
   <welcome-file-list>
+    <welcome-file>login.jsp</welcome-file>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
 

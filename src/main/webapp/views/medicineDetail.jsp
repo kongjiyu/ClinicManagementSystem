@@ -75,7 +75,7 @@
               <label class="label">
                 <span class="label-text">Total Stock *</span>
               </label>
-              <input type="number" id="totalStock" class="input input-bordered" min="0" required disabled>
+              <input type="number" id="totalStock" class="input input-bordered" min="0" required readonly>
             </div>
             <div class="form-control">
               <label class="label">
@@ -88,7 +88,7 @@
                 <span class="label-text">Selling Price *</span>
               </label>
               <div class="input-group">
-                <span class="input-group-text">$</span>
+                <span class="input-group-text">RM</span>
                 <input type="number" id="sellingPrice" class="input input-bordered" min="0" step="0.01" required disabled>
               </div>
             </div>
@@ -163,7 +163,7 @@
     }
 
     try {
-      const response = await fetch(API_BASE + '/medicine/' + medicineId);
+      const response = await fetch(API_BASE + '/medicines/' + medicineId);
       if (!response.ok) {
         throw new Error('Failed to fetch medicine data');
       }
@@ -223,7 +223,7 @@
 
     // Enable/disable form fields
     inputs.forEach(input => {
-      if (input.id !== 'medicineID') { // Keep medicine ID readonly
+      if (input.id !== 'medicineID' && input.id !== 'totalStock') { // Keep medicine ID and total stock readonly
         input.disabled = !input.disabled;
       }
     });
@@ -255,7 +255,7 @@
     }
 
     const formData = collectFormData();
-    const url = isNewMedicine ? API_BASE + '/medicine' : API_BASE + '/medicine/' + medicineData.medicineID;
+    const url = isNewMedicine ? API_BASE + '/medicines' : API_BASE + '/medicine/' + medicineData.medicineID;
     const method = isNewMedicine ? 'POST' : 'PUT';
     
     try {
@@ -296,7 +296,6 @@
     const formData = {
       medicineName: document.getElementById('medicineName').value,
       description: document.getElementById('description').value,
-      totalStock: parseInt(document.getElementById('totalStock').value) || 0,
       reorderLevel: parseInt(document.getElementById('reorderLevel').value) || 0,
       sellingPrice: parseFloat(document.getElementById('sellingPrice').value) || 0.00
     };
@@ -310,7 +309,7 @@
 
   // Validate form
   function validateForm() {
-    const requiredFields = ['medicineName', 'totalStock', 'reorderLevel', 'sellingPrice'];
+    const requiredFields = ['medicineName', 'reorderLevel', 'sellingPrice'];
 
     for (const fieldId of requiredFields) {
       const field = document.getElementById(fieldId);
@@ -322,15 +321,8 @@
     }
 
     // Validate numeric fields
-    const totalStock = parseInt(document.getElementById('totalStock').value);
     const reorderLevel = parseInt(document.getElementById('reorderLevel').value);
     const sellingPrice = parseFloat(document.getElementById('sellingPrice').value);
-
-    if (totalStock < 0) {
-      showError('Total stock cannot be negative');
-      document.getElementById('totalStock').focus();
-      return false;
-    }
 
     if (reorderLevel < 0) {
       showError('Reorder level cannot be negative');

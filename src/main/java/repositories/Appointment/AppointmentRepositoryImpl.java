@@ -7,6 +7,7 @@ import models.Appointment;
 import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import utils.TimeUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import utils.List;
@@ -113,6 +114,11 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @Override
+  public void delete(String id) {
+    em.remove(em.find(Appointment.class, id));
+  }
+
+  @Override
   public List<Appointment> findUpcomingByPatientId(String patientID) {
     List<Appointment> appointments = findAll();
     List<Appointment> patientAppoinementList = new List<>();
@@ -124,6 +130,21 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
       }
     }
    return patientAppoinementList;
+  }
+
+  @Override
+  public List<Appointment> findUpcoming() {
+    List<Appointment> appointments = findAll();
+    List<Appointment> upcomingAppointments = new List<>();
+            LocalDateTime now = TimeUtils.nowMalaysia();
+    
+    for(Appointment appointment : appointments){
+      if (appointment.getAppointmentTime().isAfter(now) ||
+          appointment.getAppointmentTime().equals(now)) {
+        upcomingAppointments.add(appointment);
+      }
+    }
+    return upcomingAppointments;
   }
 }
 

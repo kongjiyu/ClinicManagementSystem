@@ -146,14 +146,7 @@ public class PatientsResource {
       return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
   }
 
-  @POST
-  @Path("/{id}")
-  public Response updatePatient(@PathParam("id") String id, Patient patient) {
-      patient.setPatientID(id);
-    patientRepo.update(patient);
-      String json = gson.toJson(patient);
-      return Response.ok(json, MediaType.APPLICATION_JSON).build();
-  }
+
 
   @POST
   @Path("/{id}/allergies")
@@ -237,6 +230,56 @@ public class PatientsResource {
       } catch (Exception e) {
           return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                   .entity(new ErrorResponse("Error loading appointment history: " + e.getMessage()))
+                  .build();
+      }
+  }
+
+  @PUT
+  @Path("/{id}")
+  public Response updatePatient(@PathParam("id") String id, Patient updatedPatient) {
+      try {
+          Patient existingPatient = patientRepo.findById(id);
+          if (existingPatient == null) {
+              return Response.status(Response.Status.NOT_FOUND)
+                      .entity(new ErrorResponse("Patient not found"))
+                      .build();
+          }
+
+          // Update only editable fields (prevent updating critical fields)
+          if (updatedPatient.getFirstName() != null) {
+              existingPatient.setFirstName(updatedPatient.getFirstName());
+          }
+          if (updatedPatient.getLastName() != null) {
+              existingPatient.setLastName(updatedPatient.getLastName());
+          }
+          if (updatedPatient.getContactNumber() != null) {
+              existingPatient.setContactNumber(updatedPatient.getContactNumber());
+          }
+          if (updatedPatient.getEmail() != null) {
+              existingPatient.setEmail(updatedPatient.getEmail());
+          }
+          if (updatedPatient.getAddress() != null) {
+              existingPatient.setAddress(updatedPatient.getAddress());
+          }
+          if (updatedPatient.getEmergencyContactName() != null) {
+              existingPatient.setEmergencyContactName(updatedPatient.getEmergencyContactName());
+          }
+          if (updatedPatient.getEmergencyContactNumber() != null) {
+              existingPatient.setEmergencyContactNumber(updatedPatient.getEmergencyContactNumber());
+          }
+          if (updatedPatient.getAllergies() != null) {
+              existingPatient.setAllergies(updatedPatient.getAllergies());
+          }
+
+          // Save the updated patient
+          patientRepo.update(existingPatient);
+
+          String json = gson.toJson(existingPatient);
+          return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+      } catch (Exception e) {
+          return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                  .entity(new ErrorResponse("Error updating patient: " + e.getMessage()))
                   .build();
       }
   }

@@ -19,5 +19,6 @@ public interface PrescriptionRepository {
 
   List<Prescription> findHistory(String id);
   List<Prescription> findPrescriptionsByPatientId(String patientId);
+  Prescription findByConsultationIdAndMedicineId(String consultationId, String medicineId);
 
 }

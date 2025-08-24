@@ -13,7 +13,10 @@
 
 <main class="flex-1 p-6 ml-64 space-y-6">
   <div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">Medicine</h1>
+    <div>
+      <h1 class="text-2xl font-bold">Medicine</h1>
+      <p class="text-sm text-gray-600 mt-1">Available Stock shows non-expired inventory only</p>
+    </div>
     <button class="btn btn-primary" onclick="window.location.href='<%= request.getContextPath() %>/views/medicineDetail.jsp'">
       <span class="icon-[tabler--plus] size-4"></span>
       Add New Medicine
@@ -27,7 +30,7 @@
         <th>Medicine ID</th>
         <th>Medicine Name</th>
         <th>Description</th>
-        <th>Total Stock</th>
+        <th>Available Stock</th>
         <th>Reorder Level</th>
         <th>Selling Price</th>
         <th>Stock Status</th>
@@ -51,7 +54,7 @@
   function initializeDataTable() {
     new DataTable('#example', {
       ajax: {
-        url: API_BASE + '/medicine',
+        url: API_BASE + '/medicines',
         dataSrc: function(json) {
           return json.elements || json || [];
         }
@@ -76,7 +79,7 @@
           }
         },
         { 
-          data: 'totalStock',
+          data: 'availableStock', // Use availableStock instead of totalStock
           render: function(data) {
             return data || 0;
           }
@@ -90,13 +93,13 @@
         { 
           data: 'sellingPrice',
           render: function(data) {
-            return data ? '$' + parseFloat(data).toFixed(2) : '$0.00';
+            return data ? 'RM ' + parseFloat(data).toFixed(2) : 'RM 0.00';
           }
         },
         { 
           data: null,
           render: function(data) {
-            const stock = data.totalStock || 0;
+            const stock = data.availableStock || 0; // Use availableStock instead of totalStock
             const reorderLevel = data.reorderLevel || 0;
             
             if (stock === 0) {

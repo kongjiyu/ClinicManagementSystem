@@ -31,6 +31,9 @@ public interface AppointmentRepository {
   // Status
   void updateStatus(String appointmentID, String newStatus); // e.g. "Checked-in", "Cancelled"
 
+  void delete(String id);
+
   // Extra
   List<Appointment> findUpcomingByPatientId(String patientID);
+  List<Appointment> findUpcoming();
 }

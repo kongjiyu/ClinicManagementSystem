@@ -27,13 +27,16 @@
     <p class="text-sm text-base-content/70">Today is <%= java.time.LocalDate.now() %>.</p>
   </div>
 
-  <!-- Next Appointment -->
+  <!-- Patient Appointments -->
   <div id="appointmentSection" class="bg-base-100 p-6 rounded-lg shadow-md hidden">
-    <div class="flex justify-between items-center mb-4 cursor-pointer" onclick="toggleAppointments()">
-      <h3 class="text-xl font-semibold">Your Upcoming Appointments</h3>
-      <span id="toggleIcon" class="icon-[tabler--chevron-left] accordion-item-active:-rotate-90 size-5 shrink-0 transition-transform duration-300 rtl:-rotate-180" ></span>
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold">Your Appointments</h3>
+      <a href="<%= request.getContextPath() %>/views/userCreateAppointment.jsp" class="btn btn-sm btn-accent flex items-center gap-2">
+        <span class="icon-[tabler--calendar-plus] size-3"></span>
+        New Appointment
+      </a>
     </div>
-    <div id="appointmentsContent" class="overflow-x-auto">
+    <div class="overflow-x-auto">
       <table class="table table-zebra w-full">
         <thead>
           <tr>
@@ -51,6 +54,8 @@
     </div>
   </div>
 
+
+
   <!-- Clinic Rules -->
   <div class="bg-base-100 p-6 rounded-lg shadow-md">
     <h3 class="text-xl font-semibold mb-4">Clinic Rules & Regulations</h3>
@@ -62,6 +67,8 @@
     </ul>
   </div>
 
+
+
   <!-- Operating Hours -->
   <div class="bg-base-100 p-6 rounded-lg shadow-md">
     <h3 class="text-xl font-semibold mb-4">Clinic Operating Hours</h3>
@@ -72,11 +79,7 @@
     </ul>
   </div>
 
-  <!-- Quick Links -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <a href="<%= request.getContextPath() %>/user/medicalHistory" class="btn btn-outline btn-primary w-full">View Medical History</a>
-    <a href="<%= request.getContextPath() %>/user/invoice" class="btn btn-outline btn-secondary w-full">View Invoices</a>
-  </div>
+ 
 
   <!-- Error Alert -->
   <div id="errorAlert" class="alert alert-error hidden">
@@ -89,24 +92,56 @@
   const API_BASE = '<%= request.getContextPath() %>/api';
   let patientId = null;
 
-  // Get patient ID from session or URL parameter
-  function getPatientId() {
-    // For now, we'll use a default patient ID
-    // In a real application, this would come from the user's session
-    return 'PT0001'; // Default patient ID for testing
+  // Get patient ID from session
+  async function getPatientId() {
+    try {
+      const response = await fetch(API_BASE + '/auth/session');
+      if (response.ok) {
+        const session = await response.json();
+        if (session.authenticated && session.userType === 'patient' && session.userId) {
+          return session.userId;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting patient ID from session:', error);
+    }
+    return null;
   }
 
   // Load dashboard data
   async function loadDashboardData() {
-    patientId = getPatientId();
+    patientId = await getPatientId();
+    
+    if (!patientId) {
+      showError('You must be logged in as a patient to access this page');
+      hideLoading();
+      return;
+    }
     
     try {
-      const response = await fetch(API_BASE + '/patients/' + patientId + '/dashboard');
-      if (!response.ok) {
-        throw new Error('Failed to load dashboard data');
+      // Load patient information
+      const patientResponse = await fetch(API_BASE + '/patients/' + patientId);
+      if (!patientResponse.ok) {
+        throw new Error('Failed to load patient information');
       }
+      const patientData = await patientResponse.json();
       
-      const dashboardData = await response.json();
+      // Load patient's appointments
+      const appointmentsResponse = await fetch(API_BASE + '/appointments');
+      if (!appointmentsResponse.ok) {
+        throw new Error('Failed to load appointments');
+      }
+      const allAppointments = await appointmentsResponse.json();
+      
+      // Filter appointments for this patient
+      const appointments = allAppointments.elements || allAppointments || [];
+      const patientAppointments = appointments.filter(apt => apt.patientID === patientId);
+      
+      const dashboardData = {
+        patient: patientData,
+        appointments: patientAppointments
+      };
+      
       populateDashboard(dashboardData);
       hideLoading();
     } catch (error) {
@@ -118,25 +153,9 @@
 
   // Populate dashboard with data
   function populateDashboard(data) {
-    // Populate patient name from MultiMap structure
-    let patient = null;
-    
-    // Check if data has the MultiMap structure
-    if (data.map && data.map.elements) {
-      // Find the patient element in the MultiMap
-      for (const element of data.map.elements) {
-        if (element.key === 'patient' && element.value && element.value.elements && element.value.elements.length > 0) {
-          patient = element.value.elements[0];
-          break;
-        }
-      }
-    } else if (data.patient) {
-      // Fallback to direct structure
-      patient = data.patient;
-    }
-
-    if (patient) {
-      const patientName = (patient.firstName || '') + ' ' + (patient.lastName || '');
+    // Populate patient name
+    if (data.patient) {
+      const patientName = (data.patient.firstName || '') + ' ' + (data.patient.lastName || '');
       document.getElementById('patientName').textContent = patientName.trim() || 'User';
     }
 
@@ -153,32 +172,10 @@
     const tbody = document.getElementById('appointmentsTableBody');
     tbody.innerHTML = '';
 
-    console.log('Raw dashboard data:', data);
-
-    // Handle MultiMap structure from the API
-    let appointments = [];
-    
-    // Check if data has the MultiMap structure
-    if (data.map && data.map.elements) {
-      console.log('Found MultiMap structure');
-      // Find the appointment elements in the MultiMap
-      for (const element of data.map.elements) {
-        console.log('Processing element:', element.key, element.value);
-        if (element.key === 'appointment' && element.value && element.value.elements) {
-          appointments = element.value.elements;
-          console.log('Found appointments:', appointments);
-          break;
-        }
-      }
-    } else if (data.appointment) {
-      console.log('Using direct appointment structure');
-      appointments = data.appointment;
-    }
-
-    console.log('Final appointments array:', appointments);
+    const appointments = data.appointments || [];
 
     if (!appointments || appointments.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No upcoming appointments</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No appointments found</td></tr>';
       return;
     }
 
@@ -205,9 +202,15 @@
         '<td>' + time + '</td>' +
         '<td>' + (appointment.appointmentType || 'Consultation') + '</td>' +
         '<td>' + statusBadge + '</td>' +
-        '<td>' +
-          '<button class="btn btn-xs btn-warning" onclick="rescheduleAppointment(\'' + appointment.appointmentID + '\')">Reschedule</button>' +
-          ' <button class="btn btn-xs btn-error" onclick="cancelAppointment(\'' + appointment.appointmentID + '\')">Cancel</button>' +
+        '<td class="flex gap-2">' +
+          '<button class="btn btn-sm btn-warning flex items-center gap-1" onclick="rescheduleAppointment(\'' + appointment.appointmentID + '\')">' +
+            '<span class="icon-[tabler--calendar-time] size-3"></span>' +
+            'Reschedule' +
+          '</button>' +
+          '<button class="btn btn-sm btn-error flex items-center gap-1" onclick="cancelAppointment(\'' + appointment.appointmentID + '\')">' +
+            '<span class="icon-[tabler--x] size-3"></span>' +
+            'Cancel' +
+          '</button>' +
         '</td>';
       
       tbody.appendChild(row);
@@ -236,17 +239,194 @@
     }
   }
 
+
+
   // Reschedule appointment
-  function rescheduleAppointment(appointmentId) {
-    // TODO: Implement reschedule functionality
-    alert('Reschedule functionality will be implemented here');
+  async function rescheduleAppointment(appointmentId) {
+    try {
+      // Get the current appointment data
+      const response = await fetch(API_BASE + '/appointments/' + appointmentId);
+      if (!response.ok) {
+        throw new Error('Failed to load appointment details');
+      }
+      
+      const appointment = await response.json();
+      
+      // Create reschedule modal
+      const modal = createRescheduleModal(appointment);
+      document.body.appendChild(modal);
+      
+      // Show modal
+      modal.classList.remove('hidden');
+      
+    } catch (error) {
+      console.error('Error loading appointment:', error);
+      alert('Failed to load appointment details: ' + error.message);
+    }
   }
 
   // Cancel appointment
-  function cancelAppointment(appointmentId) {
+  async function cancelAppointment(appointmentId) {
     if (confirm('Are you sure you want to cancel this appointment?')) {
-      // TODO: Implement cancel functionality
-      alert('Cancel functionality will be implemented here');
+      try {
+        const response = await fetch(API_BASE + '/appointments/' + appointmentId + '/cancel', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ appointmentID: appointmentId })
+        });
+        
+        if (response.ok) {
+          alert('Appointment cancelled successfully!');
+          // Reload dashboard data
+          loadDashboardData();
+        } else {
+          const errorResult = await response.json();
+          alert('Failed to cancel appointment: ' + (errorResult.message || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error cancelling appointment:', error);
+        alert('Failed to cancel appointment: ' + error.message);
+      }
+    }
+  }
+
+  // Create reschedule modal
+  function createRescheduleModal(appointment) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center';
+    modal.style.cssText = 'background-color: rgba(0, 0, 0, 0.5) !important; z-index: 9999 !important;';
+    
+    // Calculate date constraints
+    const today = new Date().toISOString().split('T')[0];
+    const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    modal.innerHTML = 
+      '<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" style="z-index: 10000 !important;">' +
+        '<div class="flex justify-between items-center mb-4">' +
+          '<h3 class="text-lg font-semibold">Reschedule Appointment</h3>' +
+          '<button onclick="closeRescheduleModal()" class="text-gray-500 hover:text-gray-700">' +
+            '<span class="icon-[tabler--x] size-5"></span>' +
+          '</button>' +
+        '</div>' +
+        
+        '<form id="rescheduleForm" class="space-y-4">' +
+          '<input type="hidden" id="rescheduleAppointmentId" value="' + appointment.appointmentID + '">' +
+          
+          '<div>' +
+            '<label class="label">New Date</label>' +
+            '<input type="date" id="rescheduleDate" class="input input-bordered w-full"' +
+                   ' min="' + today + '"' +
+                   ' max="' + maxDate + '"' +
+                   ' required />' +
+          '</div>' +
+          
+          '<div>' +
+            '<label class="label">New Time</label>' +
+            '<select id="rescheduleTime" class="select select-bordered w-full" required>' +
+              '<option value="" disabled selected>Select a time slot</option>' +
+              '<option value="09:00">09:00 AM</option>' +
+              '<option value="09:30">09:30 AM</option>' +
+              '<option value="10:00">10:00 AM</option>' +
+              '<option value="10:30">10:30 AM</option>' +
+              '<option value="11:00">11:00 AM</option>' +
+              '<option value="11:30">11:30 AM</option>' +
+              '<option value="14:00">02:00 PM</option>' +
+              '<option value="14:30">02:30 PM</option>' +
+              '<option value="15:00">03:00 PM</option>' +
+              '<option value="15:30">03:30 PM</option>' +
+              '<option value="16:00">04:00 PM</option>' +
+            '</select>' +
+          '</div>' +
+          
+          '<div class="flex gap-2 justify-end">' +
+            '<button type="button" onclick="closeRescheduleModal()" class="btn btn-outline">Cancel</button>' +
+            '<button type="submit" class="btn btn-primary flex items-center gap-2">' +
+              '<span class="icon-[tabler--calendar-time] size-4"></span>' +
+              'Reschedule' +
+            '</button>' +
+          '</div>' +
+        '</form>' +
+      '</div>';
+    
+    // Add form submit handler
+    modal.querySelector('#rescheduleForm').addEventListener('submit', handleRescheduleSubmit);
+    
+    // Add click event to close modal when clicking backdrop
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeRescheduleModal();
+      }
+    });
+    
+    return modal;
+  }
+
+  // Handle reschedule form submission
+  async function handleRescheduleSubmit(e) {
+    e.preventDefault();
+    
+    const appointmentId = document.getElementById('rescheduleAppointmentId').value;
+    const newDate = document.getElementById('rescheduleDate').value;
+    const newTime = document.getElementById('rescheduleTime').value;
+    
+    if (!newDate || !newTime) {
+      alert('Please select both date and time');
+      return;
+    }
+    
+    try {
+      // Get current appointment data
+      const response = await fetch(API_BASE + '/appointments/' + appointmentId);
+      if (!response.ok) {
+        throw new Error('Failed to load appointment details');
+      }
+      
+      const currentAppointment = await response.json();
+      
+      // Create updated appointment object
+      const updatedAppointment = {
+        appointmentID: appointmentId,
+        patientID: currentAppointment.patientID,
+        appointmentTime: newDate + 'T' + newTime + ':00',
+        status: 'SCHEDULED',
+        description: currentAppointment.description || ''
+      };
+      
+      // Update appointment
+      const updateResponse = await fetch(API_BASE + '/appointments/' + appointmentId, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedAppointment)
+      });
+      
+      if (updateResponse.ok) {
+        alert('Appointment rescheduled successfully!');
+        closeRescheduleModal();
+        // Reload dashboard data
+        loadDashboardData();
+      } else {
+        const errorResult = await updateResponse.json();
+        alert('Failed to reschedule appointment: ' + (errorResult.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      alert('Failed to reschedule appointment: ' + error.message);
+    }
+  }
+
+
+
+
+
+  // Close reschedule modal
+  function closeRescheduleModal() {
+    const modal = document.querySelector('.fixed.inset-0');
+    if (modal) {
+      modal.remove();
     }
   }
 
@@ -261,19 +441,7 @@
     document.getElementById('loadingSpinner').classList.add('hidden');
   }
 
-  // Simple toggle for appointments
-  function toggleAppointments() {
-    const content = document.getElementById('appointmentsContent');
-    const icon = document.getElementById('toggleIcon');
-    
-    if (content.style.display === 'none') {
-      content.style.display = 'block';
-      icon.style.transform = 'rotate(-90deg)';
-    } else {
-      content.style.display = 'none';
-      icon.style.transform = 'rotate(0deg)';
-    }
-  }
+
 
   // Initialize dashboard
   document.addEventListener('DOMContentLoaded', function() {

@@ -5,12 +5,6 @@
 <glassfish-web-app error-url="">
   <context-root>/</context-root>
   
-  <!-- Disable security if not needed -->
-  <security-role-mapping>
-    <role-name>*</role-name>
-    <principal-name>anonymous</principal-name>
-  </security-role-mapping>
-  
   <!-- Class loader configuration -->
   <class-loader delegate="true"/>
   

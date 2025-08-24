@@ -38,6 +38,22 @@
 <script>
   const API_BASE = '<%= request.getContextPath() %>/api';
 
+  // Custom date sorting function
+  function customDateSort(a, b) {
+    if (a === 'N/A' && b === 'N/A') return 0;
+    if (a === 'N/A') return 1;
+    if (b === 'N/A') return -1;
+    
+    const dateA = new Date(a);
+    const dateB = new Date(b);
+    
+    if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+    if (isNaN(dateA.getTime())) return 1;
+    if (isNaN(dateB.getTime())) return -1;
+    
+    return dateA - dateB;
+  }
+
   function initializeDataTable() {
     new DataTable('#example', {
       ajax: {
@@ -69,7 +85,9 @@
           data: 'consultationDate',
           render: function(data) {
             return data ? new Date(data).toLocaleDateString() : 'N/A';
-          }
+          },
+          type: 'date',
+          orderData: [3, 0] // Sort by date first, then by consultation ID
         },
         { 
           data: 'status',
