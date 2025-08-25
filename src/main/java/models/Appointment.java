@@ -27,4 +27,6 @@ public class Appointment {
     private String status;
 
     private String description;
+
+    private String reason;
 }

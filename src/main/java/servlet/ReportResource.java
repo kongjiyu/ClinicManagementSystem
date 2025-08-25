@@ -16,6 +16,8 @@ import repositories.Medicine.MedicineRepository;
 import repositories.Order.OrderRepository;
 import repositories.Bill.BillRepository;
 import repositories.Treatment.TreatmentRepository;
+import repositories.Schedule.ScheduleRepository;
+import repositories.Appointment.AppointmentRepository;
 import utils.*;
 
 import java.time.LocalDate;
@@ -58,6 +60,12 @@ public class ReportResource {
 
     @Inject
     private repositories.Treatment.TreatmentRepository treatmentRepository;
+
+    @Inject
+    private ScheduleRepository scheduleRepository;
+
+    @Inject
+    private AppointmentRepository appointmentRepository;
 
     // ===== PHASE 1 REPORTS =====
 
@@ -996,10 +1004,12 @@ public class ReportResource {
                 }
             }
 
-            // Get all consultations for the date range
+            // Get all consultations and treatments for the date range
             List<Consultation> allConsultations = consultationRepository.findAll();
+            List<Treatment> allTreatments = treatmentRepository.findAll();
             MultiMap<String, Integer> doctorConsultationCounts = new MultiMap<>();
             MultiMap<String, Integer> doctorDiagnosisCounts = new MultiMap<>();
+            MultiMap<String, Integer> doctorTreatmentCounts = new MultiMap<>();
             MultiMap<String, Integer> doctorSpecialtyCounts = new MultiMap<>();
             MultiMap<String, Integer> doctorMonthlyCounts = new MultiMap<>();
 
@@ -1032,6 +1042,21 @@ public class ReportResource {
                         // Count monthly consultations by doctor
                         String monthKey = doctorId + "_" + consultation.getConsultationDate().getMonth().toString();
                         doctorMonthlyCounts.put(monthKey, 1);
+                    }
+                }
+            }
+
+            // Count treatments by doctor
+            for (Treatment treatment : allTreatments) {
+                if (treatment.getTreatmentDate() != null) {
+                    LocalDate treatmentDate = treatment.getTreatmentDate().toLocalDate();
+                    if (!treatmentDate.isBefore(start) && !treatmentDate.isAfter(end)) {
+                        
+                        String doctorId = treatment.getDoctorID();
+                        if (doctorId != null) {
+                            // Count treatments by doctor
+                            doctorTreatmentCounts.put(doctorId, 1);
+                        }
                     }
                 }
             }
@@ -1105,18 +1130,74 @@ public class ReportResource {
                     topDiagnosis = topCategory != null ? topCategory : "N/A";
                 }
                 
+                // Calculate treatment count for this doctor
+                int treatmentCount = 0;
+                List<Integer> treatmentCounts = doctorTreatmentCounts.get(doctorId);
+                if (!treatmentCounts.isEmpty()) {
+                    for (Integer count : treatmentCounts) {
+                        treatmentCount += count;
+                    }
+                }
+
+                // Calculate experience for this doctor
+                int experience = 0;
+                if (doctor.getEmploymentDate() != null) {
+                    LocalDate employmentDate = doctor.getEmploymentDate();
+                    LocalDate currentDate = LocalDate.now();
+                    experience = (int) java.time.Period.between(employmentDate, currentDate).getYears();
+                }
+
                 DoctorPerformanceData performanceData = new DoctorPerformanceData();
                 performanceData.doctorId = doctorId;
                 performanceData.doctorName = doctor.getFirstName() + " " + doctor.getLastName();
                 performanceData.consultations = consultationCount;
                 performanceData.diagnoses = diagnosisCount;
                 performanceData.diagnosisRate = doctorDiagnosisRate;
+                performanceData.treatments = treatmentCount;
+                performanceData.experience = experience;
                 performanceData.position = doctor.getPosition();
                 performanceData.contactNumber = doctor.getContactNumber();
                 performanceData.topDiagnosis = topDiagnosis;
                 
                 doctorPerformanceList.add(performanceData);
             }
+
+            // Get schedule data
+            List<Schedule> allSchedules = scheduleRepository.findAll();
+            MultiMap<String, Integer> doctorSchedules = new MultiMap<>();
+            MultiMap<String, Integer> scheduleTrends = new MultiMap<>();
+            
+            int totalSchedules = 0;
+            double totalHours = 0;
+            
+            for (Schedule schedule : allSchedules) {
+                if (schedule.getDate() != null &&
+                    !schedule.getDate().isBefore(start) &&
+                    !schedule.getDate().isAfter(end)) {
+                    
+                    String doctorId = schedule.getDoctorID();
+                    if (doctorId != null) {
+                        totalSchedules++;
+                        
+                        // Calculate hours for this schedule
+                        double hours = 0;
+                        if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+                            hours = java.time.Duration.between(schedule.getStartTime(), schedule.getEndTime()).toHours();
+                            totalHours += hours;
+                        }
+                        
+                        // Count schedules by doctor
+                        doctorSchedules.put(doctorId, 1);
+                        
+                        // Count monthly trends
+                        String monthKey = schedule.getDate().getMonth().toString().substring(0, 3) + 
+                                        " " + schedule.getDate().getYear();
+                        scheduleTrends.put(monthKey, 1);
+                    }
+                }
+            }
+            
+            double avgHoursPerWeek = totalSchedules > 0 ? (totalHours / totalSchedules) * 5 : 0; // Assuming 5 days per week
 
             // Build response data
             JsonObject data = new JsonObject();
@@ -1125,6 +1206,8 @@ public class ReportResource {
             data.addProperty("totalConsultations", totalConsultations);
             data.addProperty("avgConsultationsPerDoctor", avgConsultationsPerDoctor);
             data.addProperty("diagnosisRate", diagnosisRate);
+            data.addProperty("totalSchedules", totalSchedules);
+            data.addProperty("avgHoursPerWeek", avgHoursPerWeek);
             
             // Doctor consultation counts for charts
             java.util.Map<String, String> doctorNames = new java.util.HashMap<>();
@@ -1148,8 +1231,42 @@ public class ReportResource {
                 }
             }
             
+            // Doctor schedule hours for charts
+            java.util.Map<String, Integer> doctorScheduleMap = new java.util.HashMap<>();
+            ArraySet<String> scheduleKeys = doctorSchedules.keySet();
+            Object[] scheduleKeyArray = scheduleKeys.toArray();
+            for (int i = 0; i < scheduleKeyArray.length; i++) {
+                String doctorId = (String) scheduleKeyArray[i];
+                String doctorName = doctorNames.get(doctorId);
+                if (doctorName != null) {
+                    int totalCount = 0;
+                    List<Integer> counts = doctorSchedules.get(doctorId);
+                    for (int j = 0; j < counts.size(); j++) {
+                        totalCount += counts.get(j);
+                    }
+                    // Convert schedule count to estimated hours (assuming 8 hours per schedule)
+                    doctorScheduleMap.put(doctorName, totalCount * 8);
+                }
+            }
+            
+            // Schedule trends for charts
+            java.util.Map<String, Integer> scheduleTrendsMap = new java.util.HashMap<>();
+            ArraySet<String> trendKeys = scheduleTrends.keySet();
+            Object[] trendKeyArray = trendKeys.toArray();
+            for (int i = 0; i < trendKeyArray.length; i++) {
+                String monthKey = (String) trendKeyArray[i];
+                int totalCount = 0;
+                List<Integer> counts = scheduleTrends.get(monthKey);
+                for (int j = 0; j < counts.size(); j++) {
+                    totalCount += counts.get(j);
+                }
+                scheduleTrendsMap.put(monthKey, totalCount);
+            }
+            
             data.add("doctorConsultationCounts", gson.toJsonTree(doctorConsultationMap));
             data.add("doctorPerformance", gson.toJsonTree(doctorPerformanceList));
+            data.add("doctorSchedules", gson.toJsonTree(doctorScheduleMap));
+            data.add("scheduleTrends", gson.toJsonTree(scheduleTrendsMap));
 
             report.add("data", data);
 
@@ -1251,6 +1368,8 @@ public class ReportResource {
         public int consultations;
         public int diagnoses;
         public double diagnosisRate;
+        public int treatments;
+        public int experience;
         public String position;
         public String contactNumber;
         public String topDiagnosis;
@@ -1448,4 +1567,14 @@ public class ReportResource {
         public double successRate;
         public String topTreatmentType;
     }
+
+    // ===== ADDITIONAL APIS FOR REPORTS DASHBOARD =====
+
+
+
+
+
+
+
+
 }

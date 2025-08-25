@@ -14,6 +14,7 @@ import repositories.Patient.PatientRepository;
 import repositories.Staff.StaffRepository;
 import repositories.Prescription.PrescriptionRepository;
 import repositories.Medicine.MedicineRepository;
+import repositories.Appointment.AppointmentRepository;
 import utils.List;
 import utils.ErrorResponse;
 import utils.ListAdapter;
@@ -51,6 +52,9 @@ public class ConsultationResource {
 
     @Inject
     private MedicineStockService medicineStockService;
+
+    @Inject
+    private AppointmentRepository appointmentRepository;
 
     @GET
     public Response getAllConsultations() {
@@ -118,6 +122,10 @@ public class ConsultationResource {
             consultation.setPatientID(existingConsultation.getPatientID());
             consultation.setCheckInTime(existingConsultation.getCheckInTime());
             consultation.setStatus(existingConsultation.getStatus());
+            
+            // Preserve follow-up related fields
+            consultation.setIsFollowUpRequired(existingConsultation.getIsFollowUpRequired());
+            consultation.setAppointmentID(existingConsultation.getAppointmentID());
             
             // Handle doctor assignment - map doctorID to staffID if provided
             try {
@@ -290,6 +298,59 @@ public class ConsultationResource {
 
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+    }
+
+    // Follow-up appointment endpoint
+    @GET
+    @Path("/{consultationId}/followup")
+    public Response getFollowupAppointment(@PathParam("consultationId") String consultationId) {
+        try {
+            // Get consultation data
+            Consultation consultation = consultationRepository.findById(consultationId);
+            if (consultation == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Consultation not found"))
+                    .build();
+            }
+
+            // Find follow-up appointment using appointmentID link
+            models.Appointment followupAppointment = null;
+            if (consultation.getAppointmentID() != null && !consultation.getAppointmentID().isEmpty()) {
+                followupAppointment = appointmentRepository.findById(consultation.getAppointmentID());
+            }
+
+            if (followupAppointment == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Follow-up appointment not found for this consultation"))
+                    .build();
+            }
+
+            // Create follow-up data object
+            com.google.gson.JsonObject followupData = new com.google.gson.JsonObject();
+            followupData.addProperty("appointmentID", followupAppointment.getAppointmentID());
+            
+            // Extract date and time from appointmentTime
+            if (followupAppointment.getAppointmentTime() != null) {
+                followupData.addProperty("appointmentDate", followupAppointment.getAppointmentTime().toLocalDate().toString());
+                followupData.addProperty("appointmentTime", followupAppointment.getAppointmentTime().toLocalTime().toString());
+            } else {
+                followupData.addProperty("appointmentDate", "");
+                followupData.addProperty("appointmentTime", "");
+            }
+            
+            // Get reason from dedicated field
+            String reason = followupAppointment.getReason() != null ? followupAppointment.getReason() : "Follow-up";
+            followupData.addProperty("reason", reason);
+            followupData.addProperty("doctorName", "To be assigned"); // Doctor will be assigned on follow-up day
+
+            String json = gson.toJson(followupData);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorResponse("Error retrieving follow-up appointment: " + e.getMessage()))
+                .build();
+        }
     }
 
     // Prescription endpoints

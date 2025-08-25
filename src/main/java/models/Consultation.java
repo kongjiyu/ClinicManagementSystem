@@ -44,4 +44,8 @@ public class Consultation {
 
     private LocalDate endDate;
 
+    private Boolean isFollowUpRequired;
+
+    private String appointmentID;
+
 }

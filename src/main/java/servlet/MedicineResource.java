@@ -35,12 +35,12 @@ public class MedicineResource {
     public Response getAllMedicine() {
         List<Medicine> allMedicines = medicineRepo.findAll();
         List<MedicineResponse> medicineResponses = new utils.List<>();
-        
+
         for (Medicine medicine : allMedicines) {
             MedicineStockService.StockInfo stockInfo = medicineStockService.getStockInfo(medicine.getMedicineID());
             medicineResponses.add(new MedicineResponse(medicine, stockInfo));
         }
-        
+
         String json = gson.toJson(medicineResponses);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
@@ -52,10 +52,10 @@ public class MedicineResource {
         if (medicine != null) {
             // Calculate current stock information
             MedicineStockService.StockInfo stockInfo = medicineStockService.getStockInfo(id);
-            
+
             // Create a response object with calculated stock
             MedicineResponse response = new MedicineResponse(medicine, stockInfo);
-            
+
             String json = gson.toJson(response);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
@@ -114,7 +114,7 @@ public class MedicineResource {
 
     @DELETE
     @Path("/{id}")
-    public Response deleteStaff(@PathParam("id") String id) {
+    public Response deleteMedicine(@PathParam("id") String id) {
         Medicine medicine = medicineRepo.findById(id);
         if (medicine == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -163,6 +163,7 @@ public class MedicineResource {
     /**
      * Response class that includes calculated stock information
      */
+    //TODO: put as DTO
     public static class MedicineResponse {
         private String medicineID;
         private String medicineName;

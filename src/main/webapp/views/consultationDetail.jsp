@@ -289,6 +289,117 @@
 
   </section>
 
+  <!-- Follow-up Appointment Section -->
+  <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
+    <div class="flex justify-between items-center">
+      <h2 class="text-xl font-semibold mb-2">Follow-up Appointment</h2>
+      <div class="flex gap-2">
+        <button id="create-followup-btn" class="btn btn-primary" onclick="showCreateFollowupForm()">Schedule Follow-up</button>
+        <button id="view-followup-btn" class="btn btn-secondary" onclick="viewFollowup()" style="display: none;">View Follow-up</button>
+      </div>
+    </div>
+
+    <!-- Follow-up Info -->
+    <div id="followup-info" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display: none;">
+      <div>
+        <label class="label">Follow-up Appointment ID</label>
+        <input type="text" id="followupAppointmentId" class="input input-bordered w-full" disabled />
+      </div>
+      <div>
+        <label class="label">Follow-up Date</label>
+        <input type="date" id="followupDate" class="input input-bordered w-full" disabled />
+      </div>
+      <div>
+        <label class="label">Follow-up Time</label>
+        <input type="time" id="followupTime" class="input input-bordered w-full" disabled />
+      </div>
+      <div>
+        <label class="label">Doctor</label>
+        <input type="text" id="followupDoctor" class="input input-bordered w-full" disabled />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Follow-up Reason</label>
+        <input type="text" id="followupReason" class="input input-bordered w-full" disabled />
+      </div>
+    </div>
+
+    <!-- Create Follow-up Form -->
+    <div id="create-followup-form" style="display: none;">
+      <div class="bg-white rounded-lg p-4 border border-gray-200">
+        <h3 class="text-lg font-semibold mb-4">Schedule Follow-up Appointment</h3>
+        <form id="followup-form">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="label">Follow-up Date</label>
+              <input type="date" id="followup-appointment-date" name="appointmentDate" class="input input-bordered w-full" required />
+            </div>
+            <div>
+              <label class="label">Follow-up Time</label>
+              <select id="followup-appointment-time" name="appointmentTime" class="select select-bordered w-full" required>
+                <option value="">-- Select Time --</option>
+                <option value="08:00">8:00 AM</option>
+                <option value="08:30">8:30 AM</option>
+                <option value="09:00">9:00 AM</option>
+                <option value="09:30">9:30 AM</option>
+                <option value="10:00">10:00 AM</option>
+                <option value="10:30">10:30 AM</option>
+                <option value="11:00">11:00 AM</option>
+                <option value="11:30">11:30 AM</option>
+                <option value="12:00">12:00 PM</option>
+                <option value="12:30">12:30 PM</option>
+                <option value="13:00">1:00 PM</option>
+                <option value="13:30">1:30 PM</option>
+                <option value="14:00">2:00 PM</option>
+                <option value="14:30">2:30 PM</option>
+                <option value="15:00">3:00 PM</option>
+                <option value="15:30">3:30 PM</option>
+                <option value="16:00">4:00 PM</option>
+                <option value="16:30">4:30 PM</option>
+                <option value="17:00">5:00 PM</option>
+                <option value="17:30">5:30 PM</option>
+                <option value="18:00">6:00 PM</option>
+                <option value="18:30">6:30 PM</option>
+                <option value="19:00">7:00 PM</option>
+                <option value="19:30">7:30 PM</option>
+                <option value="20:00">8:00 PM</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Doctor</label>
+              <input type="text" value="To be assigned on follow-up day" class="input input-bordered w-full" disabled />
+            </div>
+            <div>
+              <label class="label">Follow-up Reason</label>
+              <select id="followup-reason" name="reason" class="select select-bordered w-full" required onchange="handleFollowupReasonChange()">
+                <option value="">-- Select Reason --</option>
+                <option value="Review Progress">Review Progress</option>
+                <option value="Medication Adjustment">Medication Adjustment</option>
+                <option value="Test Results Review">Test Results Review</option>
+                <option value="Treatment Continuation">Treatment Continuation</option>
+                <option value="Symptom Monitoring">Symptom Monitoring</option>
+                <option value="Post-Surgery Check">Post-Surgery Check</option>
+                <option value="Preventive Care">Preventive Care</option>
+                <option value="Other">Other (Specify)</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="label">Additional Notes</label>
+            <textarea id="followup-notes" name="notes" class="textarea textarea-bordered w-full" rows="3" placeholder="Additional notes for the follow-up appointment..."></textarea>
+          </div>
+          <div id="other-reason-container" class="mb-4" style="display: none;">
+            <label class="label">Specify Reason</label>
+            <textarea id="other-reason" name="otherReason" class="textarea textarea-bordered w-full" rows="2" placeholder="Please specify the follow-up reason..."></textarea>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-outline" onclick="cancelCreateFollowup()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Schedule Follow-up</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- Medical Certificate Section -->
   <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
     <div class="flex justify-between items-center">
@@ -396,6 +507,9 @@
 
       // Check for MC data
       await checkMCData();
+
+      // Check for follow-up appointment data
+      await checkFollowupData();
 
       // Load medicines and prescriptions
       await loadMedicines();
@@ -645,14 +759,27 @@
     const otherDiagnosis = document.getElementById('other-diagnosis').value;
     const diagnosis = diagnosisSelect.value === 'Other' ? otherDiagnosis : diagnosisSelect.value;
     
+    // Get current consultation data to preserve follow-up fields
+    const currentConsultation = consultationData;
+    
     const formData = {
       consultationID: consultationId,
       consultationDate: document.getElementById('consultationDate').value,
       doctorID: document.getElementById('doctor').value,
       symptoms: document.getElementById('symptoms').value,
-      diagnosis: diagnosis
-      // Status, patientID, and checkInTime are preserved by the backend
-      // Doctor assignment (staffID) can be updated from the form
+      diagnosis: diagnosis,
+      // Preserve follow-up related fields
+      isFollowUpRequired: currentConsultation.isFollowUpRequired,
+      appointmentID: currentConsultation.appointmentID,
+      // Preserve other fields that should not be changed
+      patientID: currentConsultation.patientID,
+      staffID: currentConsultation.staffID,
+      billID: currentConsultation.billID,
+      checkInTime: currentConsultation.checkInTime,
+      status: currentConsultation.status,
+      mcID: currentConsultation.mcID,
+      startDate: currentConsultation.startDate,
+      endDate: currentConsultation.endDate
     };
 
     console.log('DEBUG: Form data being sent:', formData);
@@ -1374,6 +1501,186 @@
       alert('Error updating treatment progress: ' + error.message);
     }
   });
+
+  // ===== FOLLOW-UP APPOINTMENT FUNCTIONS =====
+
+  // Show create follow-up form
+  function showCreateFollowupForm() {
+    document.getElementById('create-followup-form').style.display = 'block';
+    document.getElementById('create-followup-btn').style.display = 'none';
+    setDefaultFollowupDate();
+  }
+
+  // Hide create follow-up form
+  function cancelCreateFollowup() {
+    document.getElementById('create-followup-form').style.display = 'none';
+    document.getElementById('create-followup-btn').style.display = 'inline-block';
+    document.getElementById('followup-form').reset();
+  }
+
+  // Set default follow-up date (7 days from today)
+  function setDefaultFollowupDate() {
+    const today = new Date();
+    const followupDate = new Date(today);
+    followupDate.setDate(today.getDate() + 7);
+    
+    const dateInput = document.getElementById('followup-appointment-date');
+    dateInput.min = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Tomorrow
+    dateInput.value = followupDate.toISOString().split('T')[0];
+  }
+
+
+
+  // Handle follow-up reason change
+  function handleFollowupReasonChange() {
+    const reasonSelect = document.getElementById('followup-reason');
+    const otherContainer = document.getElementById('other-reason-container');
+    const otherTextarea = document.getElementById('other-reason');
+    
+    if (reasonSelect.value === 'Other') {
+      otherContainer.style.display = 'block';
+      otherTextarea.focus();
+    } else {
+      otherContainer.style.display = 'none';
+      otherTextarea.value = '';
+    }
+  }
+
+  // Check for existing follow-up appointment
+  async function checkFollowupData() {
+    try {
+      const response = await fetch(API_BASE + '/consultations/' + consultationId + '/followup');
+      if (response.ok) {
+        const followupData = await response.json();
+        showFollowupInfo(followupData);
+      }
+    } catch (error) {
+      console.log('No follow-up appointment found for this consultation');
+    }
+  }
+
+  // Show follow-up information
+  function showFollowupInfo(followupData) {
+    document.getElementById('followup-info').style.display = 'grid';
+    document.getElementById('create-followup-form').style.display = 'none';
+    document.getElementById('create-followup-btn').style.display = 'none';
+    document.getElementById('view-followup-btn').style.display = 'inline-block';
+    
+    populateFollowupInfo(followupData);
+  }
+
+  // Populate follow-up info
+  function populateFollowupInfo(followupData) {
+    document.getElementById('followupAppointmentId').value = followupData.appointmentID || '';
+    document.getElementById('followupDate').value = followupData.appointmentDate || '';
+    document.getElementById('followupTime').value = followupData.appointmentTime || '';
+    document.getElementById('followupDoctor').value = followupData.doctorName || '';
+    document.getElementById('followupReason').value = followupData.reason || '';
+  }
+
+  // View follow-up appointment
+  function viewFollowup() {
+    window.open('<%= request.getContextPath() %>/views/appointmentDetail.jsp?from=consultation&id=' + consultationId, '_blank');
+  }
+
+  // Handle follow-up form submission
+  document.getElementById('followup-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Get reason value - if "Other" is selected, use the textarea value
+    const reasonSelect = document.getElementById('followup-reason');
+    const otherReason = document.getElementById('other-reason').value;
+    const reason = reasonSelect.value === 'Other' ? otherReason : reasonSelect.value;
+
+    // Combine date and time into appointmentTime
+    const appointmentDate = document.getElementById('followup-appointment-date').value;
+    const appointmentTime = document.getElementById('followup-appointment-time').value;
+    const combinedDateTime = appointmentDate + 'T' + appointmentTime + ':00';
+
+    const formData = {
+      patientID: patientId,
+      appointmentTime: combinedDateTime,
+      status: 'Confirmed',
+      reason: reason,
+      description: document.getElementById('followup-notes').value || 'Follow-up appointment'
+    };
+
+    try {
+      const response = await fetch(API_BASE + '/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('Follow-up appointment scheduled successfully! Appointment ID: ' + result.appointmentID);
+        
+        // Update consultation to link with the follow-up appointment
+        await updateConsultationFollowupStatus(true, result.appointmentID);
+        
+        // Refresh consultation data to include the new appointmentID
+        await loadConsultationData();
+        
+        cancelCreateFollowup();
+        await checkFollowupData();
+      } else {
+        const error = await response.json();
+        alert('Error scheduling follow-up appointment: ' + error.error);
+      }
+    } catch (error) {
+      alert('Error scheduling follow-up appointment: ' + error.message);
+    }
+  });
+
+  // Update consultation follow-up status
+  async function updateConsultationFollowupStatus(isRequired, appointmentId = null) {
+    try {
+      // Get current consultation data first
+      const consultationResponse = await fetch(API_BASE + '/consultations/' + consultationId);
+      if (!consultationResponse.ok) {
+        console.error('Failed to get current consultation data');
+        return;
+      }
+      
+      const currentConsultation = await consultationResponse.json();
+      
+              // Update only the follow-up fields while preserving all other data
+        const updateData = {
+          consultationID: currentConsultation.consultationID,
+          patientID: currentConsultation.patientID,
+          doctorID: currentConsultation.doctorID,
+          staffID: currentConsultation.staffID,
+          billID: currentConsultation.billID,
+          symptoms: currentConsultation.symptoms,
+          diagnosis: currentConsultation.diagnosis,
+          consultationDate: currentConsultation.consultationDate,
+          checkInTime: currentConsultation.checkInTime,
+          status: currentConsultation.status,
+          mcID: currentConsultation.mcID,
+          startDate: currentConsultation.startDate,
+          endDate: currentConsultation.endDate,
+          isFollowUpRequired: isRequired,
+          appointmentID: appointmentId || currentConsultation.appointmentID
+        };
+
+      const response = await fetch(API_BASE + '/consultations/' + consultationId, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update consultation follow-up status');
+      }
+    } catch (error) {
+      console.error('Error updating consultation follow-up status:', error);
+    }
+  }
 
   // Load data when page loads
   document.addEventListener('DOMContentLoaded', function() {

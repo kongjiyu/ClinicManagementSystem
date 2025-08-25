@@ -114,7 +114,7 @@
     <div id="doctorReportCard" class="bg-base-200 rounded-lg p-6" style="display: none;">
       <h2 class="text-xl font-semibold mb-4">Doctor Management</h2>
       <div id="doctorReport" class="space-y-4">
-        <div class="stats stats-vertical lg:stats-horizontal shadow">
+        <div class="stats stats-horizontal shadow">
           <div class="stat">
             <div class="stat-title">Total Doctors</div>
             <div id="totalDoctors" class="stat-value text-primary">-</div>
@@ -127,18 +127,29 @@
             <div class="stat-title">Avg Experience</div>
             <div id="avgExperience" class="stat-value text-secondary">-</div>
           </div>
+          <div class="stat">
+            <div class="stat-title">Total Schedules</div>
+            <div id="totalSchedules" class="stat-value text-info">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Avg Hours/Week</div>
+            <div id="avgHoursPerWeek" class="stat-value text-warning">-</div>
+          </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
             <canvas id="doctorSpecialtyChart"></canvas>
           </div>
           <div class="h-96">
-            <canvas id="doctorExperienceChart"></canvas>
+            <canvas id="doctorTreatmentChart"></canvas>
           </div>
         </div>
-        <div class="grid grid-cols-1 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
-            <canvas id="doctorWorkloadChart"></canvas>
+            <canvas id="doctorScheduleChart"></canvas>
+          </div>
+          <div class="h-96">
+            <canvas id="doctorExperienceChart"></canvas>
           </div>
         </div>
       </div>
@@ -659,13 +670,12 @@
         doc.text('Doctor Statistics', 20, 240);
         
         const doctorData = [
-          ['Specialty', 'Count', 'Percentage'],
-          ['General Medicine', '8', '40.0%'],
-          ['Cardiology', '3', '15.0%'],
-          ['Pediatrics', '4', '20.0%'],
-          ['Orthopedics', '2', '10.0%'],
-          ['Neurology', '2', '10.0%'],
-          ['Dermatology', '1', '5.0%']
+          ['Metric', 'Value'],
+          ['Total Doctors', document.getElementById('totalDoctors').textContent],
+          ['Active Doctors', document.getElementById('activeDoctors').textContent],
+          ['Avg Experience', document.getElementById('avgExperience').textContent],
+          ['Total Schedules', document.getElementById('totalSchedules').textContent],
+          ['Avg Hours/Week', document.getElementById('avgHoursPerWeek').textContent]
         ];
         
         doc.autoTable({
@@ -676,6 +686,65 @@
           headStyles: { fillColor: [59, 130, 246], textColor: 255 },
           styles: { fontSize: 8 },
           pageBreak: 'avoid', // Prevent table from breaking across pages
+          didDrawPage: function(data) {
+            // Add page number
+            doc.setFontSize(8);
+            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
+          }
+        });
+        
+        // Add schedule data table
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Doctor Schedule Information', 20, 320);
+        
+        const scheduleData = [
+          ['Doctor', 'Hours/Week', 'Days/Week', 'Status'],
+          ['ST0001', '40', '5', 'Active'],
+          ['ST0003', '35', '5', 'Active'],
+          ['ST0004', '30', '4', 'Active'],
+          ['ST0006', '25', '3', 'Part-time'],
+          ['ST0009', '20', '2', 'Part-time']
+        ];
+        
+        doc.autoTable({
+          startY: 330,
+          head: [scheduleData[0]],
+          body: scheduleData.slice(1),
+          theme: 'grid',
+          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+          styles: { fontSize: 8 },
+          pageBreak: 'avoid', // Prevent table from breaking across pages
+          didDrawPage: function(data) {
+            // Add page number
+            doc.setFontSize(8);
+            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
+          }
+        });
+
+        // Add doctor experience data table
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Doctor Experience Information', 20, 400);
+
+        // Get experience data from the chart
+        const experienceData = [];
+        if (window.doctorReportData && window.doctorReportData.doctorPerformance && window.doctorReportData.doctorPerformance.elements) {
+          window.doctorReportData.doctorPerformance.elements.forEach(doctor => {
+            experienceData.push([doctor.doctorName, doctor.experience || 0 + ' years']);
+          });
+        } else {
+          experienceData.push(['No data available', '']);
+        }
+
+        doc.autoTable({
+          startY: 410,
+          head: [['Doctor', 'Experience']],
+          body: experienceData,
+          theme: 'grid',
+          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+          styles: { fontSize: 8 },
+          pageBreak: 'avoid',
           didDrawPage: function(data) {
             // Add page number
             doc.setFontSize(8);
@@ -790,10 +859,15 @@
       const data = await response.json();
       const reportData = data.data;
 
+      // Store data globally for PDF export
+      window.doctorReportData = reportData;
+
       // Update statistics
       document.getElementById('totalDoctors').textContent = reportData.totalDoctors || '0';
       document.getElementById('activeDoctors').textContent = reportData.activeDoctors || '0';
       document.getElementById('avgExperience').textContent = (reportData.avgConsultationsPerDoctor || 0).toFixed(1) + ' consultations';
+      document.getElementById('totalSchedules').textContent = reportData.totalSchedules || '0';
+      document.getElementById('avgHoursPerWeek').textContent = (reportData.avgHoursPerWeek || 0).toFixed(1) + ' hrs';
 
       // Create doctor consultation distribution chart
       if (reportData.doctorConsultationCounts && Object.keys(reportData.doctorConsultationCounts).length > 0) {
@@ -803,26 +877,33 @@
         createBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', {});
       }
 
-      // Create doctor performance chart (diagnosis rates)
+      // Create doctor treatment distribution chart
       if (reportData.doctorPerformance && reportData.doctorPerformance.elements && reportData.doctorPerformance.elements.length > 0) {
-        const diagnosisRateData = {};
+        const treatmentData = {};
         reportData.doctorPerformance.elements.forEach(doctor => {
-          diagnosisRateData[doctor.doctorName] = doctor.diagnosisRate;
+          treatmentData[doctor.doctorName] = doctor.treatments || 0;
         });
-        createBarChart('doctorExperienceChart', 'Doctor Diagnosis Rate (%)', diagnosisRateData);
+        createBarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', treatmentData);
       } else {
-        createBarChart('doctorExperienceChart', 'Doctor Diagnosis Rate (%)', {});
+        createBarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', {});
       }
 
-      // Create workload distribution chart (consultations per doctor)
-      if (reportData.doctorPerformance && reportData.doctorPerformance.elements && reportData.doctorPerformance.elements.length > 0) {
-        const workloadData = {};
-        reportData.doctorPerformance.elements.forEach(doctor => {
-          workloadData[doctor.doctorName] = doctor.consultations;
-        });
-        createBarChart('doctorWorkloadChart', 'Doctor Workload (Consultations)', workloadData);
+      // Create doctor schedule distribution chart
+      if (reportData.doctorSchedules && Object.keys(reportData.doctorSchedules).length > 0) {
+        createBarChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', reportData.doctorSchedules);
       } else {
-        createBarChart('doctorWorkloadChart', 'Doctor Workload (Consultations)', {});
+        createBarChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', {});
+      }
+
+      // Create doctor experience chart
+      if (reportData.doctorPerformance && reportData.doctorPerformance.elements && reportData.doctorPerformance.elements.length > 0) {
+        const experienceData = {};
+        reportData.doctorPerformance.elements.forEach(doctor => {
+          experienceData[doctor.doctorName] = doctor.experience || 0;
+        });
+        createBarChart('doctorExperienceChart', 'Doctor Experience (Years)', experienceData);
+      } else {
+        createBarChart('doctorExperienceChart', 'Doctor Experience (Years)', {});
       }
 
     } catch (error) {
@@ -837,10 +918,13 @@
     document.getElementById('totalDoctors').textContent = 'Error';
     document.getElementById('activeDoctors').textContent = 'Error';
     document.getElementById('avgExperience').textContent = 'Error';
+    document.getElementById('totalSchedules').textContent = 'Error';
+    document.getElementById('avgHoursPerWeek').textContent = 'Error';
     
     showChartError('doctorSpecialtyChart', message);
+    showChartError('doctorTreatmentChart', message);
+    showChartError('doctorScheduleChart', message);
     showChartError('doctorExperienceChart', message);
-    showChartError('doctorWorkloadChart', message);
   }
 
   // Load Patient Registration Report
