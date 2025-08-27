@@ -1,0 +1,15 @@
+package DTO;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ScheduleAssignmentRequest {
+    private String date;
+    private String shift;
+    private String doctorID1;
+    private String doctorID2;
+}

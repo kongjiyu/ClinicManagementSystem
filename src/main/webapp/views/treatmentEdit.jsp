@@ -5,22 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Treatment</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.0/dist/full.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
     <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
   </head>
-<body class="bg-gray-100">
+<body class="flex min-h-screen text-base-content">
     <%@ include file="/views/adminSidebar.jsp" %>
 
-    <main class="ml-64 p-6">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Edit Treatment</h1>
-                <a href="<%= request.getContextPath() %>/views/treatmentList.jsp" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to List
-                </a>
+    <main class="flex-1 p-6 ml-64 space-y-6">
+        <div class="bg-base-200 rounded-lg p-6 shadow space-y-6 w-full">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold">Edit Treatment</h1>
+                <div class="flex gap-2">
+                    <button class="btn btn-outline" onclick="window.location.href='<%= request.getContextPath() %>/views/treatmentList.jsp'">
+                        <span class="icon-[tabler--arrow-left] size-4 mr-2"></span>
+                        Back to List
+                    </button>
+                </div>
             </div>
 
             <div id="loadingSpinner" class="flex justify-center items-center py-8">
@@ -47,15 +47,7 @@
                         </select>
                     </div>
 
-                    <!-- Doctor Selection -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Doctor *</span>
-                        </label>
-                        <select id="doctorID" name="doctorID" class="select select-bordered w-full" required>
-                            <option value="">Select Doctor</option>
-                        </select>
-                    </div>
+
 
                     <!-- Treatment Type -->
                     <div class="form-control">
@@ -64,14 +56,10 @@
                         </label>
                         <select id="treatmentType" name="treatmentType" class="select select-bordered w-full" required>
                             <option value="">Select Treatment Type</option>
-                            <option value="Surgery">Surgery</option>
                             <option value="Physical Therapy">Physical Therapy</option>
-                            <option value="Vaccination">Vaccination</option>
-                            <option value="Laboratory Test">Laboratory Test</option>
-                            <option value="Emergency Treatment">Emergency Treatment</option>
-                            <option value="Preventive Care">Preventive Care</option>
-                            <option value="Diagnostic Procedure">Diagnostic Procedure</option>
-                            <option value="Therapeutic Procedure">Therapeutic Procedure</option>
+                            <option value="Medication">Medication</option>
+                            <option value="Counseling">Counseling</option>
+                            <option value="Diagnostics">Diagnostics</option>
                         </select>
                     </div>
 
@@ -163,33 +151,32 @@
                 </div>
 
                 <!-- Submit Buttons -->
-                <div class="flex justify-end space-x-4">
+                <div class="flex justify-end gap-4">
                     <button type="button" onclick="window.location.href='<%= request.getContextPath() %>/views/treatmentList.jsp'" 
-                            class="btn btn-secondary">
+                            class="btn btn-outline">
                         Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-2"></i>Update Treatment
+                        <span class="icon-[tabler--device-floppy] size-4 mr-2"></span>Update Treatment
                     </button>
                 </div>
             </form>
 
             <div id="errorMessage" class="hidden">
                 <div class="alert alert-error">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="icon-[tabler--alert-circle] size-5"></span>
                     <span id="errorText">Treatment not found</span>
                 </div>
             </div>
         </div>
     </main>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <script>
         let treatmentData = {};
 
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const treatmentId = urlParams.get('id');
             
@@ -220,17 +207,15 @@
 
         function loadPatientsAndDoctors(treatment) {
             Promise.all([
-                fetch('<%= request.getContextPath() %>/api/patients'),
-                fetch('<%= request.getContextPath() %>/api/staff')
+                fetch('<%= request.getContextPath() %>/api/patients')
             ])
             .then(responses => Promise.all(responses.map(r => r.json())))
-            .then(([patients, staff]) => {
+            .then(([patients]) => {
                 populatePatientSelect(patients, treatment.patientID);
-                populateDoctorSelect(staff, treatment.doctorID);
                 populateFormFields(treatment);
             })
             .catch(error => {
-                console.error('Error loading patients/doctors:', error);
+                console.error('Error loading patients:', error);
                 populateFormFields(treatment);
             });
         }
@@ -250,22 +235,7 @@
             }
         }
 
-        function populateDoctorSelect(staff, selectedDoctorId) {
-            const select = document.getElementById('doctorID');
-            if (staff && staff.elements) {
-                staff.elements.forEach(doctor => {
-                    if (doctor.position && doctor.position.toLowerCase().includes('doctor')) {
-                        const option = document.createElement('option');
-                        option.value = doctor.staffID;
-                        option.textContent = doctor.staffID + ' - Dr. ' + doctor.firstName + ' ' + doctor.lastName;
-                        if (doctor.staffID === selectedDoctorId) {
-                            option.selected = true;
-                        }
-                        select.appendChild(option);
-                    }
-                });
-            }
-        }
+
 
         function populateFormFields(treatment) {
             // Hide loading spinner and show form
@@ -317,29 +287,22 @@
                 }
             })
             .then(data => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: 'Treatment updated successfully',
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    window.location.href = '<%= request.getContextPath() %>/views/treatmentDetail.jsp?id=' + treatmentData.treatmentID;
-                });
+                alert('Treatment updated successfully');
+                window.location.href = '<%= request.getContextPath() %>/views/treatmentDetail.jsp?id=' + treatmentData.treatmentID;
             })
             .catch(error => {
                 console.error('Error updating treatment:', error);
-                Swal.fire('Error', 'Failed to update treatment', 'error');
+                alert('Error: Failed to update treatment');
             });
         });
 
         function validateForm() {
-            const requiredFields = ['patientID', 'doctorID', 'treatmentType', 'treatmentName', 'treatmentDate', 'duration', 'status'];
+            const requiredFields = ['patientID', 'treatmentType', 'treatmentName', 'treatmentDate', 'duration', 'status'];
             
             for (const fieldId of requiredFields) {
                 const field = document.getElementById(fieldId);
                 if (!field.value.trim()) {
-                    Swal.fire('Validation Error', fieldId + ' is required', 'error');
+                    alert('Validation Error: ' + fieldId + ' is required');
                     field.focus();
                     return false;
                 }
@@ -347,7 +310,7 @@
 
             const duration = parseInt(document.getElementById('duration').value);
             if (duration <= 0) {
-                Swal.fire('Validation Error', 'Duration must be greater than 0', 'error');
+                alert('Validation Error: Duration must be greater than 0');
                 return false;
             }
 
@@ -357,7 +320,6 @@
         function collectFormData() {
             return {
                 patientID: document.getElementById('patientID').value,
-                doctorID: document.getElementById('doctorID').value,
                 treatmentType: document.getElementById('treatmentType').value,
                 treatmentName: document.getElementById('treatmentName').value,
                 treatmentDate: document.getElementById('treatmentDate').value,

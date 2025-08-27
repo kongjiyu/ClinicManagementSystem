@@ -40,7 +40,7 @@
   <div id="medicineContent" class="hidden">
     <form id="medicineForm" class="space-y-6">
       <!-- Basic Information -->
-      <div class="card bg-base-100 shadow">
+      <div class="card bg-base-200 shadow">
         <div class="card-body">
           <h2 class="card-title">Medicine Information</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -56,18 +56,34 @@
               </label>
               <input type="text" id="medicineName" class="input input-bordered" required disabled>
             </div>
-            <div class="form-control md:col-span-2">
+            <div class="form-control">
               <label class="label">
                 <span class="label-text">Description</span>
               </label>
               <textarea id="description" class="textarea textarea-bordered" rows="3" disabled></textarea>
+            </div>
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Unit *</span>
+              </label>
+              <select id="unit" class="select select-bordered" required disabled>
+                <option value="">-- Select Unit --</option>
+                <option value="tablet">tablet</option>
+                <option value="mg">mg</option>
+                <option value="ml">ml</option>
+                <option value="capsule">capsule</option>
+                <option value="g">g</option>
+                <option value="mcg">mcg</option>
+                <option value="IU">IU</option>
+                <option value="dose">dose</option>
+              </select>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Stock Information -->
-      <div class="card bg-base-100 shadow">
+      <div class="card bg-base-200 shadow">
         <div class="card-body">
           <h2 class="card-title">Stock Information</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -97,7 +113,7 @@
       </div>
 
       <!-- Stock Status Display -->
-      <div class="card bg-base-100 shadow">
+      <div class="card bg-base-200 shadow">
         <div class="card-body">
           <h2 class="card-title">Stock Status</h2>
           <div class="flex items-center gap-4">
@@ -186,6 +202,7 @@
     document.getElementById('medicineID').value = medicineData?.medicineID || '';
     document.getElementById('medicineName').value = medicineData?.medicineName || '';
     document.getElementById('description').value = medicineData?.description || '';
+    document.getElementById('unit').value = medicineData?.unit || '';
     document.getElementById('totalStock').value = medicineData?.totalStock || 0;
     document.getElementById('reorderLevel').value = medicineData?.reorderLevel || 0;
     document.getElementById('sellingPrice').value = medicineData?.sellingPrice || 0.00;
@@ -296,6 +313,7 @@
     const formData = {
       medicineName: document.getElementById('medicineName').value,
       description: document.getElementById('description').value,
+      unit: document.getElementById('unit').value,
       reorderLevel: parseInt(document.getElementById('reorderLevel').value) || 0,
       sellingPrice: parseFloat(document.getElementById('sellingPrice').value) || 0.00
     };
@@ -309,7 +327,7 @@
 
   // Validate form
   function validateForm() {
-    const requiredFields = ['medicineName', 'reorderLevel', 'sellingPrice'];
+    const requiredFields = ['medicineName', 'unit', 'reorderLevel', 'sellingPrice'];
 
     for (const fieldId of requiredFields) {
       const field = document.getElementById(fieldId);

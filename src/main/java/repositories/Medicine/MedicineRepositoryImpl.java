@@ -94,7 +94,36 @@ public class MedicineRepositoryImpl implements MedicineRepository {
 //    }
 //  }
 
-  @Transactional
   @Override
-  public void delete(Medicine medicine) {em.remove(medicine);}
+  public void delete(Medicine medicine) {
+    em.remove(medicine);
+  }
+  
+  // Sorting method implementations
+  @Override
+  public List<Medicine> findAllSortedByName() {
+    List<Medicine> medicines = findAll();
+    return (List<Medicine>) medicines.sort((a, b) -> {
+      if (a.getMedicineName() == null && b.getMedicineName() == null) return 0;
+      if (a.getMedicineName() == null) return 1;
+      if (b.getMedicineName() == null) return -1;
+      return a.getMedicineName().compareToIgnoreCase(b.getMedicineName()); // Alphabetical order
+    });
+  }
+  
+  @Override
+  public List<Medicine> findAllSortedByStock() {
+    List<Medicine> medicines = findAll();
+    return (List<Medicine>) medicines.sort((a, b) -> {
+      return Integer.compare(a.getTotalStock(), b.getTotalStock()); // Lowest stock first
+    });
+  }
+  
+  @Override
+  public List<Medicine> findLowStockSorted() {
+    List<Medicine> lowStock = findBelowReorderLevel();
+    return (List<Medicine>) lowStock.sort((a, b) -> {
+      return Integer.compare(a.getTotalStock(), b.getTotalStock()); // Lowest stock first
+    });
+  }
 }

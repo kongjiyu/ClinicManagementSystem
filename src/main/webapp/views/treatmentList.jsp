@@ -22,7 +22,6 @@
                     <tr>
                         <th>Treatment ID</th>
                         <th>Patient</th>
-                        <th>Doctor</th>
                         <th>Treatment Type</th>
                         <th>Treatment Name</th>
                         <th>Date & Time</th>
@@ -171,13 +170,6 @@
                     }
                 },
                 { 
-                    data: 'doctorID', 
-                    title: 'Doctor',
-                    render: function(data, type, row) {
-                        return data || 'N/A';
-                    }
-                },
-                { 
                     data: 'treatmentType', 
                     title: 'Treatment Type',
                     render: function(data, type, row) {
@@ -213,7 +205,7 @@
                     }
                 }
             ],
-            order: [[5, 'desc']], // Sort by date descending (now column 5 is Date & Time)
+            order: [[4, 'desc']], // Sort by date descending (now column 4 is Date & Time)
             rowCallback: function(row, data) {
                 if (data && data.treatmentID) {
                     row.addEventListener('click', function() {

@@ -19,7 +19,9 @@ public class Schedule {
     @GenericGenerator(name = "prefix_id", strategy = "utils.PrefixIdGenerator")
     private String scheduleID;
 
-    private String doctorID;
+    private String doctorID1; // First doctor
+
+    private String doctorID2; // Second doctor (can be null)
 
     private LocalDate date;
 

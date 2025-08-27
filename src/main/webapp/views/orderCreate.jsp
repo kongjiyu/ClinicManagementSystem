@@ -77,12 +77,36 @@
   const API_BASE = '<%= request.getContextPath() %>/api';
   let medicines = [];
   let suppliers = [];
+  let currentStaffId = null;
 
   // Initialize page
   document.addEventListener('DOMContentLoaded', function() {
+    getCurrentStaffId();
     loadMedicines();
     loadSuppliers();
   });
+
+  // Get current staff ID from session
+  async function getCurrentStaffId() {
+    try {
+      const response = await fetch(API_BASE + '/auth/session');
+      if (response.ok) {
+        const session = await response.json();
+        if (session.authenticated && session.userType === 'staff' && session.userId) {
+          currentStaffId = session.userId;
+        } else {
+          console.warn('User not authenticated as staff or no staff ID found');
+          currentStaffId = 'ST001'; // Fallback
+        }
+      } else {
+        console.warn('Failed to get session, using fallback staff ID');
+        currentStaffId = 'ST001'; // Fallback
+      }
+    } catch (error) {
+      console.error('Error getting staff ID from session:', error);
+      currentStaffId = 'ST001'; // Fallback
+    }
+  }
 
   // Load medicines for dropdown
   async function loadMedicines() {
@@ -163,7 +187,7 @@
     const orderData = {
       medicineID: formData.get('medicineId'),
       supplierID: formData.get('supplierId'),
-      staffID: 'ST001', // TODO: Get current staff ID from session
+      staffID: currentStaffId || 'ST001', // Use current staff ID from session
       orderDate: new Date().toISOString().split('T')[0], // Set to today automatically
       orderStatus: 'Pending', // Always start with Pending
       unitPrice: parseFloat(formData.get('unitPrice')),

@@ -9,4 +9,10 @@ public interface StaffRepository {
   void create(Staff staff);
   void update(String id, Staff updatedStaff);
   void delete(String id);
+  
+  // Sorting methods
+  List<Staff> findAllSortedByName();
+  List<Staff> findAllSortedByPosition();
+  List<Staff> findAllDoctorsSortedByName();
+  List<Staff> findAllSortedByEmploymentDate();
 }

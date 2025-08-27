@@ -92,8 +92,14 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
     MultiMap<String, Schedule> staffScheduleMap = new MultiMap<>();
 
     for (Schedule schedule : schedules) {
-      String staffID = schedule.getDoctorID();
-      staffScheduleMap.put(staffID, schedule);
+      // Add doctor 1 if exists
+      if (schedule.getDoctorID1() != null && !schedule.getDoctorID1().trim().isEmpty()) {
+        staffScheduleMap.put(schedule.getDoctorID1(), schedule);
+      }
+      // Add doctor 2 if exists
+      if (schedule.getDoctorID2() != null && !schedule.getDoctorID2().trim().isEmpty()) {
+        staffScheduleMap.put(schedule.getDoctorID2(), schedule);
+      }
     }
 
     return staffScheduleMap;

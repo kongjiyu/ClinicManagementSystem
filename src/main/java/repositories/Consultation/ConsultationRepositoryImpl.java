@@ -85,7 +85,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
 
 //  @Override
 //  public List<Consultation> getUpcoming() {
-//    return em.createQuery("SELECT c FROM Consultation c WHERE c.status = 'SCHEDULED'", Consultation.class)
+//    return em.createQuery("SELECT c FROM Consultation c WHERE c.status = 'Scheduled'", Consultation.class)
 //             .getResultList();
 //  }
 
@@ -94,7 +94,7 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
     List<Consultation> consultations = findAll();
     List<Consultation> upcoming = new List<>();
     for (Consultation consultation : consultations) {
-      if ("SCHEDULED".equalsIgnoreCase(consultation.getStatus())) {
+      if ("Scheduled".equalsIgnoreCase(consultation.getStatus())) {
         upcoming.add(consultation);
       }
     }
@@ -252,6 +252,43 @@ public class ConsultationRepositoryImpl implements ConsultationRepository {
       }
     }
     return null;
+  }
+  
+  // Sorting method implementations
+  @Override
+  public List<Consultation> findAllSortedByDate() {
+    List<Consultation> consultations = findAll();
+    return (List<Consultation>) consultations.sort((a, b) -> {
+      if (a.getConsultationDate() == null && b.getConsultationDate() == null) return 0;
+      if (a.getConsultationDate() == null) return 1;
+      if (b.getConsultationDate() == null) return -1;
+      return b.getConsultationDate().compareTo(a.getConsultationDate()); // Newest first
+    });
+  }
+  
+  @Override
+  public List<Consultation> getByStatusSorted(String status) {
+    List<Consultation> consultations = getByStatus(status);
+    return (List<Consultation>) consultations.sort((a, b) -> {
+      if (a.getCheckInTime() == null && b.getCheckInTime() == null) return 0;
+      if (a.getCheckInTime() == null) return 1;
+      if (b.getCheckInTime() == null) return -1;
+      return a.getCheckInTime().compareTo(b.getCheckInTime()); // Earliest check-in first (FIFO)
+    });
+  }
+  
+  @Override
+  public List<Consultation> findPatientHistorySorted(String patientId) {
+    List<Consultation> history = findByPatientID(patientId);
+    if (history == null) {
+      return new List<>();
+    }
+    return (List<Consultation>) history.sort((a, b) -> {
+      if (a.getConsultationDate() == null && b.getConsultationDate() == null) return 0;
+      if (a.getConsultationDate() == null) return 1;
+      if (b.getConsultationDate() == null) return -1;
+      return b.getConsultationDate().compareTo(a.getConsultationDate()); // Newest first for history
+    });
   }
 
 }

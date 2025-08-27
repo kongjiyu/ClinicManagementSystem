@@ -5,7 +5,7 @@ import java.lang.reflect.Type;
 
 public class ListAdapter<T> implements JsonSerializer<utils.List<T>> {
     @Override
-    public JsonElement serialize(utils.List<T> src, Type typeOfSrc, JsonSerializationContext context) {
+    public JsonElement serialize(List<T> src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new JsonObject();
         JsonArray arr = new JsonArray();
 

@@ -146,5 +146,39 @@ public class AppointmentRepositoryImpl implements AppointmentRepository {
     }
     return upcomingAppointments;
   }
+  
+  // Sorting method implementations
+  @Override
+  public List<Appointment> findAllSortedByDateTime() {
+    List<Appointment> appointments = findAll();
+    return (List<Appointment>) appointments.sort((a, b) -> {
+      if (a.getAppointmentTime() == null && b.getAppointmentTime() == null) return 0;
+      if (a.getAppointmentTime() == null) return 1;
+      if (b.getAppointmentTime() == null) return -1;
+      return b.getAppointmentTime().compareTo(a.getAppointmentTime()); // Newest first
+    });
+  }
+  
+  @Override
+  public List<Appointment> findTodayAppointmentsSorted() {
+    List<Appointment> todayAppointments = findByDate(LocalDate.now());
+    return (List<Appointment>) todayAppointments.sort((a, b) -> {
+      if (a.getAppointmentTime() == null && b.getAppointmentTime() == null) return 0;
+      if (a.getAppointmentTime() == null) return 1;
+      if (b.getAppointmentTime() == null) return -1;
+      return a.getAppointmentTime().compareTo(b.getAppointmentTime()); // Earliest first for today
+    });
+  }
+  
+  @Override
+  public List<Appointment> findUpcomingSorted() {
+    List<Appointment> upcomingAppointments = findUpcoming();
+    return (List<Appointment>) upcomingAppointments.sort((a, b) -> {
+      if (a.getAppointmentTime() == null && b.getAppointmentTime() == null) return 0;
+      if (a.getAppointmentTime() == null) return 1;
+      if (b.getAppointmentTime() == null) return -1;
+      return a.getAppointmentTime().compareTo(b.getAppointmentTime()); // Earliest first
+    });
+  }
 }
 

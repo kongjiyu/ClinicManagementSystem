@@ -14,10 +14,12 @@ import repositories.Patient.PatientRepository;
 import repositories.Staff.StaffRepository;
 import repositories.Prescription.PrescriptionRepository;
 import repositories.Medicine.MedicineRepository;
+import repositories.Appointment.AppointmentRepository;
 import utils.List;
 import utils.ErrorResponse;
 import utils.ListAdapter;
 import servlet.MedicineStockService;
+import DTO.MCDto;
 
 import java.time.LocalDate;
 import utils.TimeUtils;
@@ -52,9 +54,12 @@ public class ConsultationResource {
     @Inject
     private MedicineStockService medicineStockService;
 
+    @Inject
+    private AppointmentRepository appointmentRepository;
+
     @GET
     public Response getAllConsultations() {
-        List<Consultation> consultations = consultationRepository.findAll();
+        List<Consultation> consultations = consultationRepository.findAllSortedByDate();
         String json = gson.toJson(consultations);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
@@ -76,7 +81,7 @@ public class ConsultationResource {
     @GET
     @Path("/patient/{patientId}")
     public Response getConsultationsByPatient(@PathParam("patientId") String patientId) {
-        List<Consultation> consultations = consultationRepository.groupByPatientID().get(patientId);
+        List<Consultation> consultations = consultationRepository.findPatientHistorySorted(patientId);
         String json = gson.toJson(consultations);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
@@ -117,7 +122,32 @@ public class ConsultationResource {
             consultation.setConsultationID(id);
             consultation.setPatientID(existingConsultation.getPatientID());
             consultation.setCheckInTime(existingConsultation.getCheckInTime());
-            consultation.setStatus(existingConsultation.getStatus());
+            
+            // Allow status updates if provided, otherwise preserve existing status
+            if (consultation.getStatus() != null && !consultation.getStatus().trim().isEmpty()) {
+                // Use the new status if provided
+                consultation.setStatus(consultation.getStatus());
+            } else {
+                // Preserve existing status if not provided
+                consultation.setStatus(existingConsultation.getStatus());
+            }
+            
+            // Handle follow-up related fields - allow updates if provided, otherwise preserve existing
+            if (consultation.getIsFollowUpRequired() != null) {
+                // Use the new value if provided
+                consultation.setIsFollowUpRequired(consultation.getIsFollowUpRequired());
+            } else {
+                // Preserve existing value if not provided
+                consultation.setIsFollowUpRequired(existingConsultation.getIsFollowUpRequired());
+            }
+            
+            if (consultation.getAppointmentID() != null) {
+                // Use the new value if provided
+                consultation.setAppointmentID(consultation.getAppointmentID());
+            } else {
+                // Preserve existing value if not provided
+                consultation.setAppointmentID(existingConsultation.getAppointmentID());
+            }
             
             // Handle doctor assignment - map doctorID to staffID if provided
             try {
@@ -185,6 +215,25 @@ public class ConsultationResource {
             if (consultation == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorResponse("Consultation not found"))
+                    .build();
+            }
+
+            // Validate consultation details are complete before allowing MC creation
+            if (consultation.getDoctorID() == null || consultation.getDoctorID().trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Cannot create Medical Certificate. Doctor must be assigned to the consultation first."))
+                    .build();
+            }
+            
+            if (consultation.getSymptoms() == null || consultation.getSymptoms().trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Cannot create Medical Certificate. Symptoms must be recorded in the consultation first."))
+                    .build();
+            }
+            
+            if (consultation.getDiagnosis() == null || consultation.getDiagnosis().trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Cannot create Medical Certificate. Diagnosis must be recorded in the consultation first."))
                     .build();
             }
 
@@ -275,21 +324,59 @@ public class ConsultationResource {
             .build();
     }
 
-    // DTO for MC creation
-    public static class MCDto {
-        private LocalDate startDate;
-        private LocalDate endDate;
-        private String description;
 
-        // Getters and setters
-        public LocalDate getStartDate() { return startDate; }
-        public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
 
-        public LocalDate getEndDate() { return endDate; }
-        public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    // Follow-up appointment endpoint
+    @GET
+    @Path("/{consultationId}/followup")
+    public Response getFollowupAppointment(@PathParam("consultationId") String consultationId) {
+        try {
+            // Get consultation data
+            Consultation consultation = consultationRepository.findById(consultationId);
+            if (consultation == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Consultation not found"))
+                    .build();
+            }
 
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+            // Find follow-up appointment using appointmentID link
+            models.Appointment followupAppointment = null;
+            if (consultation.getAppointmentID() != null && !consultation.getAppointmentID().isEmpty()) {
+                followupAppointment = appointmentRepository.findById(consultation.getAppointmentID());
+            }
+
+            if (followupAppointment == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Follow-up appointment not found for this consultation"))
+                    .build();
+            }
+
+            // Create follow-up data object
+            com.google.gson.JsonObject followupData = new com.google.gson.JsonObject();
+            followupData.addProperty("appointmentID", followupAppointment.getAppointmentID());
+            
+            // Extract date and time from appointmentTime
+            if (followupAppointment.getAppointmentTime() != null) {
+                followupData.addProperty("appointmentDate", followupAppointment.getAppointmentTime().toLocalDate().toString());
+                followupData.addProperty("appointmentTime", followupAppointment.getAppointmentTime().toLocalTime().toString());
+            } else {
+                followupData.addProperty("appointmentDate", "");
+                followupData.addProperty("appointmentTime", "");
+            }
+            
+            // Get reason from dedicated field
+            String reason = followupAppointment.getReason() != null ? followupAppointment.getReason() : "Follow-up";
+            followupData.addProperty("reason", reason);
+            followupData.addProperty("doctorName", "To be assigned"); // Doctor will be assigned on follow-up day
+
+            String json = gson.toJson(followupData);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorResponse("Error retrieving follow-up appointment: " + e.getMessage()))
+                .build();
+        }
     }
 
     // Prescription endpoints

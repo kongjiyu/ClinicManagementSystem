@@ -140,7 +140,7 @@
   </div>
 
   <!-- Calendar Container -->
-  <div class="bg-base-100 rounded-lg shadow-lg p-6">
+  <div class="bg-white rounded-lg shadow-lg p-6">
     <div id="calendar"></div>
   </div>
 

@@ -235,10 +235,12 @@
         return aptDate.toDateString() === selected.toDateString();
       });
       
-      // Get booked time slots
-      const bookedTimeSlots = selectedDateAppointments.map(apt => {
+      // Count appointments per time slot
+      const slotCounts = {};
+      selectedDateAppointments.forEach(apt => {
         const aptTime = new Date(apt.appointmentTime);
-        return aptTime.toTimeString().substring(0, 5); // Get HH:MM format
+        const timeSlot = aptTime.toTimeString().substring(0, 5); // Get HH:MM format
+        slotCounts[timeSlot] = (slotCounts[timeSlot] || 0) + 1;
       });
       
       // Populate time slots with availability
@@ -248,16 +250,18 @@
       let totalCount = timeSlots.length;
       
       timeSlots.forEach(slot => {
-        const isAvailable = !bookedTimeSlots.includes(slot.value);
+        const currentCount = slotCounts[slot.value] || 0;
+        const isAvailable = currentCount < 2; // Allow up to 2 patients per slot
         const option = document.createElement('option');
         option.value = slot.value;
         
         if (isAvailable) {
-          option.textContent = slot.label + ' - Available';
+          const remainingSlots = 2 - currentCount;
+          option.textContent = slot.label + ' - ' + remainingSlots + ' slot' + (remainingSlots > 1 ? 's' : '') + ' available';
           option.className = 'text-green-600';
           availableCount++;
         } else {
-          option.textContent = slot.label + ' - Booked';
+          option.textContent = slot.label + ' - Fully Booked (2/2)';
           option.disabled = true;
           option.className = 'text-red-600';
         }
@@ -271,7 +275,7 @@
         availabilityText.textContent = 'No available time slots for this date. Please select another date.';
         availabilityText.className = 'text-red-600';
       } else {
-        availabilityText.textContent = availableCount + ' of ' + totalCount + ' time slots available';
+        availabilityText.textContent = availableCount + ' of ' + totalCount + ' time slots have availability (max 2 patients per slot)';
         availabilityText.className = 'text-green-600';
       }
       

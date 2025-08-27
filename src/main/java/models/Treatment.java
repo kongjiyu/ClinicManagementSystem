@@ -21,7 +21,6 @@ public class Treatment {
 
     private String consultationID;  // Link to consultation
     private String patientID;
-    private String doctorID;
 
     private String treatmentType;   // e.g., "Surgery", "Physical Therapy", "Vaccination"
     private String treatmentName;   // e.g., "Appendectomy", "Flu Shot"

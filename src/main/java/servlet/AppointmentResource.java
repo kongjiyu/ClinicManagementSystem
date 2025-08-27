@@ -67,7 +67,11 @@ public class AppointmentResource {
                     appointment.getAppointmentTime()
                 );
                 if (schedule != null) {
-                    doctorID = schedule.getDoctorID();
+                    // Use doctor 1 as primary doctor, fallback to doctor 2 if doctor 1 is not available
+                    doctorID = schedule.getDoctorID1();
+                    if (doctorID == null || doctorID.trim().isEmpty()) {
+                        doctorID = schedule.getDoctorID2();
+                    }
                     Staff doctor = staffRepo.findById(doctorID);
                     if (doctor != null) {
                         doctorName = doctor.getFirstName() + " " + doctor.getLastName();
@@ -89,7 +93,7 @@ public class AppointmentResource {
     public Response createAppointment(Appointment appointment) {
         try {
             appointmentRepo.create(appointment);
-            appointmentRepo.updateStatus(appointment.getAppointmentID(), "SCHEDULED");
+            appointmentRepo.updateStatus(appointment.getAppointmentID(), "Scheduled");
             String json = gson.toJson(appointment);
             return Response.status(Response.Status.CREATED).entity(json).type(MediaType.APPLICATION_JSON).build();
         } catch (Exception e) {
@@ -101,7 +105,7 @@ public class AppointmentResource {
 
     @GET
     public Response getAllAppointments() {
-        List<Appointment> appointments = appointmentRepo.findAll();
+        List<Appointment> appointments = appointmentRepo.findAllSortedByDateTime();
         List<AppointmentWithPatientDTO> dtos = convertToDTOWithPatientNames(appointments);
         String json = gson.toJson(dtos);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();

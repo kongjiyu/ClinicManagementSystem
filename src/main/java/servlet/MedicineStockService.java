@@ -14,6 +14,7 @@ import repositories.Prescription.PrescriptionRepository;
 
 import java.time.LocalDate;
 import utils.List;
+import DTO.StockInfo;
 
 @ApplicationScoped
 public class MedicineStockService {
@@ -128,24 +129,7 @@ public class MedicineStockService {
         return remainingToDeduct == 0;
     }
 
-    /**
-     * Stock information container class
-     */
-    public static class StockInfo {
-        private final int totalStock;
-        private final int availableStock;
-        private final int expiredStock;
 
-        public StockInfo(int totalStock, int availableStock, int expiredStock) {
-            this.totalStock = totalStock;
-            this.availableStock = availableStock;
-            this.expiredStock = expiredStock;
-        }
-
-        public int getTotalStock() { return totalStock; }
-        public int getAvailableStock() { return availableStock; }
-        public int getExpiredStock() { return expiredStock; }
-    }
 
     /**
      * Check if there's sufficient stock for a prescription

@@ -29,7 +29,7 @@ public class StaffResource {
 
   @GET
   public Response getAllStaff() {
-    List<Staff> staff = staffRepository.findAll();
+    List<Staff> staff = staffRepository.findAllSortedByName();
     String json = gson.toJson(staff);
     return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
@@ -37,16 +37,7 @@ public class StaffResource {
   @GET
   @Path("/doctors")
   public Response getAllDoctors() {
-    List<Staff> allStaff = staffRepository.findAll();
-    List<Staff> doctors = new List<>();
-
-    for (Staff staff : allStaff) {
-      if ("Doctor".equalsIgnoreCase(staff.getPosition()) ||
-          staff.getMedicalLicenseNumber() != null && !staff.getMedicalLicenseNumber().trim().isEmpty()) {
-        doctors.add(staff);
-      }
-    }
-
+    List<Staff> doctors = staffRepository.findAllDoctorsSortedByName();
     String json = gson.toJson(doctors);
     return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }

@@ -23,7 +23,6 @@ public interface AppointmentRepository {
   List<Appointment> findByDate(LocalDate date); // For today's appointments
   MultiMap<String, Appointment> groupByAvailability();
 
-
   // Update
   void update(Appointment appointment);              // General update (e.g. PUT)
   void reschedule(String appointmentID, LocalDateTime newTime); // Specifically for rescheduling
@@ -36,4 +35,9 @@ public interface AppointmentRepository {
   // Extra
   List<Appointment> findUpcomingByPatientId(String patientID);
   List<Appointment> findUpcoming();
+  
+  // Sorting methods
+  List<Appointment> findAllSortedByDateTime();
+  List<Appointment> findTodayAppointmentsSorted();
+  List<Appointment> findUpcomingSorted();
 }

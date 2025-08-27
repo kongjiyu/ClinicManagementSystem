@@ -146,4 +146,33 @@ public class PrescriptionRepositoryImpl implements PrescriptionRepository {
     }
     return null;
   }
+  
+  // Sorting method implementations
+  @Override
+  public List<Prescription> findAllSortedByDate() {
+    List<Prescription> prescriptions = findAll();
+    return (List<Prescription>) prescriptions.sort((a, b) -> {
+      // Since prescriptions don't have a direct date field, we'll sort by prescription ID
+      // which typically contains date information or use consultation date
+      return a.getPrescriptionID().compareTo(b.getPrescriptionID()); // Alphabetical order
+    });
+  }
+  
+  @Override
+  public List<Prescription> findByPatientIdSorted(String patientId) {
+    List<Prescription> patientPrescriptions = findByPatientId(patientId);
+    return (List<Prescription>) patientPrescriptions.sort((a, b) -> {
+      // Sort by prescription ID which typically contains date information
+      return b.getPrescriptionID().compareTo(a.getPrescriptionID()); // Newest first
+    });
+  }
+  
+  @Override
+  public List<Prescription> findByConsultationIdSorted(String consultationId) {
+    List<Prescription> consultationPrescriptions = findByConsultationId(consultationId);
+    return (List<Prescription>) consultationPrescriptions.sort((a, b) -> {
+      // Sort by prescription ID which typically contains date information
+      return a.getPrescriptionID().compareTo(b.getPrescriptionID()); // Oldest first
+    });
+  }
 }

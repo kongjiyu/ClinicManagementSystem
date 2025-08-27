@@ -27,7 +27,7 @@ public class TreatmentResource {
     @GET
     public Response getAllTreatments() {
         try {
-            return Response.ok(gson.toJson(treatmentRepository.findAll())).build();
+            return Response.ok(gson.toJson(treatmentRepository.findAllSortedByDate())).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error retrieving treatments: " + e.getMessage()).build();
@@ -107,29 +107,20 @@ public class TreatmentResource {
     @Path("/patient/{patientId}")
     public Response getTreatmentsByPatient(@PathParam("patientId") String patientId) {
         try {
-            return Response.ok(gson.toJson(treatmentRepository.findByPatientId(patientId))).build();
+            return Response.ok(gson.toJson(treatmentRepository.findByPatientIdSorted(patientId))).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error retrieving patient treatments: " + e.getMessage()).build();
         }
     }
 
-    @GET
-    @Path("/doctor/{doctorId}")
-    public Response getTreatmentsByDoctor(@PathParam("doctorId") String doctorId) {
-        try {
-            return Response.ok(gson.toJson(treatmentRepository.findByDoctorId(doctorId))).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Error retrieving doctor treatments: " + e.getMessage()).build();
-        }
-    }
+
 
     @GET
     @Path("/status/{status}")
     public Response getTreatmentsByStatus(@PathParam("status") String status) {
         try {
-            return Response.ok(gson.toJson(treatmentRepository.findByStatus(status))).build();
+            return Response.ok(gson.toJson(treatmentRepository.findByStatusSorted(status))).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error retrieving treatments by status: " + e.getMessage()).build();

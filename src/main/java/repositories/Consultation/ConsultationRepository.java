@@ -29,4 +29,9 @@ public interface ConsultationRepository {
     List<Consultation> findByMcDuration(Integer duration);
     List<Consultation> findByMcDateRange(LocalDate startDate, LocalDate endDate);
     Consultation findByBillId(String billId);
+    
+    // Sorting methods
+    List<Consultation> findAllSortedByDate();
+    List<Consultation> getByStatusSorted(String status);
+    List<Consultation> findPatientHistorySorted(String patientId);
   }
