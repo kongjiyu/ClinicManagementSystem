@@ -23,6 +23,10 @@
         <span class="icon-[tabler--arrow-left] size-4 mr-2"></span>
         <span id="backButtonText">Back</span>
       </button>
+      <button id="cancelConsultationBtn" class="btn btn-error" onclick="cancelConsultation()" style="display: none;">
+        <span class="icon-[tabler--x] size-4 mr-2"></span>
+        Cancel Consultation
+      </button>
     </div>
   </div>
 
@@ -241,14 +245,10 @@
               <label class="label">Treatment Type</label>
               <select id="treatmentType" name="treatmentType" class="select select-bordered w-full" required>
                 <option value="">-- Select Type --</option>
-                <option value="Medication">Medication</option>
                 <option value="Physical Therapy">Physical Therapy</option>
-                <option value="Surgical Procedure">Surgical Procedure</option>
-                <option value="Therapeutic Procedure">Therapeutic Procedure</option>
-                <option value="Diagnostic Test">Diagnostic Test</option>
-                <option value="Preventive Care">Preventive Care</option>
-                <option value="Emergency Treatment">Emergency Treatment</option>
-                <option value="Follow-up Care">Follow-up Care</option>
+                <option value="Medication">Medication</option>
+                <option value="Counseling">Counseling</option>
+                <option value="Diagnostics">Diagnostics</option>
               </select>
             </div>
             <div>
@@ -263,20 +263,14 @@
               <label class="label">Price (RM)</label>
               <input type="number" id="treatmentPrice" name="price" class="input input-bordered w-full" min="0" step="0.01" placeholder="0.00" required />
             </div>
-            <div>
-              <label class="label">Doctor in Charge</label>
-              <select id="treatmentDoctor" name="doctorID" class="select select-bordered w-full" required>
-                <option value="">-- Select Doctor --</option>
-              </select>
-            </div>
-            <div class="md:col-span-2">
-              <label class="label">Description</label>
-              <textarea id="treatmentDescription" name="description" class="textarea textarea-bordered w-full" rows="3" placeholder="Describe the treatment procedure..." required></textarea>
-            </div>
-            <div class="md:col-span-2">
-              <label class="label">Treatment Procedure</label>
-              <textarea id="treatmentProcedure" name="treatmentProcedure" class="textarea textarea-bordered w-full" rows="3" placeholder="Detailed steps of the treatment..." required></textarea>
-            </div>
+          </div>
+          <div class="mb-4">
+            <label class="label">Description</label>
+            <textarea id="treatmentDescription" name="description" class="textarea textarea-bordered w-full" rows="3" placeholder="Describe the treatment procedure..." required></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="label">Treatment Procedure</label>
+            <textarea id="treatmentProcedure" name="treatmentProcedure" class="textarea textarea-bordered w-full" rows="3" placeholder="Detailed steps of the treatment..." required></textarea>
           </div>
           <div class="flex justify-end gap-2">
             <button type="button" class="btn btn-secondary" onclick="hideCreateTreatmentForm()">Cancel</button>
@@ -337,32 +331,8 @@
               <label class="label">Follow-up Time</label>
               <select id="followup-appointment-time" name="appointmentTime" class="select select-bordered w-full" required>
                 <option value="">-- Select Time --</option>
-                <option value="08:00">8:00 AM</option>
-                <option value="08:30">8:30 AM</option>
-                <option value="09:00">9:00 AM</option>
-                <option value="09:30">9:30 AM</option>
-                <option value="10:00">10:00 AM</option>
-                <option value="10:30">10:30 AM</option>
-                <option value="11:00">11:00 AM</option>
-                <option value="11:30">11:30 AM</option>
-                <option value="12:00">12:00 PM</option>
-                <option value="12:30">12:30 PM</option>
-                <option value="13:00">1:00 PM</option>
-                <option value="13:30">1:30 PM</option>
-                <option value="14:00">2:00 PM</option>
-                <option value="14:30">2:30 PM</option>
-                <option value="15:00">3:00 PM</option>
-                <option value="15:30">3:30 PM</option>
-                <option value="16:00">4:00 PM</option>
-                <option value="16:30">4:30 PM</option>
-                <option value="17:00">5:00 PM</option>
-                <option value="17:30">5:30 PM</option>
-                <option value="18:00">6:00 PM</option>
-                <option value="18:30">6:30 PM</option>
-                <option value="19:00">7:00 PM</option>
-                <option value="19:30">7:30 PM</option>
-                <option value="20:00">8:00 PM</option>
               </select>
+              <div id="followup-availability-info" class="text-sm text-gray-600 mt-1"></div>
             </div>
             <div>
               <label class="label">Doctor</label>
@@ -597,6 +567,9 @@
     }
     
     document.getElementById('status').value = consultationData.status || 'Waiting';
+    
+    // Show/hide cancel button based on consultation status
+    updateCancelButtonVisibility();
   }
 
   // Check for existing MC data
@@ -667,6 +640,8 @@
       otherTextarea.value = '';
     }
   }
+
+
 
   // Smart back navigation function
   function goBack() {
@@ -953,11 +928,13 @@
     const medicineOptions = medicines.map(medicine => {
       const isSelected = prescription && prescription.medicineID === medicine.medicineID;
       const isDisabled = !isSelected && selectedMedicines.includes(medicine.medicineID);
-      const disabledAttr = isDisabled ? 'disabled' : '';
+      const hasStock = medicine.availableStock > 0;
+      const disabledAttr = (isDisabled || !hasStock) ? 'disabled' : '';
       const selectedAttr = isSelected ? 'selected' : '';
+      const stockInfo = hasStock ? ' (Stock: ' + medicine.availableStock + ')' : ' (Out of Stock)';
       
       return '<option value="' + medicine.medicineID + '" ' + selectedAttr + ' ' + disabledAttr + '>' +
-        medicine.medicineName + ' (' + medicine.medicineID + ')' +
+        medicine.medicineName + ' (' + medicine.medicineID + ')' + stockInfo +
         (isDisabled ? ' (Already selected)' : '') +
       '</option>';
     }).join('');
@@ -967,10 +944,14 @@
       '<div class="mb-2"><span class="badge badge-info">Existing Prescription</span></div>' : 
       '<div class="mb-2"><span class="badge badge-warning">New Prescription</span></div>';
     
+    // Add stock information display
+    const stockInfoDiv = '<div class="mb-2" id="stock-info-' + uniqueRowId + '"><span class="text-sm text-gray-500">Select a medicine to see stock information</span></div>';
+    
     row.innerHTML = 
       statusBadge +
-      '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">' +
-        '<div>' +
+      stockInfoDiv +
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' +
+        '<div class="md:col-span-2">' +
           '<label class="label">Medicine</label>' +
           '<select class="select select-bordered w-full prescription-medicine" data-row-id="' + uniqueRowId + '">' +
             '<option value="">Select Medicine</option>' +
@@ -982,12 +963,8 @@
           '<div class="flex gap-2">' +
             '<input type="number" class="input input-bordered w-20 prescription-dosage" data-row-id="' + uniqueRowId + '" ' +
                    'value="' + (prescription ? prescription.dosage : '') + '" min="1" />' +
-            '<select class="select select-bordered w-24 prescription-unit" data-row-id="' + uniqueRowId + '">' +
-              '<option value="tablet"' + (prescription && prescription.dosageUnit === 'tablet' ? ' selected' : '') + '>tablet</option>' +
-              '<option value="mg"' + (prescription && prescription.dosageUnit === 'mg' ? ' selected' : '') + '>mg</option>' +
-              '<option value="ml"' + (prescription && prescription.dosageUnit === 'ml' ? ' selected' : '') + '>ml</option>' +
-              '<option value="capsule"' + (prescription && prescription.dosageUnit === 'capsule' ? ' selected' : '') + '>capsule</option>' +
-            '</select>' +
+            '<input type="text" class="input input-bordered w-24 prescription-unit" data-row-id="' + uniqueRowId + '" ' +
+                   'value="' + (prescription ? prescription.dosageUnit : '') + '" readonly />' +
           '</div>' +
         '</div>' +
         '<div>' +
@@ -1000,7 +977,7 @@
           '<input type="number" class="input input-bordered w-full prescription-quantity" data-row-id="' + uniqueRowId + '" ' +
                  'value="' + (prescription ? prescription.quantityDispensed : '') + '" min="1" />' +
         '</div>' +
-        '<div>' +
+        '<div class="md:col-span-2">' +
           '<label class="label">Instruction</label>' +
           '<select class="select select-bordered w-full prescription-instruction" data-row-id="' + uniqueRowId + '">' +
             '<option value="Take with food"' + (prescription && prescription.instruction === 'Take with food' ? ' selected' : '') + '>Take with food</option>' +
@@ -1030,7 +1007,16 @@
     
     // Add event listener to the medicine select to update other rows when selection changes
     const medicineSelect = row.querySelector('.prescription-medicine');
-    medicineSelect.addEventListener('change', updateMedicineOptions);
+    medicineSelect.addEventListener('change', function() {
+      updateMedicineOptions();
+      updateUnitField(this, uniqueRowId);
+    });
+    
+    // Add event listener to quantity input for stock validation
+    const quantityInput = row.querySelector('.prescription-quantity');
+    quantityInput.addEventListener('input', function() {
+      validateQuantity(uniqueRowId);
+    });
   }
 
   // Get currently selected medicines across all prescription rows
@@ -1048,6 +1034,76 @@
     return selectedMedicines;
   }
 
+  // Update unit field and stock information when medicine is selected
+  function updateUnitField(medicineSelect, rowId) {
+    const selectedMedicineId = medicineSelect.value;
+    const selectedMedicine = medicines.find(med => med.medicineID === selectedMedicineId);
+    const unitField = document.querySelector('[data-row-id="' + rowId + '"].prescription-unit');
+    const stockInfoDiv = document.getElementById('stock-info-' + rowId);
+    
+    if (selectedMedicine && unitField) {
+      unitField.value = selectedMedicine.unit || 'tablet';
+      
+      // Update stock information
+      if (stockInfoDiv) {
+        const stock = selectedMedicine.availableStock || 0;
+        const stockStatus = stock > 0 ? 
+          '<span class="text-success">✓ In Stock: ' + stock + ' available</span>' : 
+          '<span class="text-error">✗ Out of Stock</span>';
+        stockInfoDiv.innerHTML = '<span class="text-sm">' + stockStatus + '</span>';
+      }
+    } else {
+      if (unitField) {
+        unitField.value = '';
+      }
+      if (stockInfoDiv) {
+        stockInfoDiv.innerHTML = '<span class="text-sm text-gray-500">Select a medicine to see stock information</span>';
+      }
+    }
+  }
+
+  // Validate quantity against available stock
+  function validateQuantity(rowId) {
+    const row = document.getElementById('prescription-row-' + rowId);
+    
+    // Check if row exists
+    if (!row) {
+      console.warn('Row not found for ID:', rowId);
+      return true; // Allow validation to pass if row doesn't exist
+    }
+    
+    const medicineSelect = row.querySelector('.prescription-medicine');
+    const quantityInput = row.querySelector('.prescription-quantity');
+    const stockInfoDiv = document.getElementById('stock-info-' + rowId);
+    
+    // Check if required elements exist
+    if (!medicineSelect || !quantityInput) {
+      console.warn('Required elements not found in row:', rowId);
+      return true; // Allow validation to pass if elements don't exist
+    }
+    
+    if (medicineSelect.value && quantityInput.value) {
+      const selectedMedicine = medicines.find(med => med.medicineID === medicineSelect.value);
+      const requestedQuantity = parseInt(quantityInput.value) || 0;
+      
+      if (selectedMedicine && selectedMedicine.availableStock < requestedQuantity) {
+        // Update stock info to show warning
+        if (stockInfoDiv) {
+          stockInfoDiv.innerHTML = '<span class="text-sm text-error">⚠ Insufficient stock! Available: ' + selectedMedicine.availableStock + ', Requested: ' + requestedQuantity + '</span>';
+        }
+        return false;
+      } else if (selectedMedicine) {
+        // Update stock info to show success
+        if (stockInfoDiv) {
+          const stock = selectedMedicine.availableStock || 0;
+          stockInfoDiv.innerHTML = '<span class="text-sm text-success">✓ In Stock: ' + stock + ' available</span>';
+        }
+        return true;
+      }
+    }
+    return true;
+  }
+
   // Update medicine options in all rows when a selection changes
   function updateMedicineOptions() {
     const container = document.getElementById('prescription-container');
@@ -1057,6 +1113,7 @@
     rows.forEach(row => {
       const medicineSelect = row.querySelector('.prescription-medicine');
       const currentValue = medicineSelect.value;
+      const rowId = row.id.replace('prescription-row-', '');
       
       // Update options
       medicineSelect.innerHTML = '<option value="">Select Medicine</option>';
@@ -1064,17 +1121,24 @@
       medicines.forEach(medicine => {
         const isSelected = currentValue === medicine.medicineID;
         const isDisabled = !isSelected && selectedMedicines.includes(medicine.medicineID);
-        const disabledAttr = isDisabled ? 'disabled' : '';
+        const hasStock = medicine.availableStock > 0;
+        const disabledAttr = (isDisabled || !hasStock) ? 'disabled' : '';
         const selectedAttr = isSelected ? 'selected' : '';
+        const stockInfo = hasStock ? ' (Stock: ' + medicine.availableStock + ')' : ' (Out of Stock)';
         
         const option = document.createElement('option');
         option.value = medicine.medicineID;
-        option.textContent = medicine.medicineName + ' (' + medicine.medicineID + ')' + (isDisabled ? ' (Already selected)' : '');
-        option.disabled = isDisabled;
+        option.textContent = medicine.medicineName + ' (' + medicine.medicineID + ')' + stockInfo + (isDisabled ? ' (Already selected)' : '');
+        option.disabled = isDisabled || !hasStock;
         option.selected = isSelected;
         
         medicineSelect.appendChild(option);
       });
+      
+      // Update unit field for current selection
+      if (currentValue) {
+        updateUnitField(medicineSelect, rowId);
+      }
     });
   }
 
@@ -1139,13 +1203,27 @@
       const descriptionTextarea = row.querySelector('.prescription-description');
 
       if (medicineSelect.value && dosageInput.value && frequencyInput.value) {
+        // Extract row ID from the row element
+        const rowId = row.id.replace('prescription-row-', '');
+        
+        // Get the selected medicine to get its unit and check stock
+        const selectedMedicine = medicines.find(med => med.medicineID === medicineSelect.value);
+        const medicineUnit = selectedMedicine ? selectedMedicine.unit : 'tablet'; // Default fallback
+        const requestedQuantity = parseInt(quantityInput.value) || 0;
+        
+        // Check if there's enough stock
+        if (!validateQuantity(rowId)) {
+          alert('Insufficient stock for ' + selectedMedicine.medicineName + '. Available: ' + selectedMedicine.availableStock + ', Requested: ' + requestedQuantity);
+          return;
+        }
+        
         prescriptionsToSave.push({
           consultationID: consultationId,
           medicineID: medicineSelect.value,
           dosage: parseInt(dosageInput.value),
-          dosageUnit: unitSelect.value,
+          dosageUnit: medicineUnit,
           servingPerDay: parseInt(frequencyInput.value),
-          quantityDispensed: parseInt(quantityInput.value) || 0,
+          quantityDispensed: requestedQuantity,
           instruction: instructionSelect.value,
           description: descriptionTextarea.value,
           price: 0 // Will be calculated based on medicine
@@ -1217,30 +1295,7 @@
     document.getElementById('treatments-list').style.display = 'block';
   }
 
-  // Load doctors for treatment form
-  async function loadDoctorsForTreatment() {
-    try {
-      const response = await fetch(API_BASE + '/staff');
-      if (response.ok) {
-        const staffData = await response.json();
-        const doctors = staffData.elements || staffData || [];
-        
-        const doctorSelect = document.getElementById('treatmentDoctor');
-        doctorSelect.innerHTML = '<option value="">-- Select Doctor --</option>';
-        
-        doctors.forEach(doctor => {
-          if (doctor.position && doctor.position.toLowerCase().includes('doctor')) {
-            const option = document.createElement('option');
-            option.value = doctor.staffID;
-            option.textContent = doctor.firstName + ' ' + doctor.lastName + ' (' + doctor.position + ')';
-            doctorSelect.appendChild(option);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error loading doctors:', error);
-    }
-  }
+
 
   // Handle treatment form submission
   document.getElementById('treatment-form').addEventListener('submit', async function(e) {
@@ -1250,7 +1305,6 @@
     const treatmentData = {
       consultationID: consultationId,
       patientID: patientId,
-      doctorID: formData.get('doctorID'),
       treatmentType: formData.get('treatmentType'),
       treatmentName: formData.get('treatmentName'),
       description: formData.get('description'),
@@ -1527,9 +1581,141 @@
     const dateInput = document.getElementById('followup-appointment-date');
     dateInput.min = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Tomorrow
     dateInput.value = followupDate.toISOString().split('T')[0];
+    
+    // Check availability for the default date
+    checkFollowupAvailability();
   }
 
 
+
+  // Time slots for followup appointments (8 AM to 8 PM, 30-minute intervals)
+  const followupTimeSlots = [
+    { value: '08:00', label: '08:00 AM' },
+    { value: '08:30', label: '08:30 AM' },
+    { value: '09:00', label: '09:00 AM' },
+    { value: '09:30', label: '09:30 AM' },
+    { value: '10:00', label: '10:00 AM' },
+    { value: '10:30', label: '10:30 AM' },
+    { value: '11:00', label: '11:00 AM' },
+    { value: '11:30', label: '11:30 AM' },
+    { value: '12:00', label: '12:00 PM' },
+    { value: '12:30', label: '12:30 PM' },
+    { value: '13:00', label: '01:00 PM' },
+    { value: '13:30', label: '01:30 PM' },
+    { value: '14:00', label: '02:00 PM' },
+    { value: '14:30', label: '02:30 PM' },
+    { value: '15:00', label: '03:00 PM' },
+    { value: '15:30', label: '03:30 PM' },
+    { value: '16:00', label: '04:00 PM' },
+    { value: '16:30', label: '04:30 PM' },
+    { value: '17:00', label: '05:00 PM' },
+    { value: '17:30', label: '05:30 PM' },
+    { value: '18:00', label: '06:00 PM' },
+    { value: '18:30', label: '06:30 PM' },
+    { value: '19:00', label: '07:00 PM' },
+    { value: '19:30', label: '07:30 PM' },
+    { value: '20:00', label: '08:00 PM' }
+  ];
+
+  // Check followup availability for selected date
+  async function checkFollowupAvailability() {
+    const dateInput = document.getElementById('followup-appointment-date');
+    const timeSelect = document.getElementById('followup-appointment-time');
+    const availabilityInfo = document.getElementById('followup-availability-info');
+    
+    if (!dateInput.value) {
+      timeSelect.innerHTML = '<option value="">-- Select Time --</option>';
+      availabilityInfo.textContent = '';
+      return;
+    }
+
+    try {
+      // Get all appointments for the selected date
+      const response = await fetch(API_BASE + '/appointments');
+      if (!response.ok) {
+        throw new Error('Failed to fetch appointments');
+      }
+
+      const data = await response.json();
+      const appointments = data.elements || data || [];
+      
+      // Filter appointments for the selected date
+      const selectedDate = dateInput.value;
+      const selectedDateAppointments = appointments.filter(apt => {
+        if (!apt.appointmentTime) return false;
+        const aptDate = new Date(apt.appointmentTime);
+        const selected = new Date(selectedDate);
+        return aptDate.toDateString() === selected.toDateString();
+      });
+      
+      // Count appointments per time slot
+      const slotCounts = {};
+      selectedDateAppointments.forEach(apt => {
+        const aptTime = new Date(apt.appointmentTime);
+        const timeSlot = aptTime.toTimeString().substring(0, 5); // Get HH:MM format
+        slotCounts[timeSlot] = (slotCounts[timeSlot] || 0) + 1;
+      });
+
+      // Populate time slots with availability
+      timeSelect.innerHTML = '<option value="">-- Select Time --</option>';
+      
+      let availableCount = 0;
+      let totalCount = followupTimeSlots.length;
+      
+      followupTimeSlots.forEach(slot => {
+        const currentCount = slotCounts[slot.value] || 0;
+        const isAvailable = currentCount < 2; // Allow up to 2 patients per slot
+        const option = document.createElement('option');
+        option.value = slot.value;
+        
+        if (isAvailable) {
+          const remainingSlots = 2 - currentCount;
+          option.textContent = slot.label + ' - ' + remainingSlots + ' slot' + (remainingSlots > 1 ? 's' : '') + ' available';
+          option.className = 'text-green-600';
+          availableCount++;
+        } else {
+          option.textContent = slot.label + ' - Fully Booked (2/2)';
+          option.disabled = true;
+          option.className = 'text-red-600';
+        }
+        
+        timeSelect.appendChild(option);
+      });
+
+      // Update availability info
+      if (availableCount === 0) {
+        availabilityInfo.textContent = 'No available time slots for this date. Please select another date.';
+        availabilityInfo.className = 'text-red-600';
+      } else {
+        availabilityInfo.textContent = availableCount + ' of ' + totalCount + ' time slots have availability (max 2 patients per slot) for ' + formatDate(selectedDate);
+        availabilityInfo.className = 'text-green-600';
+      }
+
+    } catch (error) {
+      console.error('Error checking followup availability:', error);
+      availabilityInfo.textContent = 'Error checking availability';
+    }
+  }
+
+  // Format time slot for display (keeping for backward compatibility)
+  function formatTimeSlot(timeSlot) {
+    const [hours, minutes] = timeSlot.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    return displayHour + ':' + minutes + ' ' + ampm;
+  }
+
+  // Format date for display
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 
   // Handle follow-up reason change
   function handleFollowupReasonChange() {
@@ -1600,7 +1786,7 @@
     const formData = {
       patientID: patientId,
       appointmentTime: combinedDateTime,
-      status: 'Confirmed',
+      status: 'Scheduled',
       reason: reason,
       description: document.getElementById('followup-notes').value || 'Follow-up appointment'
     };
@@ -1682,10 +1868,81 @@
     }
   }
 
+  // Update cancel button visibility based on consultation status
+  function updateCancelButtonVisibility() {
+    const cancelBtn = document.getElementById('cancelConsultationBtn');
+    const currentStatus = consultationData.status;
+    
+    // Show cancel button only for consultations that can be cancelled
+    if (currentStatus && ['Waiting', 'In Progress'].includes(currentStatus)) {
+      cancelBtn.style.display = 'inline-flex';
+    } else {
+      cancelBtn.style.display = 'none';
+    }
+  }
+
+  // Cancel consultation
+  async function cancelConsultation() {
+    if (!confirm('Are you sure you want to cancel this consultation? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Update consultation status to Cancelled
+      const updateData = {
+        consultationID: consultationId,
+        patientID: consultationData.patientID,
+        doctorID: consultationData.doctorID,
+        staffID: consultationData.staffID,
+        billID: consultationData.billID,
+        symptoms: consultationData.symptoms,
+        diagnosis: consultationData.diagnosis,
+        consultationDate: consultationData.consultationDate,
+        checkInTime: consultationData.checkInTime,
+        status: 'Cancelled', // Set status to Cancelled
+        mcID: consultationData.mcID,
+        startDate: consultationData.startDate,
+        endDate: consultationData.endDate,
+        isFollowUpRequired: consultationData.isFollowUpRequired,
+        appointmentID: consultationData.appointmentID
+      };
+
+      const response = await fetch(API_BASE + '/consultations/' + consultationId, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel consultation');
+      }
+
+      alert('Consultation cancelled successfully!');
+      
+      // Reload consultation data to reflect the change
+      await loadConsultationData();
+      
+      // Update cancel button visibility
+      updateCancelButtonVisibility();
+
+    } catch (error) {
+      console.error('Error cancelling consultation:', error);
+      alert('Error cancelling consultation: ' + error.message);
+    }
+  }
+
   // Load data when page loads
   document.addEventListener('DOMContentLoaded', function() {
     setBackButtonText();
     loadConsultationData();
+    
+    // Add event listener for followup date to check availability
+    const followupDateInput = document.getElementById('followup-appointment-date');
+    if (followupDateInput) {
+      followupDateInput.addEventListener('change', checkFollowupAvailability);
+    }
   });
 </script>
 </body>

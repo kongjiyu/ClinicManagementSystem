@@ -13,10 +13,16 @@ public interface TreatmentRepository {
     
     // Additional methods for treatment management
     List<Treatment> findByPatientId(String patientId);
-    List<Treatment> findByDoctorId(String doctorId);
     List<Treatment> findByStatus(String status);
     List<Treatment> findByTreatmentType(String treatmentType);
     List<Treatment> findByConsultationId(String consultationId);
     MultiMap<String, Treatment> groupByStatus();
     MultiMap<String, Treatment> groupByTreatmentType();
+    
+    // Sorting methods
+    List<Treatment> findAllSortedByDate();
+    List<Treatment> findAllSortedByStatus();
+    List<Treatment> findAllSortedByType();
+    List<Treatment> findByPatientIdSorted(String patientId);
+    List<Treatment> findByStatusSorted(String status);
 }

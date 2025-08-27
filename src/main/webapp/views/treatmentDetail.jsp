@@ -5,28 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Treatment Details</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.0/dist/full.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
     <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
   </head>
-<body class="bg-gray-100">
+<body class="flex min-h-screen text-base-content">
     <%@ include file="/views/adminSidebar.jsp" %>
 
-    <main class="ml-64 p-6">
-        <div class="bg-white rounded-lg shadow-md p-6">
+    <main class="flex-1 p-6 ml-64 space-y-6">
+        <div class="bg-base-200 rounded-lg p-6 shadow space-y-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Treatment Details</h1>
-                <div class="flex space-x-2">
-                    <a href="<%= request.getContextPath() %>/views/treatmentList.jsp" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to List
-                    </a>
-                    <button id="editBtn" class="btn btn-warning">
-                        <i class="fas fa-edit mr-2"></i>Edit
+                <div class="flex gap-2">
+                    <button class="btn btn-outline" onclick="window.location.href='<%= request.getContextPath() %>/views/treatmentList.jsp'">
+                        <span class="icon-[tabler--arrow-left] size-4 mr-2"></span>
+                        Back to List
+                    </button>
+                    <button id="editBtn" class="btn btn-primary">
+                        <span class="icon-[tabler--edit] size-4 mr-2"></span>
+                        Edit
                     </button>
                     <button id="deleteBtn" class="btn btn-error">
-                        <i class="fas fa-trash mr-2"></i>Delete
+                        <span class="icon-[tabler--trash] size-4 mr-2"></span>
+                        Delete
                     </button>
                 </div>
             </div>
@@ -36,7 +36,7 @@
             </div>
 
             <div id="treatmentDetails" class="hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Treatment ID -->
                     <div class="form-control">
                         <label class="label">
@@ -111,7 +111,7 @@
                 </div>
 
                 <!-- Description -->
-                <div class="form-control mb-6">
+                <div class="form-control">
                     <label class="label">
                         <span class="label-text font-semibold">Description</span>
                     </label>
@@ -119,7 +119,7 @@
                 </div>
 
                 <!-- Procedure -->
-                <div class="form-control mb-6">
+                <div class="form-control">
                     <label class="label">
                         <span class="label-text font-semibold">Procedure</span>
                     </label>
@@ -127,7 +127,7 @@
                 </div>
 
                 <!-- Notes -->
-                <div class="form-control mb-6">
+                <div class="form-control">
                     <label class="label">
                         <span class="label-text font-semibold">Notes</span>
                     </label>
@@ -144,15 +144,14 @@
         </div>
     </main>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <script>
         let treatmentData = {};
         let patientData = {};
         let doctorData = {};
 
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const treatmentId = urlParams.get('id');
             
@@ -193,16 +192,29 @@
         function loadPatientAndDoctorData(treatment) {
             Promise.all([
                 fetch('<%= request.getContextPath() %>/api/patients/' + treatment.patientID),
-                fetch('<%= request.getContextPath() %>/api/staff/' + treatment.doctorID)
+                fetch('<%= request.getContextPath() %>/api/consultations/' + treatment.consultationID)
             ])
             .then(responses => Promise.all(responses.map(r => r.json())))
-            .then(([patient, doctor]) => {
+            .then(([patient, consultation]) => {
                 patientData = patient;
-                doctorData = doctor;
-                displayTreatmentDetails(treatment, patient, doctor);
+                // Get doctor from consultation
+                if (consultation && consultation.doctorID) {
+                    return fetch('<%= request.getContextPath() %>/api/staff/' + consultation.doctorID)
+                        .then(response => response.json())
+                        .then(doctor => {
+                            doctorData = doctor;
+                            displayTreatmentDetails(treatment, patient, doctor);
+                        })
+                        .catch(error => {
+                            console.error('Error loading doctor data:', error);
+                            displayTreatmentDetails(treatment, patient, null);
+                        });
+                } else {
+                    displayTreatmentDetails(treatment, patient, null);
+                }
             })
             .catch(error => {
-                console.error('Error loading patient/doctor data:', error);
+                console.error('Error loading patient/consultation data:', error);
                 displayTreatmentDetails(treatment, null, null);
             });
         }
@@ -233,7 +245,7 @@
             if (doctor) {
                 document.getElementById('doctorInfo').value = doctor.staffID + ' - Dr. ' + doctor.firstName + ' ' + doctor.lastName;
             } else {
-                document.getElementById('doctorInfo').value = treatment.doctorID + ' - Doctor not found';
+                document.getElementById('doctorInfo').value = 'Doctor not found';
             }
 
             // Status badge
@@ -291,34 +303,24 @@
         }
 
         function deleteTreatment(treatmentId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch('<%= request.getContextPath() %>/api/treatments/' + treatmentId, {
-                        method: 'DELETE'
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            Swal.fire('Deleted!', 'Treatment has been deleted.', 'success')
-                                .then(() => {
-                                    window.location.href = '<%= request.getContextPath() %>/views/treatmentList.jsp';
-                                });
-                        } else {
-                            throw new Error('Failed to delete treatment');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error deleting treatment:', error);
-                        Swal.fire('Error', 'Failed to delete treatment', 'error');
-                    });
+            if (!confirm('Are you sure you want to delete this treatment? This action cannot be undone.')) {
+                return;
+            }
+
+            fetch('<%= request.getContextPath() %>/api/treatments/' + treatmentId, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Treatment deleted successfully');
+                    window.location.href = '<%= request.getContextPath() %>/views/treatmentList.jsp';
+                } else {
+                    throw new Error('Failed to delete treatment');
                 }
+            })
+            .catch(error => {
+                console.error('Error deleting treatment:', error);
+                alert('Error: Failed to delete treatment');
             });
         }
 

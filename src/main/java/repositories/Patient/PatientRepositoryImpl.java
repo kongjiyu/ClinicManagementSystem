@@ -66,4 +66,23 @@ public class PatientRepositoryImpl implements PatientRepository {
   public List<Prescription>  findPrescriptionHistoryByPatientId(String patientId) {
     return prescriptionRepository.findByPatientId(patientId);
   }
+  
+  // Sorting method implementations
+  @Override
+  public List<Patient> findAllSortedByName() {
+    List<Patient> patients = findAll();
+    return (List<Patient>) patients.sort((a, b) -> {
+      String nameA = (a.getFirstName() + " " + a.getLastName()).toLowerCase();
+      String nameB = (b.getFirstName() + " " + b.getLastName()).toLowerCase();
+      return nameA.compareTo(nameB); // Alphabetical order
+    });
+  }
+  
+  @Override
+  public List<Patient> findAllSortedByAge() {
+    List<Patient> patients = findAll();
+    return (List<Patient>) patients.sort((a, b) -> {
+      return Integer.compare(a.getAge(), b.getAge()); // Youngest first
+    });
+  }
 }

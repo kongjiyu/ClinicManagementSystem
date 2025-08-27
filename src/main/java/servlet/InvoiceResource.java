@@ -24,6 +24,8 @@ import repositories.Treatment.TreatmentRepository;
 import utils.ErrorResponse;
 import utils.List;
 import utils.ListAdapter;
+import DTO.BillWithPatientDTO;
+import DTO.BillItem;
 import DTO.PaymentMethodRequest;
 
 import java.time.LocalDate;
@@ -362,8 +364,8 @@ public class InvoiceResource {
                 html.append("<td>").append(item.getItemName()).append("</td>");
                 html.append("<td>").append(item.getDescription()).append("</td>");
                 html.append("<td>").append(item.getQuantity()).append("</td>");
-                html.append("<td>$").append(String.format("%.2f", item.getUnitPrice())).append("</td>");
-                html.append("<td>$").append(String.format("%.2f", item.getTotalPrice())).append("</td>");
+                html.append("<td>RM ").append(String.format("%.2f", item.getUnitPrice())).append("</td>");
+                html.append("<td>RM ").append(String.format("%.2f", item.getTotalPrice())).append("</td>");
                 html.append("</tr>");
             }
         }
@@ -373,7 +375,7 @@ public class InvoiceResource {
 
         // Total
         html.append("<div class='total'>");
-        html.append("<p>Total Amount: $").append(String.format("%.2f", bill.getTotalAmount())).append("</p>");
+        html.append("<p>Total Amount: RM ").append(String.format("%.2f", bill.getTotalAmount())).append("</p>");
         html.append("</div>");
 
         html.append("</body></html>");
@@ -456,119 +458,9 @@ public class InvoiceResource {
         );
     }
 
-    // DTO class for Bill with patient and consultation information
-    public static class BillWithPatientDTO {
-        private String billID;
-        private String consultationID;
-        private String patientID;
-        private String patientName;
-        private String patientContact;
-        private String patientEmail;
-        private String doctorID;
-        private String doctorName;
-        private LocalDate consultationDate;
-        private double totalAmount;
-        private String paymentMethod;
-        private List<BillItem> billItems;
 
-        public BillWithPatientDTO(String billID, String consultationID, String patientID,
-                                String patientName, String patientContact, String patientEmail,
-                                String doctorID, String doctorName, LocalDate consultationDate,
-                                double totalAmount, String paymentMethod, List<BillItem> billItems) {
-            this.billID = billID;
-            this.consultationID = consultationID;
-            this.patientID = patientID;
-            this.patientName = patientName;
-            this.patientContact = patientContact;
-            this.patientEmail = patientEmail;
-            this.doctorID = doctorID;
-            this.doctorName = doctorName;
-            this.consultationDate = consultationDate;
-            this.totalAmount = totalAmount;
-            this.paymentMethod = paymentMethod;
-            this.billItems = billItems;
-        }
 
-        // Getters and setters
-        public String getBillID() { return billID; }
-        public void setBillID(String billID) { this.billID = billID; }
 
-        public String getConsultationID() { return consultationID; }
-        public void setConsultationID(String consultationID) { this.consultationID = consultationID; }
-
-        public String getPatientID() { return patientID; }
-        public void setPatientID(String patientID) { this.patientID = patientID; }
-
-        public String getPatientName() { return patientName; }
-        public void setPatientName(String patientName) { this.patientName = patientName; }
-
-        public String getPatientContact() { return patientContact; }
-        public void setPatientContact(String patientContact) { this.patientContact = patientContact; }
-
-        public String getPatientEmail() { return patientEmail; }
-        public void setPatientEmail(String patientEmail) { this.patientEmail = patientEmail; }
-
-        public String getDoctorID() { return doctorID; }
-        public void setDoctorID(String doctorID) { this.doctorID = doctorID; }
-
-        public String getDoctorName() { return doctorName; }
-        public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
-
-        public LocalDate getConsultationDate() { return consultationDate; }
-        public void setConsultationDate(LocalDate consultationDate) { this.consultationDate = consultationDate; }
-
-        public double getTotalAmount() { return totalAmount; }
-        public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
-
-        public String getPaymentMethod() { return paymentMethod; }
-        public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
-
-        public List<BillItem> getBillItems() { return billItems; }
-        public void setBillItems(List<BillItem> billItems) { this.billItems = billItems; }
-    }
-
-    // BillItem class for bill line items
-    public static class BillItem {
-        private String itemName;
-        private String description;
-        private int quantity;
-        private double unitPrice;
-        private double totalPrice;
-        private String medicineID;
-        private String dosageUnit;
-
-        public BillItem(String itemName, String description, int quantity, double unitPrice, double totalPrice, String medicineID, String dosageUnit) {
-            this.itemName = itemName;
-            this.description = description;
-            this.quantity = quantity;
-            this.unitPrice = unitPrice;
-            this.totalPrice = totalPrice;
-            this.medicineID = medicineID;
-            this.dosageUnit = dosageUnit;
-        }
-
-        // Getters and setters
-        public String getItemName() { return itemName; }
-        public void setItemName(String itemName) { this.itemName = itemName; }
-
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-
-        public int getQuantity() { return quantity; }
-        public void setQuantity(int quantity) { this.quantity = quantity; }
-
-        public double getUnitPrice() { return unitPrice; }
-        public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
-
-        public double getTotalPrice() { return totalPrice; }
-        public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
-
-        public String getMedicineID() { return medicineID; }
-        public void setMedicineID(String medicineID) { this.medicineID = medicineID; }
-
-        public String getDosageUnit() { return dosageUnit; }
-        public void setDosageUnit(String dosageUnit) { this.dosageUnit = dosageUnit; }
-    }
 
     // Helper method to calculate bill items from prescriptions and treatments
     private List<BillItem> calculateBillItems(String consultationId) {

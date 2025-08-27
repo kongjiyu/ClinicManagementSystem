@@ -23,6 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import utils.TimeUtils;
+import DTO.QueueItem;
+import DTO.StatusUpdateRequest;
 
 @Path("/queue")
 @Produces(MediaType.APPLICATION_JSON)
@@ -100,50 +102,24 @@ public class QueueResource {
         }
       }
 
-      // Group consultations by status
-      List<Consultation> waitingConsultations = new List<>();
-      List<Consultation> inProgressConsultations = new List<>();
-      List<Consultation> treatmentConsultations = new List<>();
-      List<Consultation> billingConsultations = new List<>();
-      List<Consultation> completedConsultations = new List<>();
-      List<Consultation> cancelledConsultations = new List<>();
+      // Group consultations by status and sort them
+      List<Consultation> waitingConsultations = consultationRepository.getByStatusSorted("Waiting");
+      List<Consultation> inProgressConsultations = consultationRepository.getByStatusSorted("In Progress");
+      List<Consultation> billingConsultations = consultationRepository.getByStatusSorted("Billing");
+      List<Consultation> completedConsultations = consultationRepository.getByStatusSorted("Completed");
+      List<Consultation> cancelledConsultations = consultationRepository.getByStatusSorted("Cancelled");
 
-      for (Consultation consultation : todayConsultations) {
-        String status = consultation.getStatus();
-        if (status == null) {
-          status = "Waiting";
-        }
-
-        switch (status.toLowerCase()) {
-          case "waiting":
-            waitingConsultations.add(consultation);
-            break;
-          case "in progress":
-            inProgressConsultations.add(consultation);
-            break;
-          case "treatment":
-            treatmentConsultations.add(consultation);
-            break;
-          case "billing":
-            billingConsultations.add(consultation);
-            break;
-          case "completed":
-            completedConsultations.add(consultation);
-            break;
-          case "cancelled":
-            cancelledConsultations.add(consultation);
-            break;
-          default:
-            waitingConsultations.add(consultation);
-            break;
-        }
-      }
+      // Filter today's consultations only
+      waitingConsultations = filterTodayConsultations(waitingConsultations, today);
+      inProgressConsultations = filterTodayConsultations(inProgressConsultations, today);
+      billingConsultations = filterTodayConsultations(billingConsultations, today);
+      completedConsultations = filterTodayConsultations(completedConsultations, today);
+      cancelledConsultations = filterTodayConsultations(cancelledConsultations, today);
 
       // Create DTOs with patient information
       List<QueueItem> appointmentItems = createQueueItemsFromAppointments(todayAppointments);
       List<QueueItem> waitingItems = createQueueItemsFromConsultations(waitingConsultations);
       List<QueueItem> inProgressItems = createQueueItemsFromConsultations(inProgressConsultations);
-      List<QueueItem> treatmentItems = createQueueItemsFromConsultations(treatmentConsultations);
       List<QueueItem> billingItems = createQueueItemsFromConsultations(billingConsultations);
       List<QueueItem> completedItems = createQueueItemsFromConsultations(completedConsultations);
       List<QueueItem> cancelledItems = createQueueItemsFromConsultations(cancelledConsultations);
@@ -153,7 +129,6 @@ public class QueueResource {
       response.add("appointments", gson.toJsonTree(appointmentItems));
       response.add("waiting", gson.toJsonTree(waitingItems));
       response.add("inProgress", gson.toJsonTree(inProgressItems));
-      response.add("treatment", gson.toJsonTree(treatmentItems));
       response.add("billing", gson.toJsonTree(billingItems));
       response.add("completed", gson.toJsonTree(completedItems));
       response.add("cancelled", gson.toJsonTree(cancelledItems));
@@ -257,100 +232,7 @@ public class QueueResource {
 
 
 
-  // DTO class for queue items with patient information
-  public static class QueueItem {
-    private String consultationId;
-    private String patientName;
-    private String patientId;
-    private String status;
-    private LocalDate consultationDate;
-    private LocalDateTime checkInTime;
-    private String waitingTime;
-    private String invoiceID;
-    private String billID;
-    private int treatmentCount;
 
-    // Getters and setters
-    public String getConsultationId() {
-      return consultationId;
-    }
-
-    public void setConsultationId(String consultationId) {
-      this.consultationId = consultationId;
-    }
-
-    public String getPatientName() {
-      return patientName;
-    }
-
-    public void setPatientName(String patientName) {
-      this.patientName = patientName;
-    }
-
-    public String getPatientId() {
-      return patientId;
-    }
-
-    public void setPatientId(String patientId) {
-      this.patientId = patientId;
-    }
-
-    public String getStatus() {
-      return status;
-    }
-
-    public void setStatus(String status) {
-      this.status = status;
-    }
-
-    public LocalDate getConsultationDate() {
-      return consultationDate;
-    }
-
-    public void setConsultationDate(LocalDate consultationDate) {
-      this.consultationDate = consultationDate;
-    }
-
-    public LocalDateTime getCheckInTime() {
-      return checkInTime;
-    }
-
-    public void setCheckInTime(LocalDateTime checkInTime) {
-      this.checkInTime = checkInTime;
-    }
-
-    public String getWaitingTime() {
-      return waitingTime;
-    }
-
-    public void setWaitingTime(String waitingTime) {
-      this.waitingTime = waitingTime;
-    }
-
-    public String getInvoiceID() {
-      return invoiceID;
-    }
-
-    public void setInvoiceID(String invoiceID) {
-      this.invoiceID = invoiceID;
-    }
-
-    public String getBillID() {
-      return billID;
-    }
-
-    public void setBillID(String billID) {
-      this.billID = billID;
-    }
-
-    public int getTreatmentCount() {
-      return treatmentCount;
-    }
-
-    public void setTreatmentCount(int treatmentCount) {
-      this.treatmentCount = treatmentCount;
-    }
-  }
 
   // Helper method to create QueueItems from Appointments
   private List<QueueItem> createQueueItemsFromAppointments(List<Appointment> appointments) {
@@ -429,17 +311,7 @@ public class QueueResource {
     return items;
   }
 
-  public static class StatusUpdateRequest {
-    private String status;
 
-    public String getStatus() {
-      return status;
-    }
-
-    public void setStatus(String status) {
-      this.status = status;
-    }
-  }
 
   @GET
   @Path("/patient/{patientId}")
@@ -456,7 +328,7 @@ public class QueueResource {
             appointment.getPatientID().equals(patientId) &&
             appointment.getAppointmentTime() != null &&
             appointment.getAppointmentTime().toLocalDate().equals(today) &&
-            "SCHEDULED".equals(appointment.getStatus())) {
+            "Scheduled".equals(appointment.getStatus())) {
           patientAppointments.add(appointment);
         }
       }
@@ -486,7 +358,7 @@ public class QueueResource {
       for (Appointment appointment : allAppointments) {
         if (appointment.getAppointmentTime() != null &&
             appointment.getAppointmentTime().toLocalDate().equals(today) &&
-            "SCHEDULED".equals(appointment.getStatus())) {
+            "Scheduled".equals(appointment.getStatus())) {
           todayAppointments.add(appointment);
         }
       }
@@ -571,5 +443,17 @@ public class QueueResource {
               .entity(new ErrorResponse("Error getting patient queue status: " + e.getMessage()))
               .build();
     }
+  }
+  
+  // Helper method to filter consultations for today only
+  private List<Consultation> filterTodayConsultations(List<Consultation> consultations, LocalDate today) {
+    List<Consultation> todayConsultations = new List<>();
+    for (Consultation consultation : consultations) {
+      if (consultation.getConsultationDate() != null && 
+          consultation.getConsultationDate().equals(today)) {
+        todayConsultations.add(consultation);
+      }
+    }
+    return todayConsultations;
   }
 }

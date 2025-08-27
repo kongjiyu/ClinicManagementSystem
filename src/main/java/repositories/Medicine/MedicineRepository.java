@@ -21,4 +21,9 @@ public interface MedicineRepository {
 
   // Delete (optional, if needed)
   void delete(Medicine medicine);
+  
+  // Sorting methods
+  List<Medicine> findAllSortedByName();
+  List<Medicine> findAllSortedByStock();
+  List<Medicine> findLowStockSorted();
 }

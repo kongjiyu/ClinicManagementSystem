@@ -12,6 +12,7 @@ import repositories.Schedule.ScheduleRepository;
 import repositories.Staff.StaffRepository;
 import utils.List;
 import utils.ListAdapter;
+import DTO.ScheduleAssignmentRequest;
 
 import java.time.LocalDate;
 
@@ -83,8 +84,13 @@ public class ScheduleResource {
       }
 
       if (existingSchedule != null) {
-        // Update existing schedule
-        existingSchedule.setDoctorID(request.getDoctorID());
+        // Update existing schedule with new doctor assignments
+        if (request.getDoctorID1() != null && !request.getDoctorID1().trim().isEmpty()) {
+          existingSchedule.setDoctorID1(request.getDoctorID1());
+        }
+        if (request.getDoctorID2() != null && !request.getDoctorID2().trim().isEmpty()) {
+          existingSchedule.setDoctorID2(request.getDoctorID2());
+        }
         scheduleRepository.update(existingSchedule);
         return Response.ok(gson.toJson(existingSchedule)).type(MediaType.APPLICATION_JSON).build();
       } else {
@@ -92,7 +98,8 @@ public class ScheduleResource {
         Schedule newSchedule = new Schedule();
         newSchedule.setDate(date);
         newSchedule.setShift(request.getShift());
-        newSchedule.setDoctorID(request.getDoctorID());
+        newSchedule.setDoctorID1(request.getDoctorID1());
+        newSchedule.setDoctorID2(request.getDoctorID2());
 
         // Set start and end times based on shift
         if ("morning".equals(request.getShift())) {
@@ -138,20 +145,5 @@ public class ScheduleResource {
     }
   }
 
-  // Inner class for request body
-  public static class ScheduleAssignmentRequest {
-    private String date;
-    private String shift;
-    private String doctorID;
 
-    // Getters and setters
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
-
-    public String getShift() { return shift; }
-    public void setShift(String shift) { this.shift = shift; }
-
-    public String getDoctorID() { return doctorID; }
-    public void setDoctorID(String doctorID) { this.doctorID = doctorID; }
-  }
 }

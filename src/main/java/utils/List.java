@@ -1,6 +1,7 @@
 package utils;
 
 import java.util.Iterator; // allowed
+import java.util.Comparator; // allowed
 
 public class List<T> implements ListInterface<T> {
   private Object[] elements;
@@ -177,5 +178,101 @@ public class List<T> implements ListInterface<T> {
       if (!contains(item)) return false;
     }
     return true;
+  }
+
+  @Override
+  public ListInterface<T> sort(Comparator<T> comparator) {
+    if (size <= 1) {
+      return new List<>(this); // Return a copy of the list
+    }
+    
+    // Create a copy of the current list
+    List<T> sortedList = new List<>(this);
+    
+    // Perform merge sort on the copy
+    mergeSort(sortedList.elements, 0, sortedList.size - 1, comparator);
+    
+    return sortedList;
+  }
+  
+  /**
+   * Recursive merge sort implementation
+   * @param arr The array to sort
+   * @param left Left boundary of the current segment
+   * @param right Right boundary of the current segment
+   * @param comparator Comparator to determine order
+   */
+  private void mergeSort(Object[] arr, int left, int right, Comparator<T> comparator) {
+    if (left < right) {
+      // Find the middle point
+      int mid = left + (right - left) / 2;
+      
+      // Sort first and second halves
+      mergeSort(arr, left, mid, comparator);
+      mergeSort(arr, mid + 1, right, comparator);
+      
+      // Merge the sorted halves
+      merge(arr, left, mid, right, comparator);
+    }
+  }
+  
+  /**
+   * Merge two sorted subarrays
+   * @param arr The array containing the subarrays
+   * @param left Left boundary of the first subarray
+   * @param mid Middle point (end of first subarray)
+   * @param right Right boundary of the second subarray
+   * @param comparator Comparator to determine order
+   */
+  private void merge(Object[] arr, int left, int mid, int right, Comparator<T> comparator) {
+    // Find sizes of two subarrays to be merged
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    // Create temporary arrays
+    Object[] leftArray = new Object[n1];
+    Object[] rightArray = new Object[n2];
+    
+    // Copy data to temporary arrays
+    for (int i = 0; i < n1; i++) {
+      leftArray[i] = arr[left + i];
+    }
+    for (int j = 0; j < n2; j++) {
+      rightArray[j] = arr[mid + 1 + j];
+    }
+    
+    // Merge the temporary arrays back into arr[left..right]
+    int i = 0, j = 0;
+    int k = left;
+    
+    while (i < n1 && j < n2) {
+      @SuppressWarnings("unchecked")
+      T leftVal = (T) leftArray[i];
+      @SuppressWarnings("unchecked")
+      T rightVal = (T) rightArray[j];
+      
+      if (comparator.compare(leftVal, rightVal) <= 0) {
+        arr[k] = leftArray[i];
+        i++;
+      } else {
+        arr[k] = rightArray[j];
+        j++;
+      }
+      k++;
+    }
+    
+    // Copy remaining elements of leftArray[] if any
+    while (i < n1) {
+      arr[k] = leftArray[i];
+      i++;
+      k++;
+    }
+    
+    // Copy remaining elements of rightArray[] if any
+    while (j < n2) {
+      arr[k] = rightArray[j];
+      j++;
+      k++;
+    }
   }
 }

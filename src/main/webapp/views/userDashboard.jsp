@@ -292,6 +292,119 @@
     }
   }
 
+  // Available time slots (8 AM to 8 PM with 30-minute intervals)
+  const timeSlots = [
+    { value: '08:00', label: '08:00 AM' },
+    { value: '08:30', label: '08:30 AM' },
+    { value: '09:00', label: '09:00 AM' },
+    { value: '09:30', label: '09:30 AM' },
+    { value: '10:00', label: '10:00 AM' },
+    { value: '10:30', label: '10:30 AM' },
+    { value: '11:00', label: '11:00 AM' },
+    { value: '11:30', label: '11:30 AM' },
+    { value: '12:00', label: '12:00 PM' },
+    { value: '12:30', label: '12:30 PM' },
+    { value: '13:00', label: '01:00 PM' },
+    { value: '13:30', label: '01:30 PM' },
+    { value: '14:00', label: '02:00 PM' },
+    { value: '14:30', label: '02:30 PM' },
+    { value: '15:00', label: '03:00 PM' },
+    { value: '15:30', label: '03:30 PM' },
+    { value: '16:00', label: '04:00 PM' },
+    { value: '16:30', label: '04:30 PM' },
+    { value: '17:00', label: '05:00 PM' },
+    { value: '17:30', label: '05:30 PM' },
+    { value: '18:00', label: '06:00 PM' },
+    { value: '18:30', label: '06:30 PM' },
+    { value: '19:00', label: '07:00 PM' },
+    { value: '19:30', label: '07:30 PM' },
+    { value: '20:00', label: '08:00 PM' }
+  ];
+
+  // Check availability for reschedule
+  async function checkRescheduleAvailability(selectedDate, currentAppointmentId) {
+    const timeSelect = document.getElementById('rescheduleTime');
+    const availabilityInfo = document.getElementById('rescheduleAvailabilityInfo');
+    const availabilityText = document.getElementById('rescheduleAvailabilityText');
+    
+    // Clear current options
+    timeSelect.innerHTML = '<option value="" disabled selected>Loading availability...</option>';
+    
+    try {
+      // Get all appointments
+      const response = await fetch(API_BASE + '/appointments');
+      if (!response.ok) {
+        throw new Error('Failed to load appointments');
+      }
+      
+      const appointments = await response.json();
+      const appointmentList = appointments.elements || appointments || [];
+      
+      // Filter appointments for the selected date, excluding the current appointment being rescheduled
+      const selectedDateAppointments = appointmentList.filter(apt => {
+        if (!apt.appointmentTime || apt.appointmentID === currentAppointmentId) return false;
+        const aptDate = new Date(apt.appointmentTime);
+        const selected = new Date(selectedDate);
+        return aptDate.toDateString() === selected.toDateString();
+      });
+      
+      // Count appointments per time slot
+      const slotCounts = {};
+      selectedDateAppointments.forEach(apt => {
+        const aptTime = new Date(apt.appointmentTime);
+        const timeSlot = aptTime.toTimeString().substring(0, 5); // Get HH:MM format
+        slotCounts[timeSlot] = (slotCounts[timeSlot] || 0) + 1;
+      });
+      
+      // Populate time slots with availability
+      timeSelect.innerHTML = '<option value="" disabled selected>Select a time slot</option>';
+      
+      let availableCount = 0;
+      let totalCount = timeSlots.length;
+      
+      timeSlots.forEach(slot => {
+        const currentCount = slotCounts[slot.value] || 0;
+        const isAvailable = currentCount < 2; // Allow up to 2 patients per slot
+        const option = document.createElement('option');
+        option.value = slot.value;
+        
+        if (isAvailable) {
+          const remainingSlots = 2 - currentCount;
+          option.textContent = slot.label + ' - ' + remainingSlots + ' slot' + (remainingSlots > 1 ? 's' : '') + ' available';
+          option.className = 'text-green-600';
+          availableCount++;
+        } else {
+          option.textContent = slot.label + ' - Fully Booked (2/2)';
+          option.disabled = true;
+          option.className = 'text-red-600';
+        }
+        
+        timeSelect.appendChild(option);
+      });
+      
+      // Show availability summary
+      if (availabilityInfo && availabilityText) {
+        availabilityInfo.classList.remove('hidden');
+        if (availableCount === 0) {
+          availabilityText.textContent = 'No available time slots for this date. Please select another date.';
+          availabilityText.className = 'text-red-600';
+        } else {
+          availabilityText.textContent = availableCount + ' of ' + totalCount + ' time slots have availability (max 2 patients per slot)';
+          availabilityText.className = 'text-green-600';
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      timeSelect.innerHTML = '<option value="" disabled selected>Error loading availability</option>';
+      if (availabilityInfo && availabilityText) {
+        availabilityInfo.classList.remove('hidden');
+        availabilityText.textContent = 'Error loading availability. Please try again.';
+        availabilityText.className = 'text-red-600';
+      }
+    }
+  }
+
   // Create reschedule modal
   function createRescheduleModal(appointment) {
     const modal = document.createElement('div');
@@ -325,19 +438,12 @@
           '<div>' +
             '<label class="label">New Time</label>' +
             '<select id="rescheduleTime" class="select select-bordered w-full" required>' +
-              '<option value="" disabled selected>Select a time slot</option>' +
-              '<option value="09:00">09:00 AM</option>' +
-              '<option value="09:30">09:30 AM</option>' +
-              '<option value="10:00">10:00 AM</option>' +
-              '<option value="10:30">10:30 AM</option>' +
-              '<option value="11:00">11:00 AM</option>' +
-              '<option value="11:30">11:30 AM</option>' +
-              '<option value="14:00">02:00 PM</option>' +
-              '<option value="14:30">02:30 PM</option>' +
-              '<option value="15:00">03:00 PM</option>' +
-              '<option value="15:30">03:30 PM</option>' +
-              '<option value="16:00">04:00 PM</option>' +
+              '<option value="" disabled selected>Select a date first to see available time slots</option>' +
             '</select>' +
+            '<div id="rescheduleAvailabilityInfo" class="text-sm text-gray-600 mt-2 hidden">' +
+              '<span class="icon-[tabler--info-circle] size-4 mr-1"></span>' +
+              '<span id="rescheduleAvailabilityText"></span>' +
+            '</div>' +
           '</div>' +
           
           '<div class="flex gap-2 justify-end">' +
@@ -352,6 +458,24 @@
     
     // Add form submit handler
     modal.querySelector('#rescheduleForm').addEventListener('submit', handleRescheduleSubmit);
+    
+    // Add event listener for date selection to check availability
+    const dateInput = modal.querySelector('#rescheduleDate');
+    dateInput.addEventListener('change', function(e) {
+      const selectedDate = e.target.value;
+      const currentAppointmentId = document.getElementById('rescheduleAppointmentId').value;
+      if (selectedDate) {
+        checkRescheduleAvailability(selectedDate, currentAppointmentId);
+      } else {
+        // Reset time select if no date is selected
+        const timeSelect = document.getElementById('rescheduleTime');
+        const availabilityInfo = document.getElementById('rescheduleAvailabilityInfo');
+        timeSelect.innerHTML = '<option value="" disabled selected>Select a date first to see available time slots</option>';
+        if (availabilityInfo) {
+          availabilityInfo.classList.add('hidden');
+        }
+      }
+    });
     
     // Add click event to close modal when clicking backdrop
     modal.addEventListener('click', function(e) {
@@ -390,7 +514,7 @@
         appointmentID: appointmentId,
         patientID: currentAppointment.patientID,
         appointmentTime: newDate + 'T' + newTime + ':00',
-        status: 'SCHEDULED',
+        status: 'Scheduled',
         description: currentAppointment.description || ''
       };
       

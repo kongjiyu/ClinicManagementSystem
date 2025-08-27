@@ -56,8 +56,7 @@ public class PatientsResource {
 
   @GET
   public Response getAllPatients() {
-    List<Patient> patients = new List<>();
-    patients.addAll(patientRepo.findAll());
+    List<Patient> patients = patientRepo.findAllSortedByName();
     String json = gson.toJson(patients);
     return Response.ok(json, MediaType.APPLICATION_JSON).build();
   }
@@ -78,7 +77,7 @@ public class PatientsResource {
   @Path("/{id}/medical-history")
   public Response getMedicalHistory(@PathParam("id") String id) {
       try {
-          List<Prescription> prescriptions = patientRepo.findPrescriptionHistoryByPatientId(id);
+          List<Prescription> prescriptions = prescriptionRepo.findByPatientIdSorted(id);
           List<Map<String, Object>> enrichedPrescriptions = new List<>();
           
           for (Prescription prescription : prescriptions) {

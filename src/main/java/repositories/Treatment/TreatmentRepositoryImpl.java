@@ -60,18 +60,7 @@ public class TreatmentRepositoryImpl implements TreatmentRepository {
         return patientTreatments;
     }
 
-    @Override
-    public List<Treatment> findByDoctorId(String doctorId) {
-        List<Treatment> treatments = findAll();
-        List<Treatment> doctorTreatments = new List<>();
-        
-        for (Treatment treatment : treatments) {
-            if (treatment.getDoctorID().equals(doctorId)) {
-                doctorTreatments.add(treatment);
-            }
-        }
-        return doctorTreatments;
-    }
+
 
     @Override
     public List<Treatment> findByStatus(String status) {
@@ -132,5 +121,61 @@ public class TreatmentRepositoryImpl implements TreatmentRepository {
             typeMap.put(treatment.getTreatmentType(), treatment);
         }
         return typeMap;
+    }
+    
+    // Sorting method implementations
+    @Override
+    public List<Treatment> findAllSortedByDate() {
+        List<Treatment> treatments = findAll();
+        return (List<Treatment>) treatments.sort((a, b) -> {
+            if (a.getTreatmentDate() == null && b.getTreatmentDate() == null) return 0;
+            if (a.getTreatmentDate() == null) return 1;
+            if (b.getTreatmentDate() == null) return -1;
+            return b.getTreatmentDate().compareTo(a.getTreatmentDate()); // Newest first
+        });
+    }
+    
+    @Override
+    public List<Treatment> findAllSortedByStatus() {
+        List<Treatment> treatments = findAll();
+        return (List<Treatment>) treatments.sort((a, b) -> {
+            if (a.getStatus() == null && b.getStatus() == null) return 0;
+            if (a.getStatus() == null) return 1;
+            if (b.getStatus() == null) return -1;
+            return a.getStatus().compareToIgnoreCase(b.getStatus()); // Alphabetical by status
+        });
+    }
+    
+    @Override
+    public List<Treatment> findAllSortedByType() {
+        List<Treatment> treatments = findAll();
+        return (List<Treatment>) treatments.sort((a, b) -> {
+            if (a.getTreatmentType() == null && b.getTreatmentType() == null) return 0;
+            if (a.getTreatmentType() == null) return 1;
+            if (b.getTreatmentType() == null) return -1;
+            return a.getTreatmentType().compareToIgnoreCase(b.getTreatmentType()); // Alphabetical by type
+        });
+    }
+    
+    @Override
+    public List<Treatment> findByPatientIdSorted(String patientId) {
+        List<Treatment> patientTreatments = findByPatientId(patientId);
+        return (List<Treatment>) patientTreatments.sort((a, b) -> {
+            if (a.getTreatmentDate() == null && b.getTreatmentDate() == null) return 0;
+            if (a.getTreatmentDate() == null) return 1;
+            if (b.getTreatmentDate() == null) return -1;
+            return b.getTreatmentDate().compareTo(a.getTreatmentDate()); // Newest first
+        });
+    }
+    
+    @Override
+    public List<Treatment> findByStatusSorted(String status) {
+        List<Treatment> statusTreatments = findByStatus(status);
+        return (List<Treatment>) statusTreatments.sort((a, b) -> {
+            if (a.getTreatmentDate() == null && b.getTreatmentDate() == null) return 0;
+            if (a.getTreatmentDate() == null) return 1;
+            if (b.getTreatmentDate() == null) return -1;
+            return a.getTreatmentDate().compareTo(b.getTreatmentDate()); // Oldest first for status-based queries
+        });
     }
 }

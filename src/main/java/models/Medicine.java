@@ -21,6 +21,8 @@ public class Medicine {
 
     private String description;
 
+    private String unit;  // e.g., "tablet", "mg", "ml", "capsule"
+
     // Note: totalStock is now calculated dynamically from Order batches
     // This field is kept for backward compatibility but should not be used
     @Transient // This makes it non-persistent

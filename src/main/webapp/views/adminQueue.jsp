@@ -204,23 +204,6 @@
           <th>Consultation ID</th>
           <th>Arrival Time</th>
           <th>Name</th>
-          <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-          <!-- Data will be populated by JavaScript -->
-        </tbody>
-      </table>
-    </div>
-
-    <h2 class="text-xl font-semibold mb-2">Treatment</h2>
-    <div class="border-base-content/25 w-full overflow-x-auto border">
-      <table class="table" id="treatment-table">
-        <thead>
-        <tr>
-          <th>Consultation ID</th>
-          <th>Arrival Time</th>
-          <th>Name</th>
           <th>Treatment Count</th>
           <th>Actions</th>
         </tr>
@@ -367,7 +350,6 @@
     renderTable('appointments-table', queueData.appointments?.elements || []);
     renderTable('waiting-table', queueData.waiting?.elements || []);
     renderTable('in-progress-table', queueData.inProgress?.elements || []);
-    renderTable('treatment-table', queueData.treatment?.elements || []);
     renderTable('billing-table', queueData.billing?.elements || []);
     renderTable('completed-table', queueData.completed?.elements || []);
     renderTable('cancelled-table', queueData.cancelled?.elements || []);
@@ -390,8 +372,8 @@
         colspan = '3'; // Cancelled table has no actions
       } else if (tableId === 'waiting-table') {
         colspan = '5'; // Waiting table has waiting time column
-      } else if (tableId === 'treatment-table') {
-        colspan = '5'; // Treatment table has treatment count column
+      } else if (tableId === 'in-progress-table') {
+        colspan = '5'; // In Progress table has treatment count column
       }
       tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="text-center text-gray-500">No items in this queue</td></tr>';
       return;
@@ -422,14 +404,7 @@
             'Start Consult' +
           '</button>';
       } else if (tableId === 'in-progress-table') {
-        // In Progress table: Move to Treatment button
-        actionButton =
-          '<button type="button" class="btn btn-primary btn-soft move-to-treatment-btn" ' +
-                  'data-consultation-id="' + consultationId + '">' +
-            'Move to Treatment' +
-          '</button>';
-      } else if (tableId === 'treatment-table') {
-        // Treatment table: Manage Treatments and Move to Billing buttons
+        // In Progress table: Manage Treatments and Move to Billing buttons
         actionButton =
           '<div class="flex gap-2">' +
             '<button type="button" class="btn btn-info btn-soft manage-treatments-btn" ' +
@@ -479,8 +454,8 @@
           '<td class="waiting-time" data-checkin="' + (checkInTime || '') + '"><span class="time-text">' + calculateWaitingTime(checkInTime) + '</span></td>' +
           '<td>' + (patientName || 'Unknown') + '</td>' +
           '<td>' + actionButton + '</td>';
-      } else if (tableId === 'treatment-table') {
-        // Treatment table: includes treatment count
+      } else if (tableId === 'in-progress-table') {
+        // In Progress table: includes treatment count
         const treatmentCount = item.treatmentCount || 0;
         row.innerHTML =
           '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
@@ -908,32 +883,7 @@
     }
   }
 
-  // Handle move to treatment stage
-  async function handleMoveToTreatment(consultationId) {
-    if (!confirm('Move this consultation to the Treatment stage?')) {
-      return;
-    }
 
-    try {
-      const response = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'Treatment' })
-      });
-
-      if (response.ok) {
-        alert('Consultation moved to Treatment stage successfully!');
-        await loadQueueData();
-      } else {
-        const error = await response.json();
-        alert('Error moving to treatment stage: ' + error.error);
-      }
-    } catch (error) {
-      alert('Error moving to treatment stage: ' + error.message);
-    }
-  }
 
   // Handle manage treatments (navigate to consultation detail page)
   function handleManageTreatments(consultationId) {
@@ -1204,14 +1154,7 @@
         handleDoneConsult(consultationId);
       }
       
-      // Move to treatment buttons
-      if (e.target.closest('.move-to-treatment-btn')) {
-        console.log('Move to treatment button clicked');
-        const btn = e.target.closest('.move-to-treatment-btn');
-        const consultationId = btn.getAttribute('data-consultation-id');
-        console.log('Button data:', { consultationId });
-        handleMoveToTreatment(consultationId);
-      }
+
       
       // Manage treatments buttons
       if (e.target.closest('.manage-treatments-btn')) {

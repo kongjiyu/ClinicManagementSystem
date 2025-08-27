@@ -35,6 +35,7 @@ public class ReportResource {
         .registerTypeAdapter(java.time.LocalDateTime.class, new utils.LocalDateTimeAdapter())
         .registerTypeAdapter(java.time.LocalTime.class, new utils.LocalTimeAdapter())
         .registerTypeAdapter(utils.List.class, new ListAdapter())
+        .registerTypeAdapter(utils.MultiMap.class, new MultiMapAdapter())
         .create();
 
     @Inject
@@ -1052,10 +1053,14 @@ public class ReportResource {
                     LocalDate treatmentDate = treatment.getTreatmentDate().toLocalDate();
                     if (!treatmentDate.isBefore(start) && !treatmentDate.isAfter(end)) {
                         
-                        String doctorId = treatment.getDoctorID();
-                        if (doctorId != null) {
-                            // Count treatments by doctor
-                            doctorTreatmentCounts.put(doctorId, 1);
+                        // Get doctor from consultation
+                        String consultationId = treatment.getConsultationID();
+                        if (consultationId != null) {
+                            Consultation consultation = consultationRepository.findById(consultationId);
+                            if (consultation != null && consultation.getDoctorID() != null) {
+                                // Count treatments by doctor
+                                doctorTreatmentCounts.put(consultation.getDoctorID(), 1);
+                            }
                         }
                     }
                 }
@@ -1063,7 +1068,6 @@ public class ReportResource {
 
             // Calculate statistics
             int totalDoctors = doctors.size();
-            int activeDoctors = doctorConsultationCounts.keySet().size();
             double avgConsultationsPerDoctor = totalDoctors > 0 ? (double) totalConsultations / totalDoctors : 0;
             double diagnosisRate = totalConsultations > 0 ? (double) consultationsWithDiagnosis / totalConsultations * 100 : 0;
 
@@ -1175,8 +1179,11 @@ public class ReportResource {
                     !schedule.getDate().isBefore(start) &&
                     !schedule.getDate().isAfter(end)) {
                     
-                    String doctorId = schedule.getDoctorID();
-                    if (doctorId != null) {
+                    // Handle both doctors in the schedule
+                    String doctorId1 = schedule.getDoctorID1();
+                    String doctorId2 = schedule.getDoctorID2();
+                    
+                    if (doctorId1 != null && !doctorId1.trim().isEmpty()) {
                         totalSchedules++;
                         
                         // Calculate hours for this schedule
@@ -1187,7 +1194,26 @@ public class ReportResource {
                         }
                         
                         // Count schedules by doctor
-                        doctorSchedules.put(doctorId, 1);
+                        doctorSchedules.put(doctorId1, 1);
+                        
+                        // Count monthly trends
+                        String monthKey = schedule.getDate().getMonth().toString().substring(0, 3) + 
+                                        " " + schedule.getDate().getYear();
+                        scheduleTrends.put(monthKey, 1);
+                    }
+                    
+                    if (doctorId2 != null && !doctorId2.trim().isEmpty()) {
+                        totalSchedules++;
+                        
+                        // Calculate hours for this schedule (shared between doctors)
+                        double hours = 0;
+                        if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+                            hours = java.time.Duration.between(schedule.getStartTime(), schedule.getEndTime()).toHours();
+                            totalHours += hours;
+                        }
+                        
+                        // Count schedules by doctor
+                        doctorSchedules.put(doctorId2, 1);
                         
                         // Count monthly trends
                         String monthKey = schedule.getDate().getMonth().toString().substring(0, 3) + 
@@ -1202,7 +1228,6 @@ public class ReportResource {
             // Build response data
             JsonObject data = new JsonObject();
             data.addProperty("totalDoctors", totalDoctors);
-            data.addProperty("activeDoctors", activeDoctors);
             data.addProperty("totalConsultations", totalConsultations);
             data.addProperty("avgConsultationsPerDoctor", avgConsultationsPerDoctor);
             data.addProperty("diagnosisRate", diagnosisRate);
@@ -1361,6 +1386,175 @@ public class ReportResource {
         }
     }
 
+    // 10. Medicine Growth Comparison Report
+    @GET
+    @Path("/medicine-growth-comparison")
+    public Response getMedicineGrowthComparison(
+            @QueryParam("startDate") String startDate,
+            @QueryParam("endDate") String endDate,
+            @QueryParam("period") String period) {
+        try {
+            LocalDate currentStart = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+            LocalDate currentEnd = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+            
+            // Calculate previous period based on the duration of the current period
+            LocalDate previousStart, previousEnd;
+            long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(currentStart, currentEnd) + 1;
+            
+            if (daysBetween <= 7) {
+                // For periods of 7 days or less, compare with the previous week
+                previousStart = currentStart.minusDays(7);
+                previousEnd = currentStart.minusDays(1);
+            } else if (daysBetween <= 31) {
+                // For periods of 8-31 days, compare with the previous month
+                previousStart = currentStart.minusMonths(1);
+                previousEnd = currentStart.minusDays(1);
+            } else if (daysBetween <= 365) {
+                // For periods of 32-365 days, compare with the previous year
+                previousStart = currentStart.minusYears(1);
+                previousEnd = currentStart.minusDays(1);
+            } else {
+                // For periods longer than a year, compare with the same duration previous period
+                previousStart = currentStart.minusDays(daysBetween);
+                previousEnd = currentStart.minusDays(1);
+            }
+
+            // Get all prescriptions and consultations
+            List<Prescription> allPrescriptions = prescriptionRepository.findAll();
+            List<Consultation> allConsultations = consultationRepository.findAll();
+            List<Medicine> allMedicines = medicineRepository.findAll();
+            
+            // Create consultation date mapping
+            MultiMap<String, LocalDate> consultationDates = new MultiMap<>();
+            for (Consultation consultation : allConsultations) {
+                if (consultation.getConsultationDate() != null) {
+                    consultationDates.put(consultation.getConsultationID(), consultation.getConsultationDate());
+                }
+            }
+
+            // Get medicine names
+            MultiMap<String, String> medicineNames = new MultiMap<>();
+            for (Medicine medicine : allMedicines) {
+                medicineNames.put(medicine.getMedicineID(), medicine.getMedicineName());
+            }
+
+            // Calculate current period data
+            MultiMap<String, Integer> currentPeriodQuantities = new MultiMap<>();
+            MultiMap<String, Double> currentPeriodRevenues = new MultiMap<>();
+            
+            for (Prescription prescription : allPrescriptions) {
+                List<LocalDate> dates = consultationDates.get(prescription.getConsultationID());
+                if (!dates.isEmpty()) {
+                    LocalDate consultationDate = dates.get(0);
+                    if (consultationDate != null &&
+                        !consultationDate.isBefore(currentStart) &&
+                        !consultationDate.isAfter(currentEnd)) {
+                        
+                        String medicineId = prescription.getMedicineID();
+                        int quantity = prescription.getQuantityDispensed();
+                        double revenue = quantity * prescription.getPrice();
+                        
+                        currentPeriodQuantities.put(medicineId, quantity);
+                        currentPeriodRevenues.put(medicineId, revenue);
+                    }
+                }
+            }
+
+            // Calculate previous period data
+            MultiMap<String, Integer> previousPeriodQuantities = new MultiMap<>();
+            MultiMap<String, Double> previousPeriodRevenues = new MultiMap<>();
+            
+            for (Prescription prescription : allPrescriptions) {
+                List<LocalDate> dates = consultationDates.get(prescription.getConsultationID());
+                if (!dates.isEmpty()) {
+                    LocalDate consultationDate = dates.get(0);
+                    if (consultationDate != null &&
+                        !consultationDate.isBefore(previousStart) &&
+                        !consultationDate.isAfter(previousEnd)) {
+                        
+                        String medicineId = prescription.getMedicineID();
+                        int quantity = prescription.getQuantityDispensed();
+                        double revenue = quantity * prescription.getPrice();
+                        
+                        previousPeriodQuantities.put(medicineId, quantity);
+                        previousPeriodRevenues.put(medicineId, revenue);
+                    }
+                }
+            }
+
+            // Calculate growth data
+            MultiMap<String, Double> growthData = new MultiMap<>();
+            
+            // Combine all medicine IDs from both periods
+            ArraySet<String> allMedicineKeys = new ArraySet<>();
+            
+            // Add current period keys
+            ArraySet<String> currentKeys = currentPeriodQuantities.keySet();
+            Object[] currentKeyArray = currentKeys.toArray();
+            for (int i = 0; i < currentKeyArray.length; i++) {
+                allMedicineKeys.add((String) currentKeyArray[i]);
+            }
+            
+            // Add previous period keys
+            ArraySet<String> previousKeys = previousPeriodQuantities.keySet();
+            Object[] previousKeyArray = previousKeys.toArray();
+            for (int i = 0; i < previousKeyArray.length; i++) {
+                allMedicineKeys.add((String) previousKeyArray[i]);
+            }
+            
+            Object[] keyArray = allMedicineKeys.toArray();
+            for (int i = 0; i < keyArray.length; i++) {
+                String medicineId = (String) keyArray[i];
+                
+                // Get current period totals
+                int currentQuantity = 0;
+                List<Integer> currentQuantities = currentPeriodQuantities.get(medicineId);
+                for (Integer quantity : currentQuantities) {
+                    currentQuantity += quantity;
+                }
+                
+                // Get previous period totals
+                int previousQuantity = 0;
+                List<Integer> previousQuantities = previousPeriodQuantities.get(medicineId);
+                for (Integer quantity : previousQuantities) {
+                    previousQuantity += quantity;
+                }
+                
+                // Calculate growth percentage
+                double growthPercentage = 0.0;
+                if (previousQuantity > 0) {
+                    growthPercentage = ((double)(currentQuantity - previousQuantity) / previousQuantity) * 100;
+                } else if (currentQuantity > 0) {
+                    // For medicines with no previous sales but current sales
+                    // Show a more realistic growth based on current performance
+                    if (currentQuantity >= 50) {
+                        growthPercentage = 75.0; // High performing new medicine
+                    } else if (currentQuantity >= 20) {
+                        growthPercentage = 50.0; // Medium performing new medicine
+                    } else {
+                        growthPercentage = 25.0; // Low performing new medicine
+                    }
+                }
+                
+                // Get medicine name
+                List<String> nameList = medicineNames.get(medicineId);
+                String medicineName = nameList.isEmpty() ? "Unknown Medicine" : nameList.get(0);
+                
+                // Create growth data entry
+                String growthKey = medicineName + "|" + medicineId;
+                growthData.put(growthKey, growthPercentage);
+            }
+
+            String json = gson.toJson(multiMapToSumMap(growthData));
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorResponse("Error generating medicine growth comparison: " + e.getMessage()))
+                .build();
+        }
+    }
+
     // Data class for doctor performance
     public static class DoctorPerformanceData {
         public String doctorId;
@@ -1416,7 +1610,8 @@ public class ReportResource {
             MultiMap<String, Integer> treatmentTypes = new MultiMap<>();
             MultiMap<String, Integer> doctorTreatments = new MultiMap<>();
             MultiMap<String, Integer> treatmentOutcomes = new MultiMap<>();
-            MultiMap<String, Integer> monthlyTrends = new MultiMap<>();
+            MultiMap<String, Integer> treatmentDurations = new MultiMap<>();
+            MultiMap<String, Double> treatmentRevenue = new MultiMap<>();
 
             for (Treatment treatment : filteredTreatments) {
                 // Count by status
@@ -1436,19 +1631,29 @@ public class ReportResource {
                 treatmentTypes.put(treatmentType, 1);
 
                 // Chart 2: Doctor Treatment Performance
-                String doctorId = treatment.getDoctorID() != null ? treatment.getDoctorID() : "Unknown";
+                String doctorId = "Unknown";
+                if (treatment.getConsultationID() != null) {
+                    Consultation consultation = consultationRepository.findById(treatment.getConsultationID());
+                    if (consultation != null && consultation.getDoctorID() != null) {
+                        doctorId = consultation.getDoctorID();
+                    }
+                }
                 doctorTreatments.put(doctorId, 1);
 
                 // Chart 3: Treatment Outcomes Analysis
                 String outcome = treatment.getOutcome() != null ? treatment.getOutcome() : "No Outcome";
                 treatmentOutcomes.put(outcome, 1);
 
-                // Chart 4: Monthly Treatment Trends
-                if (treatment.getTreatmentDate() != null) {
-                    String monthKey = treatment.getTreatmentDate().getMonth().toString().substring(0, 3) + 
-                                    " " + treatment.getTreatmentDate().getYear();
-                    monthlyTrends.put(monthKey, 1);
-                }
+                            // Chart 4: Treatment Duration Analysis
+            int duration = treatment.getDuration();
+            String durationCategory = categorizeTreatmentDuration(duration);
+            treatmentDurations.put(durationCategory, 1);
+
+            // Chart 6: Treatment Revenue Analysis
+            String revenueTreatmentType = treatment.getTreatmentType() != null ? treatment.getTreatmentType() : "Unknown";
+            Double price = treatment.getPrice();
+            double treatmentPrice = price != null ? price : 0.0;
+            treatmentRevenue.put(revenueTreatmentType, treatmentPrice);
             }
 
             // Calculate success rate
@@ -1482,7 +1687,14 @@ public class ReportResource {
                 int doctorSuccessful = 0;
                 int doctorTotal = 0;
                 for (Treatment treatment : filteredTreatments) {
-                    if (doctorId.equals(treatment.getDoctorID())) {
+                    String treatmentDoctorId = "Unknown";
+                    if (treatment.getConsultationID() != null) {
+                        Consultation consultation = consultationRepository.findById(treatment.getConsultationID());
+                        if (consultation != null && consultation.getDoctorID() != null) {
+                            treatmentDoctorId = consultation.getDoctorID();
+                        }
+                    }
+                    if (doctorId.equals(treatmentDoctorId)) {
                         doctorTotal++;
                         if ("Successful".equals(treatment.getOutcome())) {
                             doctorSuccessful++;
@@ -1494,7 +1706,14 @@ public class ReportResource {
                 // Find top treatment type for this doctor
                 MultiMap<String, Integer> doctorTreatmentTypes = new MultiMap<>();
                 for (Treatment treatment : filteredTreatments) {
-                    if (doctorId.equals(treatment.getDoctorID())) {
+                    String treatmentDoctorId = "Unknown";
+                    if (treatment.getConsultationID() != null) {
+                        Consultation consultation = consultationRepository.findById(treatment.getConsultationID());
+                        if (consultation != null && consultation.getDoctorID() != null) {
+                            treatmentDoctorId = consultation.getDoctorID();
+                        }
+                    }
+                    if (doctorId.equals(treatmentDoctorId)) {
                         String type = treatment.getTreatmentType() != null ? treatment.getTreatmentType() : "Unknown";
                         doctorTreatmentTypes.put(type, 1);
                     }
@@ -1543,8 +1762,12 @@ public class ReportResource {
             data.add("treatmentTypes", gson.toJsonTree(multiMapToCountMap(treatmentTypes)));
             data.add("doctorTreatments", gson.toJsonTree(multiMapToCountMap(doctorTreatments)));
             data.add("treatmentOutcomes", gson.toJsonTree(multiMapToCountMap(treatmentOutcomes)));
-            data.add("monthlyTrends", gson.toJsonTree(multiMapToCountMap(monthlyTrends)));
+            data.add("treatmentDurations", gson.toJsonTree(multiMapToCountMap(treatmentDurations)));
+            data.add("treatmentRevenue", gson.toJsonTree(multiMapToSumMap(treatmentRevenue)));
             data.add("doctorPerformance", gson.toJsonTree(doctorPerformanceList));
+            
+            // Combined data for single row display
+            data.add("treatmentTypesAndOutcomes", gson.toJsonTree(multiMapToCountMap(treatmentTypes)));
 
             report.add("data", data);
 
@@ -1569,6 +1792,110 @@ public class ReportResource {
     }
 
     // ===== ADDITIONAL APIS FOR REPORTS DASHBOARD =====
+
+    // Treatment Duration Analysis API
+    @GET
+    @Path("/treatment-duration-analysis")
+    public Response getTreatmentDurationAnalysis(
+            @QueryParam("startDate") String startDate,
+            @QueryParam("endDate") String endDate) {
+        try {
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+
+            // Get all treatments
+            List<Treatment> allTreatments = treatmentRepository.findAll();
+            
+            // Filter treatments by date range
+            List<Treatment> filteredTreatments = new List<>();
+            for (Treatment treatment : allTreatments) {
+                if (treatment.getTreatmentDate() != null) {
+                    LocalDate treatmentDate = treatment.getTreatmentDate().toLocalDate();
+                    if (!treatmentDate.isBefore(start) && !treatmentDate.isAfter(end)) {
+                        filteredTreatments.add(treatment);
+                    }
+                }
+            }
+
+            // Analyze treatment durations
+            MultiMap<String, Integer> durationAnalysis = new MultiMap<>();
+            
+            for (Treatment treatment : filteredTreatments) {
+                int duration = treatment.getDuration();
+                String durationCategory = categorizeTreatmentDuration(duration);
+                durationAnalysis.put(durationCategory, 1);
+            }
+
+            String json = gson.toJson(multiMapToCountMap(durationAnalysis));
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorResponse("Error generating treatment duration analysis: " + e.getMessage()))
+                .build();
+        }
+    }
+
+    // Treatment Revenue Analysis API
+    @GET
+    @Path("/treatment-revenue-analysis")
+    public Response getTreatmentRevenueAnalysis(
+            @QueryParam("startDate") String startDate,
+            @QueryParam("endDate") String endDate) {
+        try {
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+
+            // Get all treatments
+            List<Treatment> allTreatments = treatmentRepository.findAll();
+            
+            // Filter treatments by date range
+            List<Treatment> filteredTreatments = new List<>();
+            for (Treatment treatment : allTreatments) {
+                if (treatment.getTreatmentDate() != null) {
+                    LocalDate treatmentDate = treatment.getTreatmentDate().toLocalDate();
+                    if (!treatmentDate.isBefore(start) && !treatmentDate.isAfter(end)) {
+                        filteredTreatments.add(treatment);
+                    }
+                }
+            }
+
+            // Analyze treatment revenue by type
+            MultiMap<String, Double> revenueAnalysis = new MultiMap<>();
+            
+            for (Treatment treatment : filteredTreatments) {
+                String treatmentType = treatment.getTreatmentType() != null ? treatment.getTreatmentType() : "Unknown";
+                Double price = treatment.getPrice();
+                double treatmentPrice = price != null ? price : 0.0;
+                revenueAnalysis.put(treatmentType, treatmentPrice);
+            }
+
+            String json = gson.toJson(multiMapToSumMap(revenueAnalysis));
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorResponse("Error generating treatment revenue analysis: " + e.getMessage()))
+                .build();
+        }
+    }
+
+    // Helper method to categorize treatment duration
+    private String categorizeTreatmentDuration(int duration) {
+        if (duration <= 15) {
+            return "15 min or less";
+        } else if (duration <= 30) {
+            return "16-30 min";
+        } else if (duration <= 45) {
+            return "31-45 min";
+        } else if (duration <= 60) {
+            return "46-60 min";
+        } else if (duration <= 90) {
+            return "61-90 min";
+        } else {
+            return "90+ min";
+        }
+    }
 
 
 

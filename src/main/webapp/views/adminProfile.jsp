@@ -11,7 +11,7 @@
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
 
-<main class="ml-64 p-6 space-y-6">
+<main class="flex-1 p-6 ml-64 space-y-6">
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
@@ -27,7 +27,7 @@
 
   <!-- Profile Form -->
   <div id="profileSection" class="hidden">
-    <div class="bg-base-100 p-6 rounded-lg shadow-lg">
+    <div class="bg-base-200 p-6 rounded-lg shadow-lg w-full">
       <!-- Editable Fields Notice -->
       <div class="alert alert-info mb-6">
         <span class="icon-[tabler--info-circle] size-5"></span>

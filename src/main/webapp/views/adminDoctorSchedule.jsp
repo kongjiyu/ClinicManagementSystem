@@ -15,7 +15,7 @@
     }
   </style>
 </head>
-<body class="bg-base-200 min-h-screen">
+<body class="bg-white min-h-screen">
   <%@ include file="/views/adminSidebar.jsp" %>
 
   <main class="p-6 md:ml-64">
@@ -54,7 +54,7 @@
       </div>
 
       <!-- Calendar -->
-      <section class="bg-base-100 rounded-xl shadow p-4">
+      <section class="bg-white rounded-xl shadow p-4">
         <div class="grid grid-cols-7 text-center font-semibold text-base-content/70 border-b mb-2">
           <div class="py-2">Mon</div>
           <div class="py-2">Tue</div>
@@ -99,9 +99,15 @@
 
 
             <div>
-              <label class="label">Doctor</label>
-              <select id="doctor-select" name="doctorID" class="select select-bordered w-full" required></select>
-              <small class="text-xs text-base-content/60">Pick the doctor responsible for this shift.</small>
+              <label class="label">Doctor 1</label>
+              <select id="doctor-select-1" name="doctorID1" class="select select-bordered w-full" required></select>
+              <small class="text-xs text-base-content/60">Pick the first doctor responsible for this shift.</small>
+            </div>
+
+            <div>
+              <label class="label">Doctor 2</label>
+              <select id="doctor-select-2" name="doctorID2" class="select select-bordered w-full"></select>
+              <small class="text-xs text-base-content/60">Pick the second doctor (optional).</small>
             </div>
           </div>
           <div class="modal-footer">
@@ -183,12 +189,17 @@
       }
     }
 
-    async function assignDoctor(date, shift, doctorID) {
+    async function assignDoctor(date, shift, doctorID1, doctorID2) {
       try {
         const response = await fetch(API_BASE + '/schedules/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: date, shift: shift, doctorID: doctorID })
+          body: JSON.stringify({ 
+            date: date, 
+            shift: shift, 
+            doctorID1: doctorID1 || '', 
+            doctorID2: doctorID2 || '' 
+          })
         });
 
         if (!response.ok) {
@@ -256,9 +267,11 @@
     yearSel.addEventListener('change', loadAndRender);
 
     // ====== Load doctors for the modal ======
-    const doctorSelect = document.getElementById('doctor-select');
+    const doctorSelect1 = document.getElementById('doctor-select-1');
+    const doctorSelect2 = document.getElementById('doctor-select-2');
     function loadDoctors(){
-      doctorSelect.innerHTML = '';
+      doctorSelect1.innerHTML = '';
+      doctorSelect2.innerHTML = '';
 
       // Ensure doctors is an array and filter out null/invalid entries
       if (!Array.isArray(doctors)) {
@@ -266,12 +279,19 @@
         return;
       }
 
-      // Placeholder option when no doctor is currently assigned
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = 'Please select a doctor';
-      placeholder.selected = true;
-      doctorSelect.appendChild(placeholder);
+      // Placeholder option for doctor 1
+      const placeholder1 = document.createElement('option');
+      placeholder1.value = '';
+      placeholder1.textContent = 'Please select a doctor';
+      placeholder1.selected = true;
+      doctorSelect1.appendChild(placeholder1);
+
+      // Placeholder option for doctor 2
+      const placeholder2 = document.createElement('option');
+      placeholder2.value = '';
+      placeholder2.textContent = 'Please select a doctor (optional)';
+      placeholder2.selected = true;
+      doctorSelect2.appendChild(placeholder2);
 
       doctors.forEach(function(d){
         // Skip null or invalid doctor objects
@@ -280,10 +300,15 @@
           return;
         }
 
-        const opt = document.createElement('option');
-        opt.value = d.staffID;
-        opt.textContent = d.firstName + ' ' + d.lastName + ' (' + d.staffID + ')';
-        doctorSelect.appendChild(opt);
+        const opt1 = document.createElement('option');
+        opt1.value = d.staffID;
+        opt1.textContent = d.firstName + ' ' + d.lastName + ' (' + d.staffID + ')';
+        doctorSelect1.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = d.staffID;
+        opt2.textContent = d.firstName + ' ' + d.lastName + ' (' + d.staffID + ')';
+        doctorSelect2.appendChild(opt2);
       });
     }
 
@@ -309,16 +334,15 @@
           lookup[dateKey] = { morning: null, evening: null };
         }
 
-        const doctor = doctors.find(function(d){ return d && d.staffID === schedule.doctorID; });
-        const assignment = doctor ? { doctorID: doctor.staffID, name: dname(doctor) } : null;
+        const doctor1 = doctors.find(function(d){ return d && d.staffID === schedule.doctorID1; });
+        const doctor2 = doctors.find(function(d){ return d && d.staffID === schedule.doctorID2; });
+
+        const assignment1 = doctor1 ? { doctorID: doctor1.staffID, name: dname(doctor1) } : null;
+        const assignment2 = doctor2 ? { doctorID: doctor2.staffID, name: dname(doctor2) } : null;
 
         // Convert shift to lowercase to match frontend expectations
         const shiftKey = (schedule.shift + '').toLowerCase();
-        if (!lookup[dateKey][shiftKey]) {
-          lookup[dateKey][shiftKey] = assignment;
-        } else {
-          lookup[dateKey][shiftKey] = assignment; // overwrite with latest
-        }
+        lookup[dateKey][shiftKey] = { doctor1: assignment1, doctor2: assignment2 };
       });
       return lookup;
     }
@@ -353,8 +377,8 @@
       for (let day = 1; day <= last.getDate(); day++) {
         const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
         const info = scheduleLookup[dateStr] || {};
-        const morn = info.morning || null;
-        const eve  = info.evening || null;
+        const morn = info.morning || { doctor1: null, doctor2: null };
+        const eve  = info.evening || { doctor1: null, doctor2: null };
 
         const cell = document.createElement('div');
         cell.className = 'border rounded p-2 min-h-28 flex flex-col gap-2 hover:shadow transition';
@@ -368,10 +392,12 @@
         const mBlock = document.createElement('button');
         mBlock.type = 'button';
         mBlock.className = 'text-left rounded p-2 bg-blue-50 border border-blue-200 hover:bg-blue-100';
-        const mName = morn ? morn.name : '<span class="text-base-content/50">Unassigned</span>';
+        const mName1 = morn.doctor1 ? morn.doctor1.name : '<span class="text-base-content/50">Unassigned</span>';
+        const mName2 = morn.doctor2 ? morn.doctor2.name : '';
+        const mDisplay = mName2 ? mName1 + '<br/>' + mName2 : mName1;
         mBlock.innerHTML =
           '<div class="text-xs font-semibold">Morning <br/>(08:00&ndash;14:00)</div>' +
-          '<div class="text-sm">' + mName + '</div>';
+          '<div class="text-sm">' + mDisplay + '</div>';
         mBlock.addEventListener('click', function(){ openEditModal(dateStr, 'morning', morn); });
         cell.appendChild(mBlock);
 
@@ -379,10 +405,12 @@
         const eBlock = document.createElement('button');
         eBlock.type = 'button';
         eBlock.className = 'text-left rounded p-2 bg-amber-50 border border-amber-200 hover:bg-amber-100';
-        const eName = eve ? eve.name : '<span class="text-base-content/50">Unassigned</span>';
+        const eName1 = eve.doctor1 ? eve.doctor1.name : '<span class="text-base-content/50">Unassigned</span>';
+        const eName2 = eve.doctor2 ? eve.doctor2.name : '';
+        const eDisplay = eName2 ? eName1 + '<br/>' + eName2 : eName1;
         eBlock.innerHTML =
           '<div class="text-xs font-semibold">Evening <br/>(14:00&ndash;20:00)</div>' +
-          '<div class="text-sm">' + eName + '</div>';
+          '<div class="text-sm">' + eDisplay + '</div>';
         eBlock.addEventListener('click', function(){ openEditModal(dateStr, 'evening', eve); });
         cell.appendChild(eBlock);
 
@@ -410,15 +438,18 @@
 
       // Set doctor selection after a brief delay to ensure options are loaded
       setTimeout(function(){
-        if (existing && existing.doctorID) {
-          doctorSelect.value = existing.doctorID;
+        if (existing && existing.doctor1 && existing.doctor1.doctorID) {
+          doctorSelect1.value = existing.doctor1.doctorID;
         } else {
-          // default to placeholder
-          doctorSelect.value = '';
+          doctorSelect1.value = '';
+        }
+        
+        if (existing && existing.doctor2 && existing.doctor2.doctorID) {
+          doctorSelect2.value = existing.doctor2.doctorID;
+        } else {
+          doctorSelect2.value = '';
         }
       }, 100);
-
-      // No bulk range anymore
 
       // Try multiple ways to open the modal
       const modal = document.getElementById('edit-shift-modal');
@@ -442,11 +473,12 @@
       e.preventDefault();
       const date = fieldDate.value;
       const shift = fieldShift.value;
-      const docId = doctorSelect.value;
+      const docId1 = doctorSelect1.value;
+      const docId2 = doctorSelect2.value;
 
       try {
-        // Single-day only
-        await assignDoctor(date, shift, docId);
+        // Send both doctors in a single request
+        await assignDoctor(date, shift, docId1, docId2);
         await loadAndRender();
         closeModal();
       } catch (error) {

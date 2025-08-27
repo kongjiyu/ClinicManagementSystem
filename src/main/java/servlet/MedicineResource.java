@@ -11,6 +11,8 @@ import repositories.Medicine.MedicineRepository;
 import utils.ErrorResponse;
 import utils.List;
 import utils.ListAdapter;
+import DTO.MedicineResponse;
+import DTO.StockInfo;
 
 @Path("/medicines")
 @Produces(MediaType.APPLICATION_JSON)
@@ -33,11 +35,11 @@ public class MedicineResource {
 
     @GET
     public Response getAllMedicine() {
-        List<Medicine> allMedicines = medicineRepo.findAll();
+        List<Medicine> allMedicines = medicineRepo.findAllSortedByName();
         List<MedicineResponse> medicineResponses = new utils.List<>();
 
         for (Medicine medicine : allMedicines) {
-            MedicineStockService.StockInfo stockInfo = medicineStockService.getStockInfo(medicine.getMedicineID());
+            StockInfo stockInfo = medicineStockService.getStockInfo(medicine.getMedicineID());
             medicineResponses.add(new MedicineResponse(medicine, stockInfo));
         }
 
@@ -51,7 +53,7 @@ public class MedicineResource {
         Medicine medicine = medicineRepo.findById(id);
         if (medicine != null) {
             // Calculate current stock information
-            MedicineStockService.StockInfo stockInfo = medicineStockService.getStockInfo(id);
+            StockInfo stockInfo = medicineStockService.getStockInfo(id);
 
             // Create a response object with calculated stock
             MedicineResponse response = new MedicineResponse(medicine, stockInfo);
@@ -68,7 +70,7 @@ public class MedicineResource {
     public Response getMedicineStock(@PathParam("id") String id) {
         Medicine medicine = medicineRepo.findById(id);
         if (medicine != null) {
-            MedicineStockService.StockInfo stockInfo = medicineStockService.getStockInfo(id);
+            StockInfo stockInfo = medicineStockService.getStockInfo(id);
             String json = gson.toJson(stockInfo);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } else {
@@ -160,40 +162,6 @@ public class MedicineResource {
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 
-    /**
-     * Response class that includes calculated stock information
-     */
-    //TODO: put as DTO
-    public static class MedicineResponse {
-        private String medicineID;
-        private String medicineName;
-        private String description;
-        private int reorderLevel;
-        private double sellingPrice;
-        private int totalStock;
-        private int availableStock;
-        private int expiredStock;
 
-        public MedicineResponse(Medicine medicine, MedicineStockService.StockInfo stockInfo) {
-            this.medicineID = medicine.getMedicineID();
-            this.medicineName = medicine.getMedicineName();
-            this.description = medicine.getDescription();
-            this.reorderLevel = medicine.getReorderLevel();
-            this.sellingPrice = medicine.getSellingPrice();
-            this.totalStock = stockInfo.getTotalStock();
-            this.availableStock = stockInfo.getAvailableStock();
-            this.expiredStock = stockInfo.getExpiredStock();
-        }
-
-        // Getters
-        public String getMedicineID() { return medicineID; }
-        public String getMedicineName() { return medicineName; }
-        public String getDescription() { return description; }
-        public int getReorderLevel() { return reorderLevel; }
-        public double getSellingPrice() { return sellingPrice; }
-        public int getTotalStock() { return totalStock; }
-        public int getAvailableStock() { return availableStock; }
-        public int getExpiredStock() { return expiredStock; }
-    }
 
 }

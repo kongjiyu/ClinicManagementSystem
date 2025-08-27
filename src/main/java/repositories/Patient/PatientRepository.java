@@ -14,4 +14,8 @@ public interface PatientRepository {
 
   // Extra methods based on API list
   List<Prescription> findPrescriptionHistoryByPatientId(String patientId);
+  
+  // Sorting methods
+  List<Patient> findAllSortedByName();
+  List<Patient> findAllSortedByAge();
 }

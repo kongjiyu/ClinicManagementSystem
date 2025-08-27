@@ -58,16 +58,7 @@
   <!-- Date Range Filter -->
   <div id="dateFilterSection" class="bg-base-200 rounded-lg p-6" style="display: none;">
     <h2 class="text-xl font-semibold mb-4">Report Filters</h2>
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <div>
-        <label class="label">Period</label>
-        <select id="periodFilter" class="select select-bordered w-full" onchange="updateDateRange()">
-          <option value="monthly">Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-          <option value="yearly">Yearly</option>
-        </select>
-      </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div>
         <label class="label">Start Date</label>
         <input type="date" id="startDate" class="input input-bordered w-full" onchange="loadSelectedReport()">
@@ -120,12 +111,8 @@
             <div id="totalDoctors" class="stat-value text-primary">-</div>
           </div>
           <div class="stat">
-            <div class="stat-title">Active Doctors</div>
-            <div id="activeDoctors" class="stat-value text-success">-</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">Avg Experience</div>
-            <div id="avgExperience" class="stat-value text-secondary">-</div>
+            <div class="stat-title">Avg Consultations</div>
+            <div id="avgConsultations" class="stat-value text-secondary">-</div>
           </div>
           <div class="stat">
             <div class="stat-title">Total Schedules</div>
@@ -285,23 +272,23 @@
           </div>
         </div>
         
-        <!-- First Row: Treatment Types and Doctor Performance -->
+        <!-- First Row: Treatment Types and Outcomes -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
             <canvas id="treatmentTypeChart"></canvas>
           </div>
           <div class="h-96">
-            <canvas id="doctorTreatmentChart"></canvas>
+            <canvas id="treatmentOutcomeChart"></canvas>
           </div>
         </div>
         
-        <!-- Second Row: Treatment Outcomes and Monthly Trends -->
+        <!-- Second Row: Treatment Duration and Revenue Analysis -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
-            <canvas id="treatmentOutcomeChart"></canvas>
+            <canvas id="treatmentDurationChart"></canvas>
           </div>
           <div class="h-96">
-            <canvas id="treatmentTrendsChart"></canvas>
+            <canvas id="treatmentRevenueChart"></canvas>
           </div>
         </div>
         
@@ -353,30 +340,7 @@
     document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
   }
 
-  // Update date range based on period selection
-  function updateDateRange() {
-    const period = document.getElementById('periodFilter').value;
-    const endDate = new Date();
-    const startDate = new Date();
-    
-    switch(period) {
-      case 'daily':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case 'weekly':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case 'monthly':
-        startDate.setMonth(startDate.getMonth() - 1);
-        break;
-      case 'yearly':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-    }
-    
-    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
-    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
-  }
+
 
   // Module selection function
   function selectModule(module) {
@@ -424,24 +388,23 @@
     
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    const period = document.getElementById('periodFilter').value;
 
     try {
       switch(selectedModule) {
         case 'patient':
-          await loadPatientRegistrationReport(startDate, endDate, period);
+          await loadPatientRegistrationReport(startDate, endDate);
           break;
         case 'doctor':
-          await loadDoctorManagementReport(startDate, endDate, period);
+          await loadDoctorManagementReport(startDate, endDate);
           break;
         case 'consultation':
-          await loadConsultationVolumeReport(startDate, endDate, period);
+          await loadConsultationVolumeReport(startDate, endDate);
           break;
         case 'medicine':
-          await loadMedicineSalesReport(startDate, endDate, period);
+          await loadMedicineSalesReport(startDate, endDate);
           break;
         case 'treatment':
-          await loadTreatmentManagementReport(startDate, endDate, period);
+          await loadTreatmentManagementReport(startDate, endDate);
           break;
       }
     } catch (error) {
@@ -672,8 +635,7 @@
         const doctorData = [
           ['Metric', 'Value'],
           ['Total Doctors', document.getElementById('totalDoctors').textContent],
-          ['Active Doctors', document.getElementById('activeDoctors').textContent],
-          ['Avg Experience', document.getElementById('avgExperience').textContent],
+          ['Avg Consultations', document.getElementById('avgConsultations').textContent],
           ['Total Schedules', document.getElementById('totalSchedules').textContent],
           ['Avg Hours/Week', document.getElementById('avgHoursPerWeek').textContent]
         ];
@@ -849,9 +811,9 @@
   }
 
   // Load Doctor Management Report
-  async function loadDoctorManagementReport(startDate, endDate, period) {
+  async function loadDoctorManagementReport(startDate, endDate) {
     try {
-      const url = API_BASE + '/reports/doctor-management?startDate=' + startDate + '&endDate=' + endDate + '&period=' + period;
+      const url = API_BASE + '/reports/doctor-management?startDate=' + startDate + '&endDate=' + endDate;
       console.log('Fetching doctor management report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load doctor management report');
@@ -864,46 +826,45 @@
 
       // Update statistics
       document.getElementById('totalDoctors').textContent = reportData.totalDoctors || '0';
-      document.getElementById('activeDoctors').textContent = reportData.activeDoctors || '0';
-      document.getElementById('avgExperience').textContent = (reportData.avgConsultationsPerDoctor || 0).toFixed(1) + ' consultations';
+      document.getElementById('avgConsultations').textContent = (reportData.avgConsultationsPerDoctor || 0).toFixed(1) + ' consultations';
       document.getElementById('totalSchedules').textContent = reportData.totalSchedules || '0';
       document.getElementById('avgHoursPerWeek').textContent = (reportData.avgHoursPerWeek || 0).toFixed(1) + ' hrs';
 
-      // Create doctor consultation distribution chart
+      // Create doctor consultation distribution chart (Horizontal Bar)
       if (reportData.doctorConsultationCounts && Object.keys(reportData.doctorConsultationCounts).length > 0) {
-        createBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', reportData.doctorConsultationCounts);
+        createHorizontalBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', reportData.doctorConsultationCounts);
       } else {
         // Create empty chart if no data
-        createBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', {});
+        createHorizontalBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', {});
       }
 
-      // Create doctor treatment distribution chart
+      // Create doctor treatment distribution chart (Radar Chart)
       if (reportData.doctorPerformance && reportData.doctorPerformance.elements && reportData.doctorPerformance.elements.length > 0) {
         const treatmentData = {};
         reportData.doctorPerformance.elements.forEach(doctor => {
           treatmentData[doctor.doctorName] = doctor.treatments || 0;
         });
-        createBarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', treatmentData);
+        createRadarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', treatmentData);
       } else {
-        createBarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', {});
+        createRadarChart('doctorTreatmentChart', 'Doctor Treatment Distribution', {});
       }
 
-      // Create doctor schedule distribution chart
+      // Create doctor schedule distribution chart (Polar Area Chart)
       if (reportData.doctorSchedules && Object.keys(reportData.doctorSchedules).length > 0) {
-        createBarChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', reportData.doctorSchedules);
+        createPolarAreaChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', reportData.doctorSchedules);
       } else {
-        createBarChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', {});
+        createPolarAreaChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', {});
       }
 
-      // Create doctor experience chart
+      // Create doctor experience chart (Horizontal Bar with gradient)
       if (reportData.doctorPerformance && reportData.doctorPerformance.elements && reportData.doctorPerformance.elements.length > 0) {
         const experienceData = {};
         reportData.doctorPerformance.elements.forEach(doctor => {
           experienceData[doctor.doctorName] = doctor.experience || 0;
         });
-        createBarChart('doctorExperienceChart', 'Doctor Experience (Years)', experienceData);
+        createHorizontalBarChart('doctorExperienceChart', 'Doctor Experience (Years)', experienceData);
       } else {
-        createBarChart('doctorExperienceChart', 'Doctor Experience (Years)', {});
+        createHorizontalBarChart('doctorExperienceChart', 'Doctor Experience (Years)', {});
       }
 
     } catch (error) {
@@ -916,8 +877,7 @@
   // Show doctor report error
   function showDoctorReportError(message) {
     document.getElementById('totalDoctors').textContent = 'Error';
-    document.getElementById('activeDoctors').textContent = 'Error';
-    document.getElementById('avgExperience').textContent = 'Error';
+    document.getElementById('avgConsultations').textContent = 'Error';
     document.getElementById('totalSchedules').textContent = 'Error';
     document.getElementById('avgHoursPerWeek').textContent = 'Error';
     
@@ -928,9 +888,9 @@
   }
 
   // Load Patient Registration Report
-  async function loadPatientRegistrationReport(startDate, endDate, period) {
+  async function loadPatientRegistrationReport(startDate, endDate) {
     try {
-      const url = API_BASE + '/reports/patient-registration?startDate=' + startDate + '&endDate=' + endDate + '&period=' + period;
+      const url = API_BASE + '/reports/patient-registration?startDate=' + startDate + '&endDate=' + endDate;
       console.log('Fetching patient registration report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load patient registration report');
@@ -959,9 +919,9 @@
   }
 
   // Load Consultation Volume Report
-  async function loadConsultationVolumeReport(startDate, endDate, period) {
+  async function loadConsultationVolumeReport(startDate, endDate) {
     try {
-      const url = API_BASE + '/reports/consultation-volume?startDate=' + startDate + '&endDate=' + endDate + '&period=' + period;
+      const url = API_BASE + '/reports/consultation-volume?startDate=' + startDate + '&endDate=' + endDate;
       console.log('Fetching consultation volume report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load consultation volume report');
@@ -1044,9 +1004,9 @@
   }
 
   // Load Medicine Sales Report
-  async function loadMedicineSalesReport(startDate, endDate, period) {
+  async function loadMedicineSalesReport(startDate, endDate) {
     try {
-      const url = API_BASE + '/reports/medicine-sales?startDate=' + startDate + '&endDate=' + endDate + '&period=' + period;
+      const url = API_BASE + '/reports/medicine-sales?startDate=' + startDate + '&endDate=' + endDate;
       console.log('Fetching medicine sales report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load medicine sales report');
@@ -1085,7 +1045,7 @@
       await loadMedicineCharts(reportData, startDate, endDate);
 
       // Update enhanced top selling medicines table
-      updateEnhancedMedicinesTable(medicinesArray);
+      await updateEnhancedMedicinesTable(medicinesArray);
 
     } catch (error) {
       console.error('Error loading medicine sales report:', error);
@@ -1100,13 +1060,13 @@
       // Chart 1: Medicine Sales (Bar Chart)
       createBarChart('medicineSalesChart', 'Medicine Sales by Quantity', reportData.medicineSales);
 
-      // Chart 2: Monthly Trends (Line Chart) - Load real data
-      const trendsResponse = await fetch(API_BASE + '/reports/medicine-monthly-trends?months=6');
-      if (trendsResponse.ok) {
-        const monthlyTrends = await trendsResponse.json();
-        createLineChart('medicineTrendsChart', 'Monthly Sales Trends', monthlyTrends);
+      // Chart 2: Growth Comparison (Horizontal Bar Chart) - Load real growth data
+      const growthResponse = await fetch(API_BASE + '/reports/medicine-growth-comparison?startDate=' + startDate + '&endDate=' + endDate);
+      if (growthResponse.ok) {
+        const growthData = await growthResponse.json();
+        createHorizontalBarChart('medicineTrendsChart', 'Medicine Growth vs Previous Period (%)', growthData);
       } else {
-        showChartError('medicineTrendsChart', 'Failed to load monthly trends data');
+        showChartError('medicineTrendsChart', 'Failed to load growth comparison data');
       }
 
       // Chart 3: Performance Analysis (Bar Chart) - Load real data
@@ -1143,9 +1103,9 @@
   }
 
   // Load Treatment Management Report
-  async function loadTreatmentManagementReport(startDate, endDate, period) {
+  async function loadTreatmentManagementReport(startDate, endDate) {
     try {
-      const url = API_BASE + '/reports/treatment-analytics?startDate=' + startDate + '&endDate=' + endDate + '&period=' + period;
+      const url = API_BASE + '/reports/treatment-analytics?startDate=' + startDate + '&endDate=' + endDate;
       console.log('Fetching treatment analytics report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load treatment analytics report');
@@ -1183,9 +1143,9 @@
     document.getElementById('scheduledTreatments').textContent = 'Error';
     
     showChartError('treatmentTypeChart', message);
-    showChartError('doctorTreatmentChart', message);
     showChartError('treatmentOutcomeChart', message);
-    showChartError('treatmentTrendsChart', message);
+    showChartError('treatmentDurationChart', message);
+    showChartError('treatmentRevenueChart', message);
     
     // Show error in table
     const tbody = document.getElementById('treatmentTable');
@@ -1199,30 +1159,32 @@
     try {
       // Chart 1: Treatment Types Distribution (Pie Chart)
       if (reportData.treatmentTypes && Object.keys(reportData.treatmentTypes).length > 0) {
-        createPieChart('treatmentTypeChart', 'Treatment Types Distribution', reportData.treatmentTypes);
+        createDoughnutChart('treatmentTypeChart', 'Treatment Types Distribution', reportData.treatmentTypes);
       } else {
         showChartError('treatmentTypeChart', 'No treatment types data available');
       }
 
-      // Chart 2: Doctor Treatment Performance (Bar Chart)
-      if (reportData.doctorTreatments && Object.keys(reportData.doctorTreatments).length > 0) {
-        createBarChart('doctorTreatmentChart', 'Treatments per Doctor', reportData.doctorTreatments);
-      } else {
-        showChartError('doctorTreatmentChart', 'No doctor treatment data available');
-      }
 
-      // Chart 3: Treatment Outcomes (Bar Chart)
+
+      // Chart 2: Treatment Outcomes (Horizontal Bar Chart)
       if (reportData.treatmentOutcomes && Object.keys(reportData.treatmentOutcomes).length > 0) {
-        createBarChart('treatmentOutcomeChart', 'Treatment Outcomes', reportData.treatmentOutcomes);
+        createHorizontalBarChart('treatmentOutcomeChart', 'Treatment Outcomes', reportData.treatmentOutcomes);
       } else {
         showChartError('treatmentOutcomeChart', 'No treatment outcomes data available');
       }
 
-      // Chart 4: Monthly Treatment Trends (Line Chart)
-      if (reportData.monthlyTrends && Object.keys(reportData.monthlyTrends).length > 0) {
-        createLineChart('treatmentTrendsChart', 'Monthly Treatment Trends', reportData.monthlyTrends);
+      // Chart 3: Treatment Duration Analysis (Radar Chart)
+      if (reportData.treatmentDurations && Object.keys(reportData.treatmentDurations).length > 0) {
+        createRadarChart('treatmentDurationChart', 'Treatment Duration Analysis', reportData.treatmentDurations);
       } else {
-        showChartError('treatmentTrendsChart', 'No monthly trends data available');
+        showChartError('treatmentDurationChart', 'No duration data available');
+      }
+
+      // Chart 4: Treatment Revenue Analysis (Polar Area Chart)
+      if (reportData.treatmentRevenue && Object.keys(reportData.treatmentRevenue).length > 0) {
+        createPolarAreaChart('treatmentRevenueChart', 'Treatment Revenue Analysis', reportData.treatmentRevenue);
+      } else {
+        showChartError('treatmentRevenueChart', 'No revenue data available');
       }
 
     } catch (error) {
@@ -1284,7 +1246,12 @@
 
   // Create pie chart
   function createPieChart(canvasId, title, data) {
-    const ctx = document.getElementById(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
@@ -1293,7 +1260,7 @@
     const values = Object.values(data);
     const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
-    charts[canvasId] = new Chart(ctx, {
+    charts[canvasId] = new Chart(canvas, {
       type: 'pie',
       data: {
         labels: labels,
@@ -1323,15 +1290,23 @@
 
   // Create bar chart
   function createBarChart(canvasId, title, data) {
-    const ctx = document.getElementById(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
-    const labels = Object.keys(data);
-    const values = Object.values(data);
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
 
-    charts[canvasId] = new Chart(ctx, {
+    charts[canvasId] = new Chart(canvas, {
       type: 'bar',
       data: {
         labels: labels,
@@ -1365,9 +1340,449 @@
     });
   }
 
+  // Create horizontal bar chart
+  function createHorizontalBarChart(canvasId, title, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
+    if (charts[canvasId]) {
+      charts[canvasId].destroy();
+    }
+
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
+
+    // Create gradient backgrounds with fallback
+    const gradients = labels.map((_, index) => {
+      const colors = [
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+        '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+      ];
+      
+      // Try to create gradient, fallback to solid color if not available
+      try {
+        const ctx2d = canvas.getContext('2d');
+        if (ctx2d && typeof ctx2d.createLinearGradient === 'function') {
+          const gradient = ctx2d.createLinearGradient(0, 0, 0, 400);
+          const colorPair = [
+            colors[index % colors.length],
+            colors[(index + 5) % colors.length] // Use a different color for gradient end
+          ];
+          gradient.addColorStop(0, colorPair[0]);
+          gradient.addColorStop(1, colorPair[1]);
+          return gradient;
+        }
+      } catch (error) {
+        console.warn('Gradient creation failed, using solid color:', error);
+      }
+      
+      // Fallback to solid color
+      return colors[index % colors.length];
+    });
+
+    charts[canvasId] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: title,
+          data: values,
+          backgroundColor: gradients,
+          borderColor: '#2563EB',
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)',
+              drawBorder: false
+            },
+            ticks: {
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          y: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Create doughnut chart
+  function createDoughnutChart(canvasId, title, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
+    if (charts[canvasId]) {
+      charts[canvasId].destroy();
+    }
+
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
+    const colors = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+    ];
+
+    charts[canvasId] = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors.slice(0, labels.length),
+          borderWidth: 4,
+          borderColor: '#fff',
+          hoverBorderWidth: 6,
+          hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 25,
+              usePointStyle: true,
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            cornerRadius: 8
+          }
+        },
+        cutout: '65%',
+        animation: {
+          animateRotate: true,
+          animateScale: true
+        }
+      }
+    });
+  }
+
+  // Create radar chart
+  function createRadarChart(canvasId, title, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
+    if (charts[canvasId]) {
+      charts[canvasId].destroy();
+    }
+
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
+
+    charts[canvasId] = new Chart(canvas, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: title,
+          data: values,
+          backgroundColor: 'rgba(59, 130, 246, 0.3)',
+          borderColor: '#3B82F6',
+          borderWidth: 4,
+          pointBackgroundColor: '#3B82F6',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 3,
+          pointRadius: 8,
+          pointHoverRadius: 12,
+          pointHoverBackgroundColor: '#2563EB',
+          pointHoverBorderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)',
+              circular: true
+            },
+            pointLabels: {
+              font: {
+                size: 12,
+                weight: 'bold'
+              },
+              color: '#374151'
+            },
+            ticks: {
+              font: {
+                weight: 'bold'
+              },
+              color: '#6B7280'
+            }
+          }
+        },
+        animation: {
+          duration: 2000,
+          easing: 'easeInOutQuart'
+        }
+      }
+    });
+  }
+
+  // Create polar area chart
+  function createPolarAreaChart(canvasId, title, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
+    if (charts[canvasId]) {
+      charts[canvasId].destroy();
+    }
+
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
+    const colors = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+    ];
+
+    charts[canvasId] = new Chart(canvas, {
+      type: 'polarArea',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors.slice(0, labels.length).map(color => 
+            color + '80' // Add transparency
+          ),
+          borderColor: colors.slice(0, labels.length),
+          borderWidth: 3,
+          hoverBorderWidth: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 25,
+              usePointStyle: true,
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            cornerRadius: 8
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeInOutQuart'
+        }
+      }
+    });
+  }
+
+  // Create bubble chart for nationality distribution
+  function createBubbleChart(canvasId, title, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
+    if (charts[canvasId]) {
+      charts[canvasId].destroy();
+    }
+
+    // Convert MultiMap format to object format
+    const chartData = convertMultiMapToObject(data);
+    
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
+    const total = values.reduce((sum, val) => sum + val, 0);
+    
+    // Create bubble data with size based on percentage
+    const bubbleData = labels.map((label, index) => {
+      const value = values[index];
+      const percentage = (value / total) * 100;
+      return {
+        x: Math.random() * 100, // Random x position
+        y: Math.random() * 100, // Random y position
+        r: Math.max(10, percentage * 2) // Size based on percentage
+      };
+    });
+
+    const colors = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+    ];
+
+    charts[canvasId] = new Chart(canvas, {
+      type: 'bubble',
+      data: {
+        datasets: [{
+          label: title,
+          data: bubbleData,
+          backgroundColor: colors.slice(0, labels.length).map(color => 
+            color + '80' // Add transparency
+          ),
+          borderColor: colors.slice(0, labels.length),
+          borderWidth: 2,
+          hoverBackgroundColor: colors.slice(0, labels.length),
+          hoverBorderColor: '#000',
+          hoverBorderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(context) {
+                const index = context.dataIndex;
+                const label = labels[index];
+                const value = values[index];
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} patients (${percentage}%)`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: false,
+            min: 0,
+            max: 100
+          },
+          y: {
+            display: false,
+            min: 0,
+            max: 100
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeInOutQuart'
+        }
+      }
+    });
+  }
+
   // Create line chart
   function createLineChart(canvasId, title, data) {
-    const ctx = document.getElementById(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
+    
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
@@ -1375,7 +1790,7 @@
     const labels = Object.keys(data);
     const values = Object.values(data);
 
-    charts[canvasId] = new Chart(ctx, {
+    charts[canvasId] = new Chart(canvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -1424,7 +1839,7 @@
   }
 
   // Update enhanced top selling medicines table
-  function updateEnhancedMedicinesTable(medicines) {
+  async function updateEnhancedMedicinesTable(medicines) {
     const tbody = document.getElementById('topSellingMedicines');
     tbody.innerHTML = '';
 
@@ -1442,6 +1857,26 @@
       return quantityB - quantityA; // Descending order
     });
     
+    // Get real growth data
+    let growthData = {};
+    try {
+      const startDateElement = document.getElementById('startDate');
+      const endDateElement = document.getElementById('endDate');
+      
+      const startDate = startDateElement ? startDateElement.value : '';
+      const endDate = endDateElement ? endDateElement.value : '';
+      
+      // Only make API call if we have valid dates
+      if (startDate && endDate) {
+        const growthResponse = await fetch(API_BASE + '/reports/medicine-growth-comparison?startDate=' + startDate + '&endDate=' + endDate);
+        if (growthResponse.ok) {
+          growthData = await growthResponse.json();
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load growth data:', error);
+    }
+    
     medicineArray.slice(0, 10).forEach((medicine, index) => {
       const row = tbody.insertRow();
       
@@ -1450,9 +1885,21 @@
       const revenue = medicine.revenue || 0;
       const medicineName = medicine.medicineName || 'Unknown Medicine';
       const avgPrice = quantitySold > 0 ? (revenue / quantitySold) : 0;
-      const growth = Math.random() * 20 - 10; // Sample growth data
-      const growthClass = growth >= 0 ? 'text-success' : 'text-error';
-      const growthIcon = growth >= 0 ? '↗' : '↘';
+      
+      // Get real growth data for this medicine
+      let growth = 0;
+      let growthClass = 'text-neutral';
+      let growthIcon = '→';
+      
+      // Find growth data for this medicine
+      for (const [key, value] of Object.entries(growthData)) {
+        if (key.includes(medicine.medicineId) || key.includes(medicineName)) {
+          growth = value;
+          growthClass = growth >= 0 ? 'text-success' : 'text-error';
+          growthIcon = growth >= 0 ? '↗' : '↘';
+          break;
+        }
+      }
       
       row.innerHTML = 
         '<td><div class="badge badge-primary">' + (index + 1) + '</div></td>' +
@@ -1488,6 +1935,17 @@
     showChartError('patientAgeChart', message);
     showChartError('patientBloodTypeChart', message);
     showChartError('patientNationalityChart', message);
+  }
+
+  // Helper function to convert MultiMap format to object
+  function convertMultiMapToObject(multiMap) {
+    const obj = {};
+    for (const key in multiMap) {
+      if (Object.prototype.hasOwnProperty.call(multiMap, key)) {
+        obj[key] = multiMap[key];
+      }
+    }
+    return obj;
   }
 </script>
 </body>

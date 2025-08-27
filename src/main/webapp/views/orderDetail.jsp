@@ -10,7 +10,7 @@
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
 
-<main class="ml-64 p-6 space-y-8">
+<main class="flex-1 p-6 ml-64 space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold">Order Detail</h1>
     <div class="flex gap-2">
@@ -25,7 +25,7 @@
     </div>
   </div>
 
-  <div class="bg-base-200 rounded-lg p-6 shadow space-y-6">
+  <div class="bg-base-200 rounded-lg p-6 shadow space-y-6 w-full">
     <!-- Order Information -->
     <div>
       <h2 class="text-xl font-semibold mb-4">Order Information</h2>
@@ -128,7 +128,7 @@
           Mark as Shipped
         </button>
         <button id="deliverButton" class="btn btn-success" onclick="deliverOrder()" style="display: none;">
-          <span class="icon-[tabler--package-check] size-4 mr-2"></span>
+          <span class="icon-[tabler--truck-delivery] size-4 mr-2"></span>
           Mark as Delivered
         </button>
         <button id="completeButton" class="btn btn-primary" onclick="completeOrder()" style="display: none;">
@@ -396,6 +396,13 @@
       }
 
       alert('Order delivered successfully');
+      
+      // Hide the expiry date section
+      document.getElementById('expiryDateSection').classList.add('hidden');
+      
+      // Clear the expiry date input
+      document.getElementById('expiryDateInput').value = '';
+      
       loadOrderData(); // Reload order data
 
     } catch (error) {
