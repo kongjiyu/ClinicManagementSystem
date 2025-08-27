@@ -32,7 +32,6 @@
         <li>
           <a href="<%= request.getContextPath() %>/views/userProfile.jsp">
             <div class="flex items-center gap-3">
-              <div class="avatar"><div class="w-8 rounded-full"><img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="profile"/></div></div>
               <div>
                 <div class="text-sm font-semibold" id="userName">User</div>
                 <div class="text-xs text-base-content/50">Profile</div>

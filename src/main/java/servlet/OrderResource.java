@@ -19,6 +19,8 @@ import utils.ErrorResponse;
 import utils.List;
 import utils.ListAdapter;
 import utils.TimeUtils;
+import DTO.OrderWithDetailsDTO;
+import DTO.StatusUpdateRequest;
 
 import java.time.LocalDate;
 
@@ -294,92 +296,5 @@ public class OrderResource {
         );
     }
 
-    // DTO class for Order with detailed information
-    public static class OrderWithDetailsDTO {
-        private String ordersID;
-        private String medicineID;
-        private String medicineName;
-        private String supplierID;
-        private String supplierName;
-        private String staffID;
-        private String staffName;
-        private LocalDate orderDate;
-        private String orderStatus;
-        private double unitPrice;
-        private int quantity;
-        private double totalAmount;
-        private LocalDate expiryDate;
-        private int stock;
 
-        public OrderWithDetailsDTO(String ordersID, String medicineID, String medicineName,
-                                 String supplierID, String supplierName, String staffID, String staffName,
-                                 LocalDate orderDate, String orderStatus, double unitPrice, int quantity,
-                                 double totalAmount, LocalDate expiryDate, int stock) {
-            this.ordersID = ordersID;
-            this.medicineID = medicineID;
-            this.medicineName = medicineName;
-            this.supplierID = supplierID;
-            this.supplierName = supplierName;
-            this.staffID = staffID;
-            this.staffName = staffName;
-            this.orderDate = orderDate;
-            this.orderStatus = orderStatus;
-            this.unitPrice = unitPrice;
-            this.quantity = quantity;
-            this.totalAmount = totalAmount;
-            this.expiryDate = expiryDate;
-            this.stock = stock;
-        }
-
-        // Getters and setters
-        public String getOrdersID() { return ordersID; }
-        public void setOrdersID(String ordersID) { this.ordersID = ordersID; }
-
-        public String getMedicineID() { return medicineID; }
-        public void setMedicineID(String medicineID) { this.medicineID = medicineID; }
-
-        public String getMedicineName() { return medicineName; }
-        public void setMedicineName(String medicineName) { this.medicineName = medicineName; }
-
-        public String getSupplierID() { return supplierID; }
-        public void setSupplierID(String supplierID) { this.supplierID = supplierID; }
-
-        public String getSupplierName() { return supplierName; }
-        public void setSupplierName(String supplierName) { this.supplierName = supplierName; }
-
-        public String getStaffID() { return staffID; }
-        public void setStaffID(String staffID) { this.staffID = staffID; }
-
-        public String getStaffName() { return staffName; }
-        public void setStaffName(String staffName) { this.staffName = staffName; }
-
-        public LocalDate getOrderDate() { return orderDate; }
-        public void setOrderDate(LocalDate orderDate) { this.orderDate = orderDate; }
-
-        public String getOrderStatus() { return orderStatus; }
-        public void setOrderStatus(String orderStatus) { this.orderStatus = orderStatus; }
-
-        public double getUnitPrice() { return unitPrice; }
-        public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
-
-        public int getQuantity() { return quantity; }
-        public void setQuantity(int quantity) { this.quantity = quantity; }
-
-        public double getTotalAmount() { return totalAmount; }
-        public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
-
-        public LocalDate getExpiryDate() { return expiryDate; }
-        public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
-
-        public int getStock() { return stock; }
-        public void setStock(int stock) { this.stock = stock; }
-    }
-
-    // Request class for status updates
-    public static class StatusUpdateRequest {
-        private String status;
-
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-    }
 }
