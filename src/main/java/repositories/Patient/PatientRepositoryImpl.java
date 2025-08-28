@@ -1,5 +1,10 @@
 package repositories.Patient;
 
+/**
+ * Author: Yap Ern Tong
+ * Patient Module
+ */
+
 import jakarta.annotation.Resource;
 import jakarta.enterprise.context.ApplicationScoped;
 import javax.sql.DataSource;

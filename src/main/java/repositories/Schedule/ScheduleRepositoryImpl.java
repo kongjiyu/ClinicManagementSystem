@@ -1,5 +1,10 @@
 package repositories.Schedule;
 
+/**
+ * Author: Yap Yu Xin
+ * Consultation Module
+ */
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

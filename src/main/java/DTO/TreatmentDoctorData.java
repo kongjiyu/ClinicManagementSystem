@@ -1,5 +1,10 @@
 package DTO;
 
+/**
+ * Author: Kong Ji Yu
+ * Doctor Module
+ */
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

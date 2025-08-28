@@ -1,5 +1,10 @@
 package repositories.Bill;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import models.Bill;
 import utils.List;
 import java.time.LocalDate;

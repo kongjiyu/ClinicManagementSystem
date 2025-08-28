@@ -1,5 +1,9 @@
 package utils;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 public interface SetInterface<T> {
   boolean add(T element);
   boolean remove(T element);

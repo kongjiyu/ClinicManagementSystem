@@ -1,5 +1,10 @@
 package repositories.Bill;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;

@@ -1,5 +1,10 @@
 package DTO;
 
+/**
+ * Author: Yap Yu Xin
+ * Consultation Module
+ */
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

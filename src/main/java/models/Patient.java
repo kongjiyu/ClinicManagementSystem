@@ -1,5 +1,10 @@
 package models;
 
+/**
+ * Author: Yap Ern Tong
+ * Patient Module
+ */
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;

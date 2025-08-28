@@ -1,5 +1,10 @@
 package repositories.Supplier;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import models.Supplier;
 import utils.List;
 

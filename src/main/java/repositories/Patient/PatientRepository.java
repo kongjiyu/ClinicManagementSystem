@@ -1,5 +1,10 @@
 package repositories.Patient;
 
+/**
+ * Author: Yap Ern Tong
+ * Patient Module
+ */
+
 import models.Consultation;
 import models.Patient;
 import models.Prescription;

@@ -1,9 +1,6 @@
 <%--
-  Created by IntelliJ IDEA.
-  User: kongjy
-  Date: 31/07/2025
-  Time: 10:27 PM
-  To change this template use File | Settings | File Templates.
+Author: Kong Ji Yu
+General Module
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>

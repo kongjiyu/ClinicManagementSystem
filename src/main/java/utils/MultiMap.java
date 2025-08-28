@@ -1,5 +1,9 @@
 package utils;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 import java.util.Iterator;
 
 public class MultiMap<K, V> implements MultiMapInterface<K, V>, Iterable<MultiMap.KeyValue<K, V>> {

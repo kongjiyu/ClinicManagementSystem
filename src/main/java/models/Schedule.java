@@ -1,5 +1,10 @@
 package models;
 
+/**
+ * Author: Yap Yu Xin
+ * Consultation Module
+ */
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;

@@ -1,5 +1,10 @@
 package repositories.Order;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import models.Order;

@@ -1,5 +1,10 @@
 package DTO;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import lombok.*;
 
 @Getter

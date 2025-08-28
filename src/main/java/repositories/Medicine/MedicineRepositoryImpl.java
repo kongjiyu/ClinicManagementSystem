@@ -1,5 +1,10 @@
 package repositories.Medicine;
 
+/**
+ * Author: Anny Wong Ann Nee
+ * Pharmacy Module
+ */
+
 import jakarta.enterprise.context.ApplicationScoped;
 import models.Medicine;
 import jakarta.persistence.EntityManager;

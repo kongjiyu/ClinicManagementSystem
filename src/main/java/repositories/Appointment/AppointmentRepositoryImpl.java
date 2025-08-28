@@ -1,5 +1,10 @@
 package repositories.Appointment;
 
+/**
+ * Author: Yap Yu Xin
+ * Consultation Module
+ */
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import models.Appointment;

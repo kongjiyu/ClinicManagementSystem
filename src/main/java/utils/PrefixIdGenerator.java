@@ -1,5 +1,9 @@
 package utils;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.id.IdentifierGenerator;
 import java.io.Serializable;

@@ -1,9 +1,6 @@
 <%--
-  Created by IntelliJ IDEA.
-  User: kongjy
-  Date: 01/08/2025
-  Time: 4:51 PM
-  To change this template use File | Settings | File Templates.
+Author: Anny Wong Ann Nee
+Pharmacy Module
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>

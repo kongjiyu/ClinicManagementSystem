@@ -78,7 +78,7 @@
 
   <!-- Reports Grid -->
   <div id="reportsGrid" class="grid grid-cols-1 gap-6" style="display: none;">
-    
+
     <!-- Patient Registration Report -->
     <div id="patientReportCard" class="bg-base-200 rounded-lg p-6" style="display: none;">
       <h2 class="text-xl font-semibold mb-4">Patient Registration Trends</h2>
@@ -160,7 +160,7 @@
             <div id="peakHour" class="stat-value text-accent">-</div>
           </div>
         </div>
-        
+
         <!-- First Row: Status and Hourly -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
@@ -170,7 +170,7 @@
             <canvas id="consultationHourlyChart"></canvas>
           </div>
         </div>
-        
+
         <!-- Second Row: Daily Trends and Monthly Comparison -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
@@ -206,14 +206,14 @@
             <div id="topSellingMedicine" class="stat-value text-info">-</div>
           </div>
         </div>
-        
+
         <!-- First Row: Sales Chart -->
         <div class="grid grid-cols-1 gap-6">
           <div class="h-96">
             <canvas id="medicineSalesChart"></canvas>
           </div>
         </div>
-        
+
         <!-- Second Row: Trends and Performance -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
@@ -223,7 +223,7 @@
             <canvas id="medicinePerformanceChart"></canvas>
           </div>
         </div>
-        
+
         <!-- Third Row: Top Medicines Table -->
         <div class="bg-base-100 rounded-lg p-4">
           <h3 class="text-lg font-semibold mb-3">Top Selling Medicines Details</h3>
@@ -271,7 +271,7 @@
             <div id="scheduledTreatments" class="stat-value text-warning">-</div>
           </div>
         </div>
-        
+
         <!-- First Row: Treatment Types and Outcomes -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
@@ -281,7 +281,7 @@
             <canvas id="treatmentOutcomeChart"></canvas>
           </div>
         </div>
-        
+
         <!-- Second Row: Treatment Duration and Revenue Analysis -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="h-96">
@@ -291,7 +291,7 @@
             <canvas id="treatmentRevenueChart"></canvas>
           </div>
         </div>
-        
+
         <!-- Third Row: Treatment Details Table -->
         <div class="bg-base-100 rounded-lg p-4">
           <h3 class="text-lg font-semibold mb-3">Treatment Performance by Doctor</h3>
@@ -335,7 +335,7 @@
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 1);
-    
+
     document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
     document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
   }
@@ -345,20 +345,20 @@
   // Module selection function
   function selectModule(module) {
     selectedModule = module;
-    
+
     // Show date filter section
     document.getElementById('dateFilterSection').style.display = 'block';
-    
+
     // Show reports grid
     document.getElementById('reportsGrid').style.display = 'grid';
-    
+
     // Hide all report cards
     document.getElementById('patientReportCard').style.display = 'none';
     document.getElementById('doctorReportCard').style.display = 'none';
     document.getElementById('consultationReportCard').style.display = 'none';
     document.getElementById('medicineReportCard').style.display = 'none';
     document.getElementById('treatmentReportCard').style.display = 'none';
-    
+
     // Show selected report card
     switch(module) {
       case 'patient':
@@ -377,7 +377,7 @@
         document.getElementById('treatmentReportCard').style.display = 'block';
         break;
     }
-    
+
     // Load the selected report
     loadSelectedReport();
   }
@@ -385,7 +385,7 @@
   // Load selected report
   async function loadSelectedReport() {
     if (!selectedModule) return;
-    
+
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
@@ -457,7 +457,7 @@
       // Create new PDF document
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('landscape', 'mm', 'a4');
-      
+
       // Set document properties
       doc.setProperties({
         title: selectedModule + ' Report',
@@ -470,7 +470,7 @@
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
       doc.text('Clinic Management System - Reports', 105, 20, { align: 'center' });
-      
+
       // Add date
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
@@ -502,23 +502,23 @@
       // Get chart canvases and add them to PDF
       const charts = reportCard.querySelectorAll('canvas');
       const chartTitles = ['Gender Distribution', 'Age Distribution', 'Blood Type Distribution', 'Nationality Distribution'];
-      
+
       // Add charts in 2x2 grid
       for (let i = 0; i < charts.length; i++) {
         const canvas = charts[i];
         const imgData = canvas.toDataURL('image/png');
-        
+
         // Calculate position for 2x2 grid
         const row = Math.floor(i / 2);
         const col = i % 2;
         const x = 20 + (col * 130);
         const y = 60 + (row * 80);
-        
+
         // Add chart title
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text(chartTitles[i] || 'Chart ' + (i + 1), x + 60, y - 5, { align: 'center' });
-        
+
         // Add chart image
         doc.addImage(imgData, 'PNG', x, y, 120, 70);
       }
@@ -527,11 +527,11 @@
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text('Data Summary', 20, 200);
-      
+
       // Add summary statistics
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      
+
       // Get statistics from the report
       const statsElements = reportCard.querySelectorAll('.stat-value');
       if (statsElements.length > 0) {
@@ -550,11 +550,11 @@
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('Detailed Patient Data', 20, 240);
-        
+
         // Extract data from Chart.js instances
         const chartInstances = Chart.getChart ? Object.values(Chart.instances) : [];
         let allData = [];
-        
+
         // Try to get data from chart instances
         chartInstances.forEach(chart => {
           if (chart && chart.data && chart.data.datasets) {
@@ -570,7 +570,7 @@
             });
           }
         });
-        
+
         // If no chart data found, use sample data
         if (allData.length === 0) {
           allData = [
@@ -587,14 +587,14 @@
             ['Blood Type O', '35', '40.7%']
           ];
         }
-        
+
         // Split data into multiple tables if too long
         const maxRowsPerTable = 8;
         const tables = [];
         for (let i = 0; i < allData.length; i += maxRowsPerTable) {
           tables.push(allData.slice(i, i + maxRowsPerTable));
         }
-        
+
         let currentY = 250;
         tables.forEach((tableData, tableIndex) => {
           if (tableIndex > 0) {
@@ -607,7 +607,7 @@
               currentY += 20; // Add space between tables
             }
           }
-          
+
           doc.autoTable({
             startY: currentY,
             head: [['Category', 'Count', 'Percentage']],
@@ -623,7 +623,7 @@
               doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
             }
           });
-          
+
           currentY = doc.lastAutoTable.finalY + 10;
         });
       } else if (selectedModule === 'doctor') {
@@ -631,7 +631,7 @@
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('Doctor Statistics', 20, 240);
-        
+
         const doctorData = [
           ['Metric', 'Value'],
           ['Total Doctors', document.getElementById('totalDoctors').textContent],
@@ -639,7 +639,7 @@
           ['Total Schedules', document.getElementById('totalSchedules').textContent],
           ['Avg Hours/Week', document.getElementById('avgHoursPerWeek').textContent]
         ];
-        
+
         doc.autoTable({
           startY: 250,
           head: [doctorData[0]],
@@ -654,12 +654,12 @@
             doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
           }
         });
-        
+
         // Add schedule data table
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('Doctor Schedule Information', 20, 320);
-        
+
         const scheduleData = [
           ['Doctor', 'Hours/Week', 'Days/Week', 'Status'],
           ['ST0001', '40', '5', 'Active'],
@@ -668,7 +668,7 @@
           ['ST0006', '25', '3', 'Part-time'],
           ['ST0009', '20', '2', 'Part-time']
         ];
-        
+
         doc.autoTable({
           startY: 330,
           head: [scheduleData[0]],
@@ -718,14 +718,14 @@
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('Consultation Statistics', 20, 240);
-        
+
         const consultationData = [
           ['Metric', 'Value'],
           ['Total Consultations', document.getElementById('totalConsultations').textContent],
           ['Average per Day', document.getElementById('avgConsultationsPerDay').textContent],
           ['Peak Hour', document.getElementById('peakHour').textContent]
         ];
-        
+
         doc.autoTable({
           startY: 250,
           head: [consultationData[0]],
@@ -745,7 +745,7 @@
              doc.setFontSize(12);
              doc.setFont('helvetica', 'bold');
              doc.text('Top Selling Medicines', 20, 240);
-             
+
              const medicineData = [
                ['Medicine', 'Quantity Sold', 'Revenue'],
                        ['Paracetamol', '150', 'RM 750.00'],
@@ -754,7 +754,7 @@
         ['Omeprazole', '80', 'RM 1,600.00'],
         ['Cetirizine', '65', 'RM 325.00']
              ];
-             
+
              doc.autoTable({
                startY: 250,
                head: [medicineData[0]],
@@ -774,7 +774,7 @@
               doc.setFontSize(12);
               doc.setFont('helvetica', 'bold');
               doc.text('Treatment Performance by Doctor', 20, 240);
-              
+
               const treatmentData = [
                 ['Doctor', 'Total Treatments', 'Completed', 'Success Rate', 'Top Treatment Type'],
                 ['ST0001', '8', '7', '87.5%', 'Surgery'],
@@ -783,7 +783,7 @@
                 ['ST0006', '4', '3', '75.0%', 'Laboratory Test'],
                 ['ST0009', '3', '2', '66.7%', 'Emergency Treatment']
               ];
-              
+
               doc.autoTable({
                 startY: 250,
                 head: [treatmentData[0]],
@@ -803,7 +803,7 @@
       // Save the PDF
       const filename = selectedModule + '_report_' + new Date().toISOString().split('T')[0] + '.pdf';
       doc.save(filename);
-      
+
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Error generating PDF: ' + error.message);
@@ -817,7 +817,7 @@
       console.log('Fetching doctor management report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load doctor management report');
-      
+
       const data = await response.json();
       const reportData = data.data;
 
@@ -880,7 +880,7 @@
     document.getElementById('avgConsultations').textContent = 'Error';
     document.getElementById('totalSchedules').textContent = 'Error';
     document.getElementById('avgHoursPerWeek').textContent = 'Error';
-    
+
     showChartError('doctorSpecialtyChart', message);
     showChartError('doctorTreatmentChart', message);
     showChartError('doctorScheduleChart', message);
@@ -894,7 +894,7 @@
       console.log('Fetching patient registration report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load patient registration report');
-      
+
       const data = await response.json();
       const reportData = data.data;
 
@@ -925,7 +925,7 @@
       console.log('Fetching consultation volume report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load consultation volume report');
-      
+
       const data = await response.json();
       const reportData = data.data;
 
@@ -965,7 +965,7 @@
     document.getElementById('totalConsultations').textContent = 'Error';
     document.getElementById('avgConsultationsPerDay').textContent = 'Error';
     document.getElementById('peakHour').textContent = 'Error';
-    
+
     showChartError('consultationStatusChart', message);
     showChartError('consultationHourlyChart', message);
     showChartError('consultationDailyTrendChart', message);
@@ -1010,24 +1010,24 @@
       console.log('Fetching medicine sales report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load medicine sales report');
-      
+
       const data = await response.json();
       const reportData = data.data;
 
       // Update enhanced statistics
               document.getElementById('totalRevenue').textContent = 'RM ' + reportData.totalRevenue.toFixed(2);
         document.getElementById('avgRevenuePerPrescription').textContent = 'RM ' + reportData.averageRevenuePerPrescription.toFixed(2);
-      
+
       // Calculate additional statistics
       let totalQuantity = 0;
       let topMedicine = '';
       let maxQuantity = 0;
-      
+
       // Handle elements array structure
-      const medicinesArray = reportData.topSellingMedicines && reportData.topSellingMedicines.elements ? 
-        reportData.topSellingMedicines.elements : 
+      const medicinesArray = reportData.topSellingMedicines && reportData.topSellingMedicines.elements ?
+        reportData.topSellingMedicines.elements :
         (Array.isArray(reportData.topSellingMedicines) ? reportData.topSellingMedicines : []);
-      
+
       if (medicinesArray.length > 0) {
         medicinesArray.forEach(medicine => {
           totalQuantity += medicine.quantitySold || 0;
@@ -1037,7 +1037,7 @@
           }
         });
       }
-      
+
       document.getElementById('totalQuantitySold').textContent = totalQuantity.toLocaleString();
       document.getElementById('topSellingMedicine').textContent = topMedicine || 'N/A';
 
@@ -1092,11 +1092,11 @@
     document.getElementById('totalQuantitySold').textContent = 'Error';
     document.getElementById('avgRevenuePerPrescription').textContent = 'Error';
     document.getElementById('topSellingMedicine').textContent = 'Error';
-    
+
     showChartError('medicineSalesChart', message);
     showChartError('medicineTrendsChart', message);
     showChartError('medicinePerformanceChart', message);
-    
+
     // Show error in table
     const tbody = document.getElementById('topSellingMedicines');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-error">Error loading medicine data: ' + message + '</td></tr>';
@@ -1109,7 +1109,7 @@
       console.log('Fetching treatment analytics report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load treatment analytics report');
-      
+
       const data = await response.json();
       const reportData = data.data;
 
@@ -1121,7 +1121,7 @@
 
       // Load charts
       await loadTreatmentCharts(reportData);
-      
+
       // Update treatment table
       updateTreatmentTable(reportData.doctorPerformance);
 
@@ -1141,12 +1141,12 @@
     document.getElementById('treatmentSuccessRate').textContent = 'Error';
     document.getElementById('completedTreatments').textContent = 'Error';
     document.getElementById('scheduledTreatments').textContent = 'Error';
-    
+
     showChartError('treatmentTypeChart', message);
     showChartError('treatmentOutcomeChart', message);
     showChartError('treatmentDurationChart', message);
     showChartError('treatmentRevenueChart', message);
-    
+
     // Show error in table
     const tbody = document.getElementById('treatmentTable');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-error">Error loading treatment data: ' + message + '</td></tr>';
@@ -1201,7 +1201,7 @@
 
       // Handle different data structures
       let doctorArray = [];
-      
+
       if (Array.isArray(doctorPerformance)) {
         doctorArray = doctorPerformance;
       } else if (doctorPerformance && typeof doctorPerformance === 'object') {
@@ -1228,7 +1228,7 @@
 
       sortedDoctors.forEach((doctor, index) => {
         const row = tbody.insertRow();
-        row.innerHTML = 
+        row.innerHTML =
           '<td>' + (index + 1) + '</td>' +
           '<td>' + (doctor.doctorName || doctor.doctorId || 'Unknown') + '</td>' +
           '<td>' + (doctor.totalTreatments || 0) + '</td>' +
@@ -1251,7 +1251,7 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
@@ -1295,14 +1295,14 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
 
@@ -1347,24 +1347,24 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
 
     // Create gradient backgrounds with fallback
     const gradients = labels.map((_, index) => {
       const colors = [
-        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
         '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
       ];
-      
+
       // Try to create gradient, fallback to solid color if not available
       try {
         const ctx2d = canvas.getContext('2d');
@@ -1381,7 +1381,7 @@
       } catch (error) {
         console.warn('Gradient creation failed, using solid color:', error);
       }
-      
+
       // Fallback to solid color
       return colors[index % colors.length];
     });
@@ -1449,18 +1449,18 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
     const colors = [
-      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
       '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
     ];
 
@@ -1521,14 +1521,14 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
 
@@ -1609,18 +1609,18 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
     const colors = [
-      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
       '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
     ];
 
@@ -1630,7 +1630,7 @@
         labels: labels,
         datasets: [{
           data: values,
-          backgroundColor: colors.slice(0, labels.length).map(color => 
+          backgroundColor: colors.slice(0, labels.length).map(color =>
             color + '80' // Add transparency
           ),
           borderColor: colors.slice(0, labels.length),
@@ -1681,18 +1681,18 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
 
     // Convert MultiMap format to object format
     const chartData = convertMultiMapToObject(data);
-    
+
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
     const total = values.reduce((sum, val) => sum + val, 0);
-    
+
     // Create bubble data with size based on percentage
     const bubbleData = labels.map((label, index) => {
       const value = values[index];
@@ -1705,7 +1705,7 @@
     });
 
     const colors = [
-      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
       '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
     ];
 
@@ -1715,7 +1715,7 @@
         datasets: [{
           label: title,
           data: bubbleData,
-          backgroundColor: colors.slice(0, labels.length).map(color => 
+          backgroundColor: colors.slice(0, labels.length).map(color =>
             color + '80' // Add transparency
           ),
           borderColor: colors.slice(0, labels.length),
@@ -1750,7 +1750,7 @@
                 const label = labels[index];
                 const value = values[index];
                 const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: ${value} patients (${percentage}%)`;
+                return label + ": " + value + " patients (" + percentage + "%)";
               }
             }
           }
@@ -1782,7 +1782,7 @@
       console.error('Canvas element not found:', canvasId);
       return;
     }
-    
+
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
@@ -1849,23 +1849,23 @@
     }
 
     const medicineArray = Array.isArray(medicines) ? medicines : Object.values(medicines);
-    
+
     // Sort medicines by quantity sold (descending) for proper ranking
     medicineArray.sort((a, b) => {
       const quantityA = a.quantitySold || 0;
       const quantityB = b.quantitySold || 0;
       return quantityB - quantityA; // Descending order
     });
-    
+
     // Get real growth data
     let growthData = {};
     try {
       const startDateElement = document.getElementById('startDate');
       const endDateElement = document.getElementById('endDate');
-      
+
       const startDate = startDateElement ? startDateElement.value : '';
       const endDate = endDateElement ? endDateElement.value : '';
-      
+
       // Only make API call if we have valid dates
       if (startDate && endDate) {
         const growthResponse = await fetch(API_BASE + '/reports/medicine-growth-comparison?startDate=' + startDate + '&endDate=' + endDate);
@@ -1876,21 +1876,21 @@
     } catch (error) {
       console.warn('Failed to load growth data:', error);
     }
-    
+
     medicineArray.slice(0, 10).forEach((medicine, index) => {
       const row = tbody.insertRow();
-      
+
       // Safe data access with fallbacks
       const quantitySold = medicine.quantitySold || 0;
       const revenue = medicine.revenue || 0;
       const medicineName = medicine.medicineName || 'Unknown Medicine';
       const avgPrice = quantitySold > 0 ? (revenue / quantitySold) : 0;
-      
+
       // Get real growth data for this medicine
       let growth = 0;
       let growthClass = 'text-neutral';
       let growthIcon = '→';
-      
+
       // Find growth data for this medicine
       for (const [key, value] of Object.entries(growthData)) {
         if (key.includes(medicine.medicineId) || key.includes(medicineName)) {
@@ -1900,8 +1900,8 @@
           break;
         }
       }
-      
-      row.innerHTML = 
+
+      row.innerHTML =
         '<td><div class="badge badge-primary">' + (index + 1) + '</div></td>' +
         '<td class="font-medium">' + medicineName + '</td>' +
         '<td>' + quantitySold.toLocaleString() + '</td>' +

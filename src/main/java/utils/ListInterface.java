@@ -1,5 +1,9 @@
 package utils;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 import java.util.Comparator;
 
 public interface ListInterface<T> extends Iterable<T> {

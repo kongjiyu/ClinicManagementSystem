@@ -1,5 +1,9 @@
 package DTO;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

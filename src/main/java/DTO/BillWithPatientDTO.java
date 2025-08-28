@@ -1,5 +1,10 @@
 package DTO;
 
+/**
+ * Author: Yap Ern Tong
+ * Patient Module
+ */
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

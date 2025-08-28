@@ -1,5 +1,10 @@
 package models;
 
+/**
+ * Author: Kong Ji Yu
+ * Doctor Module
+ */
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;

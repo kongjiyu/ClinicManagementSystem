@@ -1,5 +1,10 @@
 package models;
 
+/**
+ * Author: Oh Wan Ting
+ * Treatment Module
+ */
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;

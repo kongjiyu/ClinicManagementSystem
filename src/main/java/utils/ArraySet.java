@@ -1,5 +1,9 @@
 package utils;
 
+/**
+ * Author: Kong Ji Yu
+ */
+
 public class ArraySet<T> implements SetInterface<T> {
     private Object[] elements;
     private int size;
