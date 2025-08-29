@@ -120,6 +120,7 @@ Appointment Module
     .fc-list-event-title {
       color: black !important;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    }
 
   </style>
   
@@ -185,7 +186,7 @@ Appointment Module
       height: 'auto',
       expandRows: true,
       slotMinTime: '08:00:00',
-      slotMaxTime: '18:00:00',
+      slotMaxTime: '20:00:00',
       allDaySlot: false,
       slotDuration: '00:30:00',
       selectable: false,

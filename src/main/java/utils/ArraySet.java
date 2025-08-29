@@ -1,7 +1,7 @@
 package utils;
 
 /**
- * Author: Kong Ji Yu
+ * Author: all members
  */
 
 public class ArraySet<T> implements SetInterface<T> {

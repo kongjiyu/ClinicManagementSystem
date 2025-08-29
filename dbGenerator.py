@@ -295,6 +295,10 @@ def generate_appointment_sql(n=80, patient_ids=None, doctor_ids=None):
     current = start_date
     statuses_before_sep = ["Cancelled", "Checked-in", "No show"]
     statuses_on_after_sep = ["Cancelled", "Scheduled"]
+    
+    # Track which patients already have active appointments
+    patients_with_active_appointments = set()
+    
     while current <= end_date:
         # choose very few slots per day for smaller clinic, and not every day
         if random.random() < 0.3:  # Only 30% of days have appointments
@@ -319,7 +323,7 @@ def generate_appointment_sql(n=80, patient_ids=None, doctor_ids=None):
                     break
 
             appointmentID = f"AP{str(ap_index).zfill(4)}"
-            patientID = random.choice(patient_ids)
+            
             # More realistic status distribution
             if dt.date() < date(2025, 9, 1):
                 # Past appointments: mostly completed, some cancelled/no-show
@@ -327,6 +331,21 @@ def generate_appointment_sql(n=80, patient_ids=None, doctor_ids=None):
             else:
                 # Future appointments: mostly scheduled, some cancelled
                 status = random.choices(statuses_on_after_sep, weights=[85, 15])[0]
+            
+            # For future appointments (Scheduled), ensure patient doesn't already have an active appointment
+            if status == "Scheduled":
+                # Get patients who don't have active appointments yet
+                available_patients = [pid for pid in patient_ids if pid not in patients_with_active_appointments]
+                if available_patients:
+                    patientID = random.choice(available_patients)
+                    patients_with_active_appointments.add(patientID)
+                else:
+                    # If all patients have active appointments, make this one cancelled
+                    patientID = random.choice(patient_ids)
+                    status = "Cancelled"
+            else:
+                # For past appointments, any patient can be chosen
+                patientID = random.choice(patient_ids)
 
             reason = random.choice(reasons)
             values = [
@@ -381,8 +400,8 @@ def generate_consultations(n=200, appointment_ids=None, doctor_ids=None, patient
             "Migraine", "Gastritis", "Dermatitis", "Anxiety", "Depression",
             "Bronchitis", "Sinusitis", "Urinary tract infection", "Conjunctivitis"
         ])
-        # Generate consultations from January 2024 to December 2025
-        consultationDate = fake.date_between(start_date=date(2024, 1, 1), end_date=date(2025, 12, 31))
+        # Generate consultations from January 2024 to August 31, 2025 (before September)
+        consultationDate = fake.date_between(start_date=date(2024, 1, 1), end_date=date(2025, 8, 31))
         checkInTime = datetime.combine(consultationDate, time(random.randint(8, 16), random.choice([0, 15, 30, 45])))
         status = random.choice(statuses)
 
@@ -571,14 +590,8 @@ def generate_treatment_sql(consultations):
             tr_min = random.choice([0, 15, 30, 45])
             t_datetime = datetime.combine(base_date, time(tr_hour, tr_min))
 
-            # Set status based on treatment date (September 2025 as cutoff)
-            september_2025 = date(2025, 9, 1)
-            if base_date >= september_2025:
-                # After September 2025: Only In Progress
-                status = "In Progress"
-            else:
-                # Before September 2025: Mostly Completed, some Cancelled
-                status = random.choices(["Completed", "Cancelled"], weights=[85, 15])[0]
+            # All treatments are before September 2025, so mostly Completed, some Cancelled
+            status = random.choices(["Completed", "Cancelled"], weights=[85, 15])[0]
 
             outcome = random.choice(completed_outcomes) if status == "Completed" else None
             duration = random.randint(15, 60)
@@ -813,9 +826,9 @@ def generate_schedule_sql(doctor_ids):
     inserts = []
     schedule_index = 1
 
-    # Generate from July to end of September 2025
+    # Generate from July to end of August 2025 (before September)
     start_date = date(2025, 7, 1)
-    end_date = date(2025, 9, 30)
+    end_date = date(2025, 8, 31)
 
     current_date = start_date
     while current_date <= end_date:
@@ -901,36 +914,40 @@ def generate_order_sql(n=30, medicine_ids=None, supplier_ids=None, staff_ids=Non
     supplier_ids = supplier_ids or [f"SU{str(i + 1).zfill(4)}" for i in range(n)]
     staff_ids = staff_ids or [f"ST{str(i + 1).zfill(4)}" for i in range(n)]
 
+    # Track which medicines have been ordered to ensure we cover all medicines
+    ordered_medicines = set()
+    
+    # Ensure we have exactly one medicine with insufficient stock
+    insufficient_stock_medicine = random.choice(medicine_ids)
+    
     for i in range(n):
         order_id = f"OR{str(i + 1).zfill(4)}"
-        medicine_id = random.choice(medicine_ids)
+        
+        # Ensure we cover all medicines in the catalog
+        if len(ordered_medicines) < len(medicine_ids):
+            # Choose a medicine that hasn't been ordered yet
+            available_medicines = [mid for mid in medicine_ids if mid not in ordered_medicines]
+            medicine_id = random.choice(available_medicines)
+            ordered_medicines.add(medicine_id)
+        else:
+            # If all medicines have been ordered, choose randomly
+            medicine_id = random.choice(medicine_ids)
+            
         supplier_id = random.choice(supplier_ids)
         staff_id = random.choice(staff_ids)
-        order_date = fake.date_between(start_date='-1y', end_date='today')
+        order_date = fake.date_between(start_date='-1y', end_date=date(2025, 8, 31))
 
-        # Determine order status based on date
-        september_2025 = date(2025, 9, 1)
-        if order_date >= september_2025:
-            # After September 2025: Pending or Shipped
-            order_status = random.choice(["Pending", "Shipped"])
-        else:
-            # Before September 2025: Completed or Cancelled
-            order_status = random.choice(["Completed", "Cancelled"])
+        # All orders are before September 2025, so mostly Completed, some Cancelled
+        order_status = random.choice(["Completed", "Cancelled"])
 
         # Use realistic medicine prices from MED_CATALOG
         medicine_name = None
-        for med_id in medicine_ids:
-            if med_id == medicine_id:
-                # Find the medicine name from MED_CATALOG
-                for i, (name, _, price, _, _) in enumerate(MED_CATALOG, 1):
-                    if f"ME{str(i).zfill(4)}" == medicine_id:
-                        medicine_name = name
-                        unit_price = price
-                        break
+        unit_price = 10.0  # default price
+        for i, (name, _, price, _, _) in enumerate(MED_CATALOG, 1):
+            if f"ME{str(i).zfill(4)}" == medicine_id:
+                medicine_name = name
+                unit_price = price
                 break
-        
-        if not medicine_name:
-            unit_price = round(random.uniform(5.0, 50.0), 2)
         
         # Ensure sufficient stock (at least 100 non-expired units per medicine)
         quantity = random.randint(200, 500)  # Larger quantities
@@ -943,8 +960,14 @@ def generate_order_sql(n=30, medicine_ids=None, supplier_ids=None, staff_ids=Non
         else:
             expiry_date = fake.date_between(start_date=order_date, end_date='+1y')
         
-        stock = quantity
-
+        # Set stock based on whether this is the insufficient stock medicine
+        if medicine_id == insufficient_stock_medicine:
+            # This medicine will have insufficient stock (below reorder level of 20)
+            stock = random.randint(5, 15)  # Below reorder level
+        else:
+            # All other medicines have sufficient stock
+            stock = quantity  # Full stock from order
+        
         values = [
             order_id, medicine_id, supplier_id, staff_id, order_date,
             order_status, unit_price, quantity, total_amount, expiry_date, stock

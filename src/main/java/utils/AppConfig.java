@@ -1,7 +1,7 @@
 package utils;
 
 /**
- * Author: Kong Ji Yu
+ * Author: all members
  */
 
 import jakarta.ws.rs.ApplicationPath;

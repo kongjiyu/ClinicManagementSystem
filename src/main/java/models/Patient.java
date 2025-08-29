@@ -10,8 +10,6 @@ import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.util.List;
-
 @Getter
 @Setter
 @Entity

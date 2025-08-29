@@ -136,10 +136,10 @@ public class ReportResource {
             data.addProperty("totalPatients", totalPatients);
             data.addProperty("newPatientsThisMonth", newPatientsThisMonth);
             data.addProperty("newPatientsThisWeek", newPatientsThisWeek);
-            data.add("genderDistribution", gson.toJsonTree(multiMapToCountMap(genderDistribution)));
-            data.add("ageDistribution", gson.toJsonTree(multiMapToCountMap(ageDistribution)));
-            data.add("bloodTypeDistribution", gson.toJsonTree(multiMapToCountMap(bloodTypeDistribution)));
-            data.add("nationalityDistribution", gson.toJsonTree(multiMapToCountMap(nationalityDistribution)));
+            data.add("genderDistribution", gson.toJsonTree(multiMapToCountArray(genderDistribution)));
+            data.add("ageDistribution", gson.toJsonTree(multiMapToCountArray(ageDistribution)));
+            data.add("bloodTypeDistribution", gson.toJsonTree(multiMapToCountArray(bloodTypeDistribution)));
+            data.add("nationalityDistribution", gson.toJsonTree(multiMapToCountArray(nationalityDistribution)));
 
             report.add("data", data);
 
@@ -216,9 +216,9 @@ public class ReportResource {
             JsonObject data = new JsonObject();
             data.addProperty("totalConsultations", totalConsultations);
             data.addProperty("averageConsultationsPerDay", avgConsultationsPerDay);
-            data.add("statusDistribution", gson.toJsonTree(multiMapToCountMap(statusDistribution)));
-            data.add("dailyConsultations", gson.toJsonTree(multiMapToCountMap(dailyConsultations)));
-            data.add("hourlyConsultations", gson.toJsonTree(multiMapToCountMap(hourlyConsultations)));
+            data.add("statusDistribution", gson.toJsonTree(multiMapToCountArray(statusDistribution)));
+            data.add("dailyConsultations", gson.toJsonTree(multiMapToCountArray(dailyConsultations)));
+            data.add("hourlyConsultations", gson.toJsonTree(multiMapToCountArray(hourlyConsultations)));
 
             report.add("data", data);
 
@@ -255,7 +255,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToCountMap(dailyTrends));
+            String json = gson.toJson(multiMapToCountArray(dailyTrends));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -299,7 +299,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToCountMap(doctorPerformance));
+            String json = gson.toJson(multiMapToCountArray(doctorPerformance));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -334,7 +334,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToCountMap(durationAnalysis));
+            String json = gson.toJson(multiMapToCountArray(durationAnalysis));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -366,7 +366,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToCountMap(monthlyComparison));
+            String json = gson.toJson(multiMapToCountArray(monthlyComparison));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -443,7 +443,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToCountMap(categoryAnalysis));
+            String json = gson.toJson(multiMapToCountArray(categoryAnalysis));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -490,7 +490,7 @@ public class ReportResource {
                 }
             }
 
-            String json = gson.toJson(multiMapToSumMap(monthlyTrends));
+            String json = gson.toJson(multiMapToSumArray(monthlyTrends));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -650,8 +650,8 @@ public class ReportResource {
             data.addProperty("averageRevenuePerPrescription", 
                 filteredPrescriptions.size() > 0 ? totalRevenue / filteredPrescriptions.size() : 0);
             data.add("topSellingMedicines", gson.toJsonTree(topSellingMedicinesList));
-            data.add("medicineSales", gson.toJsonTree(multiMapToCountMap(medicineSales)));
-            data.add("medicineRevenue", gson.toJsonTree(multiMapToSumMap(medicineRevenue)));
+            data.add("medicineSales", gson.toJsonTree(multiMapToCountArray(medicineSales)));
+            data.add("medicineRevenue", gson.toJsonTree(multiMapToSumArray(medicineRevenue)));
 
             report.add("data", data);
 
@@ -762,11 +762,12 @@ public class ReportResource {
         else return "70+";
     }
 
-    // Helper method to convert MultiMap<String, Integer> to simple Map for JSON
-    private java.util.Map<String, Integer> multiMapToCountMap(MultiMap<String, Integer> multiMap) {
-        java.util.Map<String, Integer> result = new java.util.HashMap<>();
+    // Helper method to convert MultiMap<String, Integer> to simple data structure for JSON
+    private CountData[] multiMapToCountArray(MultiMap<String, Integer> multiMap) {
         ArraySet<String> keys = multiMap.keySet();
         Object[] keyArray = keys.toArray();
+        CountData[] result = new CountData[keyArray.length];
+        
         for (int i = 0; i < keyArray.length; i++) {
             String key = (String) keyArray[i];
             int count = 0;
@@ -774,16 +775,17 @@ public class ReportResource {
             for (int j = 0; j < values.size(); j++) {
                 count += values.get(j);
             }
-            result.put(key, count);
+            result[i] = new CountData(key, count);
         }
         return result;
     }
 
-    // Helper method to convert MultiMap<String, Double> to simple Map for JSON
-    private java.util.Map<String, Double> multiMapToSumMap(MultiMap<String, Double> multiMap) {
-        java.util.Map<String, Double> result = new java.util.HashMap<>();
+    // Helper method to convert MultiMap<String, Double> to simple data structure for JSON
+    private SumData[] multiMapToSumArray(MultiMap<String, Double> multiMap) {
         ArraySet<String> keys = multiMap.keySet();
         Object[] keyArray = keys.toArray();
+        SumData[] result = new SumData[keyArray.length];
+        
         for (int i = 0; i < keyArray.length; i++) {
             String key = (String) keyArray[i];
             double sum = 0.0;
@@ -791,9 +793,81 @@ public class ReportResource {
             for (int j = 0; j < values.size(); j++) {
                 sum += values.get(j);
             }
-            result.put(key, sum);
+            result[i] = new SumData(key, sum);
         }
         return result;
+    }
+
+    // Data classes for structured responses
+    public static class CountData {
+        public String key;
+        public int count;
+        
+        public CountData(String key, int count) {
+            this.key = key;
+            this.count = count;
+        }
+    }
+
+    public static class SumData {
+        public String key;
+        public double sum;
+        
+        public SumData(String key, double sum) {
+            this.key = key;
+            this.sum = sum;
+        }
+    }
+
+    // Additional data classes for doctor management report
+    public static class DoctorNameData {
+        public String doctorId;
+        public String doctorName;
+        
+        public DoctorNameData(String doctorId, String doctorName) {
+            this.doctorId = doctorId;
+            this.doctorName = doctorName;
+        }
+    }
+
+    public static class DoctorConsultationData {
+        public String doctorName;
+        public int consultationCount;
+        
+        public DoctorConsultationData(String doctorName, int consultationCount) {
+            this.doctorName = doctorName;
+            this.consultationCount = consultationCount;
+        }
+    }
+
+    public static class DoctorScheduleData {
+        public String doctorName;
+        public int scheduleHours;
+        
+        public DoctorScheduleData(String doctorName, int scheduleHours) {
+            this.doctorName = doctorName;
+            this.scheduleHours = scheduleHours;
+        }
+    }
+
+    public static class ScheduleTrendData {
+        public String monthKey;
+        public int totalCount;
+        
+        public ScheduleTrendData(String monthKey, int totalCount) {
+            this.monthKey = monthKey;
+            this.totalCount = totalCount;
+        }
+    }
+
+    // Helper method to get doctor name from array
+    private String getDoctorName(DoctorNameData[] doctorNames, String doctorId) {
+        for (DoctorNameData doctor : doctorNames) {
+            if (doctor.doctorId.equals(doctorId)) {
+                return doctor.doctorName;
+            }
+        }
+        return null;
     }
 
     // Data classes for structured responses
@@ -891,16 +965,16 @@ public class ReportResource {
             data.addProperty("diagnosisRate", totalConsultations > 0 ? (double) consultationsWithDiagnosis / totalConsultations * 100 : 0);
             
             // Top diagnoses
-            data.add("topDiagnoses", gson.toJsonTree(multiMapToCountMap(diagnosisCounts)));
+            data.add("topDiagnoses", gson.toJsonTree(multiMapToCountArray(diagnosisCounts)));
             
             // Diagnosis categories
-            data.add("diagnosisCategories", gson.toJsonTree(multiMapToCountMap(categoryCounts)));
+            data.add("diagnosisCategories", gson.toJsonTree(multiMapToCountArray(categoryCounts)));
             
             // Doctor diagnosis counts
-            data.add("doctorDiagnosisCounts", gson.toJsonTree(multiMapToCountMap(doctorDiagnosisCounts)));
+            data.add("doctorDiagnosisCounts", gson.toJsonTree(multiMapToCountArray(doctorDiagnosisCounts)));
             
             // Monthly trends
-            data.add("monthlyDiagnosisTrends", gson.toJsonTree(multiMapToCountMap(monthlyDiagnosisCounts)));
+            data.add("monthlyDiagnosisTrends", gson.toJsonTree(multiMapToCountArray(monthlyDiagnosisCounts)));
 
             report.add("data", data);
 
@@ -967,9 +1041,9 @@ public class ReportResource {
 
             // Build response data
             JsonObject data = new JsonObject();
-            data.add("categoryDistribution", gson.toJsonTree(multiMapToCountMap(categoryCounts)));
-            data.add("categoryByMonth", gson.toJsonTree(multiMapToCountMap(categoryByMonth)));
-            data.add("categoryByDoctor", gson.toJsonTree(multiMapToCountMap(categoryByDoctor)));
+            data.add("categoryDistribution", gson.toJsonTree(multiMapToCountArray(categoryCounts)));
+            data.add("categoryByMonth", gson.toJsonTree(multiMapToCountArray(categoryByMonth)));
+            data.add("categoryByDoctor", gson.toJsonTree(multiMapToCountArray(categoryByDoctor)));
 
             report.add("data", data);
 
@@ -1239,34 +1313,39 @@ public class ReportResource {
             data.addProperty("avgHoursPerWeek", avgHoursPerWeek);
             
             // Doctor consultation counts for charts
-            java.util.Map<String, String> doctorNames = new java.util.HashMap<>();
-            for (Staff doctor : doctors) {
+            DoctorNameData[] doctorNamesArray = new DoctorNameData[doctors.size()];
+            MultiMap<String, String> doctorNames = new MultiMap<>();
+            for (int i = 0; i < doctors.size(); i++) {
+                Staff doctor = doctors.get(i);
                 doctorNames.put(doctor.getStaffID(), doctor.getFirstName() + " " + doctor.getLastName());
+                doctorNamesArray[i] = new DoctorNameData(doctor.getStaffID(), doctor.getFirstName() + " " + doctor.getLastName());
             }
             
-            java.util.Map<String, Integer> doctorConsultationMap = new java.util.HashMap<>();
             ArraySet<String> doctorKeys = doctorConsultationCounts.keySet();
+            DoctorConsultationData[] doctorConsultationArray = new DoctorConsultationData[doctorKeys.size()];
             Object[] keyArray = doctorKeys.toArray();
+            int consultationIndex = 0;
             for (int i = 0; i < keyArray.length; i++) {
                 String doctorId = (String) keyArray[i];
-                String doctorName = doctorNames.get(doctorId);
+                String doctorName = getDoctorName(doctorNamesArray, doctorId);
                 if (doctorName != null) {
                     int totalCount = 0;
                     List<Integer> counts = doctorConsultationCounts.get(doctorId);
                     for (int j = 0; j < counts.size(); j++) {
                         totalCount += counts.get(j);
                     }
-                    doctorConsultationMap.put(doctorName, totalCount);
+                    doctorConsultationArray[consultationIndex++] = new DoctorConsultationData(doctorName, totalCount);
                 }
             }
             
             // Doctor schedule hours for charts
-            java.util.Map<String, Integer> doctorScheduleMap = new java.util.HashMap<>();
             ArraySet<String> scheduleKeys = doctorSchedules.keySet();
+            DoctorScheduleData[] doctorScheduleArray = new DoctorScheduleData[scheduleKeys.size()];
             Object[] scheduleKeyArray = scheduleKeys.toArray();
+            int scheduleIndex = 0;
             for (int i = 0; i < scheduleKeyArray.length; i++) {
                 String doctorId = (String) scheduleKeyArray[i];
-                String doctorName = doctorNames.get(doctorId);
+                String doctorName = getDoctorName(doctorNamesArray, doctorId);
                 if (doctorName != null) {
                     int totalCount = 0;
                     List<Integer> counts = doctorSchedules.get(doctorId);
@@ -1274,14 +1353,15 @@ public class ReportResource {
                         totalCount += counts.get(j);
                     }
                     // Convert schedule count to estimated hours (assuming 8 hours per schedule)
-                    doctorScheduleMap.put(doctorName, totalCount * 8);
+                    doctorScheduleArray[scheduleIndex++] = new DoctorScheduleData(doctorName, totalCount * 8);
                 }
             }
             
             // Schedule trends for charts
-            java.util.Map<String, Integer> scheduleTrendsMap = new java.util.HashMap<>();
             ArraySet<String> trendKeys = scheduleTrends.keySet();
+            ScheduleTrendData[] scheduleTrendsArray = new ScheduleTrendData[trendKeys.size()];
             Object[] trendKeyArray = trendKeys.toArray();
+            int trendIndex = 0;
             for (int i = 0; i < trendKeyArray.length; i++) {
                 String monthKey = (String) trendKeyArray[i];
                 int totalCount = 0;
@@ -1289,13 +1369,13 @@ public class ReportResource {
                 for (int j = 0; j < counts.size(); j++) {
                     totalCount += counts.get(j);
                 }
-                scheduleTrendsMap.put(monthKey, totalCount);
+                scheduleTrendsArray[trendIndex++] = new ScheduleTrendData(monthKey, totalCount);
             }
             
-            data.add("doctorConsultationCounts", gson.toJsonTree(doctorConsultationMap));
+            data.add("doctorConsultationCounts", gson.toJsonTree(doctorConsultationArray));
             data.add("doctorPerformance", gson.toJsonTree(doctorPerformanceList));
-            data.add("doctorSchedules", gson.toJsonTree(doctorScheduleMap));
-            data.add("scheduleTrends", gson.toJsonTree(scheduleTrendsMap));
+            data.add("doctorSchedules", gson.toJsonTree(doctorScheduleArray));
+            data.add("scheduleTrends", gson.toJsonTree(scheduleTrendsArray));
 
             report.add("data", data);
 
@@ -1380,7 +1460,7 @@ public class ReportResource {
                 performanceCategories.put(category, 1);
             }
 
-            String json = gson.toJson(multiMapToCountMap(performanceCategories));
+            String json = gson.toJson(multiMapToCountArray(performanceCategories));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -1549,7 +1629,7 @@ public class ReportResource {
                 growthData.put(growthKey, growthPercentage);
             }
 
-            String json = gson.toJson(multiMapToSumMap(growthData));
+            String json = gson.toJson(multiMapToSumArray(growthData));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -1759,15 +1839,15 @@ public class ReportResource {
             data.addProperty("successRate", successRate);
             
             // Chart data
-            data.add("treatmentTypes", gson.toJsonTree(multiMapToCountMap(treatmentTypes)));
-            data.add("doctorTreatments", gson.toJsonTree(multiMapToCountMap(doctorTreatments)));
-            data.add("treatmentOutcomes", gson.toJsonTree(multiMapToCountMap(treatmentOutcomes)));
-            data.add("treatmentDurations", gson.toJsonTree(multiMapToCountMap(treatmentDurations)));
-            data.add("treatmentRevenue", gson.toJsonTree(multiMapToSumMap(treatmentRevenue)));
+            data.add("treatmentTypes", gson.toJsonTree(multiMapToCountArray(treatmentTypes)));
+            data.add("doctorTreatments", gson.toJsonTree(multiMapToCountArray(doctorTreatments)));
+            data.add("treatmentOutcomes", gson.toJsonTree(multiMapToCountArray(treatmentOutcomes)));
+            data.add("treatmentDurations", gson.toJsonTree(multiMapToCountArray(treatmentDurations)));
+            data.add("treatmentRevenue", gson.toJsonTree(multiMapToSumArray(treatmentRevenue)));
             data.add("doctorPerformance", gson.toJsonTree(doctorPerformanceList));
             
             // Combined data for single row display
-            data.add("treatmentTypesAndOutcomes", gson.toJsonTree(multiMapToCountMap(treatmentTypes)));
+            data.add("treatmentTypesAndOutcomes", gson.toJsonTree(multiMapToCountArray(treatmentTypes)));
 
             report.add("data", data);
 
@@ -1826,7 +1906,7 @@ public class ReportResource {
                 durationAnalysis.put(durationCategory, 1);
             }
 
-            String json = gson.toJson(multiMapToCountMap(durationAnalysis));
+            String json = gson.toJson(multiMapToCountArray(durationAnalysis));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {
@@ -1870,7 +1950,7 @@ public class ReportResource {
                 revenueAnalysis.put(treatmentType, treatmentPrice);
             }
 
-            String json = gson.toJson(multiMapToSumMap(revenueAnalysis));
+            String json = gson.toJson(multiMapToSumArray(revenueAnalysis));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (Exception e) {

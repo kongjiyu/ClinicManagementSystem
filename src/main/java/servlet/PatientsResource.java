@@ -26,8 +26,7 @@ import utils.ErrorResponse;
 import DTO.AllergyInput;
 import utils.ListAdapter;
 import utils.MultiMap;
-import java.util.HashMap;
-import java.util.Map;
+
 
 @Path("/patients")
 @Produces(MediaType.APPLICATION_JSON)
@@ -83,45 +82,45 @@ public class PatientsResource {
   public Response getMedicalHistory(@PathParam("id") String id) {
       try {
           List<Prescription> prescriptions = prescriptionRepo.findByPatientIdSorted(id);
-          List<Map<String, Object>> enrichedPrescriptions = new List<>();
+          List<EnrichedPrescription> enrichedPrescriptions = new List<>();
           
           for (Prescription prescription : prescriptions) {
-              Map<String, Object> enrichedPrescription = new HashMap<>();
+              EnrichedPrescription enrichedPrescription = new EnrichedPrescription();
               
               // Add prescription data
-              enrichedPrescription.put("prescriptionID", prescription.getPrescriptionID());
-              enrichedPrescription.put("consultationID", prescription.getConsultationID());
-              enrichedPrescription.put("medicineID", prescription.getMedicineID());
-              enrichedPrescription.put("description", prescription.getDescription());
-                             enrichedPrescription.put("dosage", prescription.getDosage());
+              enrichedPrescription.prescriptionID = prescription.getPrescriptionID();
+              enrichedPrescription.consultationID = prescription.getConsultationID();
+              enrichedPrescription.medicineID = prescription.getMedicineID();
+              enrichedPrescription.description = prescription.getDescription();
+              enrichedPrescription.dosage = prescription.getDosage();
                
-               // Convert instruction to meaningful text
-               String instructionText = getInstructionText(prescription.getInstruction());
-               enrichedPrescription.put("instruction", instructionText);
+              // Convert instruction to meaningful text
+              String instructionText = getInstructionText(prescription.getInstruction());
+              enrichedPrescription.instruction = instructionText;
                
-               enrichedPrescription.put("servingPerDay", prescription.getServingPerDay());
-              enrichedPrescription.put("price", prescription.getPrice());
-              enrichedPrescription.put("dosageUnit", prescription.getDosageUnit());
+              enrichedPrescription.servingPerDay = prescription.getServingPerDay();
+              enrichedPrescription.price = prescription.getPrice();
+              enrichedPrescription.dosageUnit = prescription.getDosageUnit();
               
               // Get medicine name
               models.Medicine medicine = medicineRepository.findById(prescription.getMedicineID());
-              enrichedPrescription.put("medicineName", medicine != null ? medicine.getMedicineName() : "Unknown Medicine");
+              enrichedPrescription.medicineName = medicine != null ? medicine.getMedicineName() : "Unknown Medicine";
               
               // Get consultation to find doctor
               Consultation consultation = consultationRepo.findById(prescription.getConsultationID());
               if (consultation != null && consultation.getDoctorID() != null) {
                   Staff doctor = staffRepository.findById(consultation.getDoctorID());
                   if (doctor != null) {
-                      enrichedPrescription.put("doctorName", "Dr. " + doctor.getFirstName() + " " + doctor.getLastName());
+                      enrichedPrescription.doctorName = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
                   } else {
-                      enrichedPrescription.put("doctorName", "Unknown Doctor");
+                      enrichedPrescription.doctorName = "Unknown Doctor";
                   }
-                  enrichedPrescription.put("prescriptionDate", consultation.getConsultationDate());
-                  enrichedPrescription.put("status", consultation.getStatus());
+                  enrichedPrescription.prescriptionDate = consultation.getConsultationDate();
+                  enrichedPrescription.status = consultation.getStatus();
               } else {
-                  enrichedPrescription.put("doctorName", "Unknown Doctor");
-                  enrichedPrescription.put("prescriptionDate", null);
-                  enrichedPrescription.put("status", "Unknown");
+                  enrichedPrescription.doctorName = "Unknown Doctor";
+                  enrichedPrescription.prescriptionDate = null;
+                  enrichedPrescription.status = "Unknown";
               }
               
               enrichedPrescriptions.add(enrichedPrescription);
@@ -318,5 +317,22 @@ public class PatientsResource {
           // If it's not a number, return as is
           return instruction;
       }
+  }
+
+  // Data class for enriched prescription data
+  public static class EnrichedPrescription {
+      public String prescriptionID;
+      public String consultationID;
+      public String medicineID;
+      public String description;
+      public int dosage;
+      public String instruction;
+      public int servingPerDay;
+      public double price;
+      public String dosageUnit;
+      public String medicineName;
+      public String doctorName;
+      public java.time.LocalDate prescriptionDate;
+      public String status;
   }
 }

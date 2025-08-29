@@ -462,8 +462,13 @@
       document.getElementById('avgHoursPerWeek').textContent = (reportData.avgHoursPerWeek || 0).toFixed(1) + ' hrs';
 
       // Create doctor consultation distribution chart (Horizontal Bar)
-      if (reportData.doctorConsultationCounts && Object.keys(reportData.doctorConsultationCounts).length > 0) {
-        createHorizontalBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', reportData.doctorConsultationCounts);
+      if (reportData.doctorConsultationCounts && Array.isArray(reportData.doctorConsultationCounts) && reportData.doctorConsultationCounts.length > 0) {
+        // Convert array format to object format for charts
+        const consultationData = {};
+        reportData.doctorConsultationCounts.forEach(item => {
+          consultationData[item.doctorName] = item.consultationCount;
+        });
+        createHorizontalBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', consultationData);
       } else {
         // Create empty chart if no data
         createHorizontalBarChart('doctorSpecialtyChart', 'Doctor Consultation Distribution', {});
@@ -481,8 +486,13 @@
       }
 
       // Create doctor schedule distribution chart (Polar Area Chart)
-      if (reportData.doctorSchedules && Object.keys(reportData.doctorSchedules).length > 0) {
-        createPolarAreaChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', reportData.doctorSchedules);
+      if (reportData.doctorSchedules && Array.isArray(reportData.doctorSchedules) && reportData.doctorSchedules.length > 0) {
+        // Convert array format to object format for charts
+        const scheduleData = {};
+        reportData.doctorSchedules.forEach(item => {
+          scheduleData[item.doctorName] = item.scheduleHours;
+        });
+        createPolarAreaChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', scheduleData);
       } else {
         createPolarAreaChart('doctorScheduleChart', 'Doctor Schedule Distribution (Hours/Week)', {});
       }
@@ -581,7 +591,7 @@
   // Load additional consultation charts
   async function loadAdditionalConsultationCharts(reportData) {
     // Update additional statistics
-    const peakHourData = reportData.hourlyConsultations || {};
+    const peakHourData = convertArrayToObject(reportData.hourlyConsultations || []);
     const peakHour = Object.keys(peakHourData).reduce((a, b) => peakHourData[a] > peakHourData[b] ? a : b, '0');
     document.getElementById('peakHour').textContent = peakHour + ':00';
 
@@ -883,8 +893,10 @@
       charts[canvasId].destroy();
     }
 
-    const labels = Object.keys(data);
-    const values = Object.values(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
     const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
     charts[canvasId] = new Chart(canvas, {
@@ -927,8 +939,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -979,8 +991,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -1081,8 +1093,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -1153,8 +1165,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -1241,8 +1253,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -1313,8 +1325,8 @@
       charts[canvasId].destroy();
     }
 
-    // Convert MultiMap format to object format
-    const chartData = convertMultiMapToObject(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
 
     const labels = Object.keys(chartData);
     const values = Object.values(chartData);
@@ -1414,8 +1426,10 @@
       charts[canvasId].destroy();
     }
 
-    const labels = Object.keys(data);
-    const values = Object.values(data);
+    // Convert array format to object format for charts
+    const chartData = convertArrayToObject(data);
+    const labels = Object.keys(chartData);
+    const values = Object.values(chartData);
 
     charts[canvasId] = new Chart(canvas, {
       type: 'line',
@@ -1519,12 +1533,24 @@
       let growthIcon = '→';
 
       // Find growth data for this medicine
-      for (const [key, value] of Object.entries(growthData)) {
-        if (key.includes(medicine.medicineId) || key.includes(medicineName)) {
-          growth = value;
-          growthClass = growth >= 0 ? 'text-success' : 'text-error';
-          growthIcon = growth >= 0 ? '↗' : '↘';
-          break;
+      if (Array.isArray(growthData)) {
+        for (const item of growthData) {
+          if (item && item.key && (item.key.includes(medicine.medicineId) || item.key.includes(medicineName))) {
+            growth = item.sum || 0;
+            growthClass = growth >= 0 ? 'text-success' : 'text-error';
+            growthIcon = growth >= 0 ? '↗' : '↘';
+            break;
+          }
+        }
+      } else {
+        // Fallback for old format
+        for (const [key, value] of Object.entries(growthData)) {
+          if (key.includes(medicine.medicineId) || key.includes(medicineName)) {
+            growth = value;
+            growthClass = growth >= 0 ? 'text-success' : 'text-error';
+            growthIcon = growth >= 0 ? '↗' : '↘';
+            break;
+          }
         }
       }
 
@@ -1564,7 +1590,33 @@
     showChartError('patientNationalityChart', message);
   }
 
-  // Helper function to convert MultiMap format to object
+  // Helper function to convert array format to object for charts
+  function convertArrayToObject(dataArray) {
+    // If it's already an object, return it as is
+    if (dataArray && typeof dataArray === 'object' && !Array.isArray(dataArray)) {
+      return dataArray;
+    }
+    
+    const obj = {};
+    if (Array.isArray(dataArray)) {
+      dataArray.forEach(item => {
+        if (item && item.key !== undefined && item.count !== undefined) {
+          obj[item.key] = item.count;
+        } else if (item && item.key !== undefined && item.sum !== undefined) {
+          obj[item.key] = item.sum;
+        } else if (item && item.doctorName !== undefined && item.consultationCount !== undefined) {
+          obj[item.doctorName] = item.consultationCount;
+        } else if (item && item.doctorName !== undefined && item.scheduleHours !== undefined) {
+          obj[item.doctorName] = item.scheduleHours;
+        } else if (item && item.monthKey !== undefined && item.totalCount !== undefined) {
+          obj[item.monthKey] = item.totalCount;
+        }
+      });
+    }
+    return obj;
+  }
+
+  // Helper function to convert MultiMap format to object (legacy support)
   function convertMultiMapToObject(multiMap) {
     const obj = {};
     for (const key in multiMap) {
