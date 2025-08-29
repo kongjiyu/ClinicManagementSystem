@@ -1,7 +1,7 @@
 package models;
 
 /**
- * Author: Chia Yu Xin
+ * Author: Kong Ji Yu
  * Consultation Module
  */
 

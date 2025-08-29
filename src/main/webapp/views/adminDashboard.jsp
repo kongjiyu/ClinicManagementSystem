@@ -29,14 +29,20 @@ General Module
     </div>
   </div>
 
-  <!-- Loading Spinner -->
-  <div id="loadingSpinner" class="flex justify-center items-center py-8">
-    <div class="loading loading-spinner loading-lg"></div>
+  <!-- Loading Page -->
+  <div id="loadingPage" class="flex flex-col justify-center items-center min-h-screen">
+    <div class="text-center space-y-6">
+      <div class="loading loading-spinner loading-lg"></div>
+      <h2 class="text-2xl font-semibold">Loading Dashboard...</h2>
+      <p class="text-base-content/70">Please wait while we fetch your data</p>
+    </div>
   </div>
 
-  <!-- Statistics Cards -->
-  <div id="statsSection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
-    <div class="stat bg-base-100 shadow-lg rounded-lg">
+  <!-- Main Content -->
+  <div id="mainContent" class="hidden">
+        <!-- Statistics Cards -->
+    <div id="statsSection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <div class="stat bg-base-100 shadow-lg rounded-lg">
       <div class="stat-figure text-primary">
         <span class="icon-[tabler--users] size-8"></span>
       </div>
@@ -74,7 +80,7 @@ General Module
   </div>
 
     <!-- Charts Row -->
-  <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+  <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
     <!-- Appointments Chart -->
     <div class="bg-base-100 p-6 rounded-lg shadow-lg xl:col-span-3">
       <h3 class="text-xl font-semibold mb-4">Appointments This Week</h3>
@@ -155,10 +161,11 @@ General Module
 
 
 
-  <!-- Error Alert -->
-  <div id="errorAlert" class="alert alert-error hidden">
-    <span class="icon-[tabler--alert-circle] size-5"></span>
-    <span id="errorMessage"></span>
+    <!-- Error Alert -->
+    <div id="errorAlert" class="alert alert-error hidden">
+      <span class="icon-[tabler--alert-circle] size-5"></span>
+      <span id="errorMessage"></span>
+    </div>
   </div>
 </main>
 
@@ -485,14 +492,14 @@ General Module
     document.getElementById('errorAlert').classList.remove('hidden');
   }
 
-  // Hide loading spinner
+  // Hide loading page
   function hideLoading() {
-    document.getElementById('loadingSpinner').classList.add('hidden');
+    document.getElementById('loadingPage').classList.add('hidden');
   }
 
-  // Show content
+  // Show main content
   function showContent() {
-    document.getElementById('statsSection').classList.remove('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
   }
 
   // Initialize dashboard

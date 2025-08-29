@@ -975,13 +975,16 @@ Consultation Module
         const treatmentsData = await treatmentsResponse.json();
         const treatments = Array.isArray(treatmentsData) ? treatmentsData : (treatmentsData.elements || []);
         
-        const inProgressTreatments = treatments.filter(treatment => 
-          treatment.status && treatment.status.toLowerCase() === 'in progress'
-        );
-        
-        if (inProgressTreatments.length > 0) {
-          alert('Cannot move to Billing stage. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before moving to billing.');
-          return;
+        // Add null/undefined checks
+        if (treatments && treatments.length > 0) {
+          const inProgressTreatments = treatments.filter(treatment => 
+            treatment && treatment.status && treatment.status.toLowerCase() === 'in progress'
+          );
+          
+          if (inProgressTreatments.length > 0) {
+            alert('Cannot move to Billing stage. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before moving to billing.');
+            return;
+          }
         }
       }
 
@@ -1060,13 +1063,16 @@ Consultation Module
         const treatmentsData = await treatmentsResponse.json();
         const treatments = Array.isArray(treatmentsData) ? treatmentsData : (treatmentsData.elements || []);
         
-        const inProgressTreatments = treatments.filter(treatment => 
-          treatment.status && treatment.status.toLowerCase() === 'in progress'
-        );
-        
-        if (inProgressTreatments.length > 0) {
-          alert('Cannot complete consultation. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before completing the consultation.');
-          return;
+        // Add null/undefined checks
+        if (treatments && treatments.length > 0) {
+          const inProgressTreatments = treatments.filter(treatment => 
+            treatment && treatment.status && treatment.status.toLowerCase() === 'in progress'
+          );
+          
+          if (inProgressTreatments.length > 0) {
+            alert('Cannot complete consultation. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before completing the consultation.');
+            return;
+          }
         }
       }
 

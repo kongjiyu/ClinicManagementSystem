@@ -644,7 +644,7 @@ def generate_bill_sql(totals_by_consultation, treatment_totals_by_consultation):
     for consultation_id, med_total in totals_by_consultation.items():
         bill_id = f"BI{str(idx).zfill(4)}"
         treatment_total = treatment_totals_by_consultation.get(consultation_id, 0.0)
-        total_amount = round(med_total + treatment_total + 20.0, 2)  # medicine total + treatment total + consultation fee (20)
+        total_amount = round(med_total + treatment_total + 20.0, 2)  # medicine total + treatment total + consultation fee (RM 20)
         payment_method = random.choice(payment_methods)
 
         values = [bill_id, total_amount, payment_method]
@@ -771,12 +771,15 @@ def generate_prescription_sql(consultations, name_to_id, price_map):
         diagnosis = c['diagnosis']
         options = DIAGNOSIS_TO_MEDS.get(diagnosis, [])
 
+        # Initialize consultation total to 0.0
+        totals_by_consultation[c['consultationID']] = 0.0
+
         if diagnosis == "Healthy":
             num_meds = 0
         else:
-            num_meds = random.randint(1, min(3, len(options))) if options else random.randint(0, 2)
+            num_meds = random.randint(1, min(3, len(options))) if options else 0
 
-        chosen = random.sample(options, k=num_meds) if len(options) >= num_meds else options
+        chosen = random.sample(options, k=num_meds) if len(options) >= num_meds and num_meds > 0 else []
 
         for med_name in chosen:
             med_id = name_to_id.get(med_name)

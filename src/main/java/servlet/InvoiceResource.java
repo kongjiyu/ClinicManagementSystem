@@ -472,8 +472,8 @@ public class InvoiceResource {
         List<BillItem> billItems = new List<>();
         double totalAmount = 0.0;
 
-        // Add consultation fee (fixed at RM 50.00)
-        double consultationFee = 50.0;
+        // Add consultation fee (fixed at RM 20.00)
+        double consultationFee = 20.0;
         billItems.add(new BillItem(
             "Consultation Fee",
             "Medical consultation service",
@@ -547,7 +547,7 @@ public class InvoiceResource {
 
     // Helper method to calculate consultation total from prescriptions and treatments
     private double calculateConsultationTotal(String consultationId) {
-        double total = 50.0; // Base consultation fee
+        double total = 20.0; // Base consultation fee
 
         // Get prescriptions for this consultation
         List<Prescription> prescriptions = prescriptionRepo.findByConsultationId(consultationId);

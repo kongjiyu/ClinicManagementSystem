@@ -622,10 +622,16 @@ Consultation Module
   function showCreateMCForm() {
     console.log('DEBUG: showCreateMCForm called');
     
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before creating Medical Certificates.');
+      return;
+    }
+    
     // Check if consultation status allows MC creation
     const currentStatus = consultationData.status;
     if (!currentStatus || !['In Progress'].includes(currentStatus)) {
-      alert('Medical Certificate can only be created for consultations that are In Progress. Current status: ' + (currentStatus || 'Unknown'));
+      console.log('Medical Certificate can only be created for consultations that are In Progress. Current status: ' + (currentStatus || 'Unknown'));
       return;
     }
     
@@ -749,10 +755,16 @@ Consultation Module
   document.getElementById('consultation-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before editing the consultation.');
+      return;
+    }
+
     // Check if consultation can be edited
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot edit consultation with status: ' + currentStatus);
+      console.log('Cannot edit consultation with status: ' + currentStatus);
       return;
     }
 
@@ -853,10 +865,16 @@ Consultation Module
   document.getElementById('mc-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before creating Medical Certificates.');
+      return;
+    }
+
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot create Medical Certificates for a ' + currentStatus + ' consultation.');
+      console.log('Cannot create Medical Certificates for a ' + currentStatus + ' consultation.');
       return;
     }
 
@@ -979,11 +997,18 @@ Consultation Module
 
   // Add prescription row
   function addPrescriptionRow(prescription = null, index = null) {
-    // Check if consultation is completed, cancelled, or waiting
-    const currentStatus = consultationData.status;
-    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot add prescriptions to a ' + currentStatus + ' consultation.');
-      return;
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded, allowing prescription row addition');
+      // Allow adding prescription row if consultation data is not yet loaded
+      // The status validation will be handled when saving prescriptions
+    } else {
+      // Check if consultation is completed, cancelled, or waiting
+      const currentStatus = consultationData.status;
+      if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+        console.log('Cannot add prescriptions to a ' + currentStatus + ' consultation.');
+        return;
+      }
     }
     
     const container = document.getElementById('prescription-container');
@@ -1300,11 +1325,18 @@ Consultation Module
 
   // Remove prescription row
   async function removePrescriptionRow(rowId) {
-    // Check if consultation is completed, cancelled, or waiting
-    const currentStatus = consultationData.status;
-    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot remove prescriptions from a ' + currentStatus + ' consultation.');
-      return;
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded, allowing prescription row removal');
+      // Allow removing prescription row if consultation data is not yet loaded
+      // The status validation will be handled when saving prescriptions
+    } else {
+      // Check if consultation is completed, cancelled, or waiting
+      const currentStatus = consultationData.status;
+      if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+        console.log('Cannot remove prescriptions from a ' + currentStatus + ' consultation.');
+        return;
+      }
     }
     
     const row = document.getElementById("prescription-row-" + rowId);
@@ -1351,10 +1383,16 @@ Consultation Module
 
   // Save prescriptions
   async function savePrescriptions() {
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before saving prescriptions.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot save prescriptions to a ' + currentStatus + ' consultation.');
+      console.log('Cannot save prescriptions to a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -1470,10 +1508,16 @@ Consultation Module
 
   // Show create treatment form
   function showCreateTreatmentForm() {
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before starting treatments.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot start treatments for a ' + currentStatus + ' consultation.');
+      console.log('Cannot start treatments for a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -1494,10 +1538,16 @@ Consultation Module
   document.getElementById('treatment-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before creating treatments.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot create treatments for a ' + currentStatus + ' consultation.');
+      console.log('Cannot create treatments for a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -1675,10 +1725,16 @@ Consultation Module
 
   // Show update progress form
   async function showUpdateProgressForm(treatmentId) {
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before updating treatment progress.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
+      console.log('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -1752,10 +1808,16 @@ Consultation Module
   document.getElementById('treatment-progress-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before updating treatment progress.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
+      console.log('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -1822,10 +1884,16 @@ Consultation Module
 
   // Show create follow-up form
   function showCreateFollowupForm() {
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before scheduling follow-up appointments.');
+      return;
+    }
+    
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
+      console.log('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
       return;
     }
     
@@ -2066,10 +2134,16 @@ Consultation Module
   document.getElementById('followup-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Check if consultation data is loaded
+    if (!consultationData || !consultationData.status) {
+      console.log('Consultation data not yet loaded. Please wait for the page to fully load before scheduling follow-up appointments.');
+      return;
+    }
+
     // Check if consultation is completed, cancelled, or waiting
     const currentStatus = consultationData.status;
     if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
-      alert('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
+      console.log('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
       return;
     }
 
