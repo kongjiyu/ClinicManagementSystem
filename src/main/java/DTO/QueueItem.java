@@ -1,7 +1,7 @@
 package DTO;
 
 /**
- * Author: Chia Yu Xin
+ * Author: Yap Ern Tong
  * Consultation Module
  */
 

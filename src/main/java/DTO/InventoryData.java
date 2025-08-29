@@ -1,7 +1,7 @@
 package DTO;
 
 /**
- * Author: Anny Wong Ann Nee
+ * Author: Oh Wan Ting
  * Pharmacy Module
  */
 

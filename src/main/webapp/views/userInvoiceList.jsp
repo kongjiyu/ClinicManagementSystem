@@ -1,5 +1,5 @@
 <%--
-Author: Anny Wong Ann Nee
+Author: Oh Wan Ting
 Pharmacy Module
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>

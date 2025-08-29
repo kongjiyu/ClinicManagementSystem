@@ -1,7 +1,7 @@
 package repositories.Schedule;
 
 /**
- * Author: Chia Yu Xin
+ * Author: Kong Ji Yu
  * Consultation Module
  */
 
