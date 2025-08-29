@@ -102,7 +102,8 @@ Pharmacy Module
               <label class="label">
                 <span class="label-text">Reorder Level *</span>
               </label>
-              <input type="number" id="reorderLevel" class="input input-bordered" min="0" required disabled>
+              <input type="number" id="reorderLevel" class="input input-bordered" min="0" max="100000" required disabled>
+              <div class="text-xs text-gray-500 mt-1">Maximum: 100,000 units</div>
             </div>
             <div class="form-control">
               <label class="label">
@@ -110,8 +111,9 @@ Pharmacy Module
               </label>
               <div class="input-group">
                 <span class="input-group-text">RM</span>
-                <input type="number" id="sellingPrice" class="input input-bordered" min="0" step="0.01" required disabled>
+                <input type="number" id="sellingPrice" class="input input-bordered" min="0" max="10000" step="0.01" required disabled>
               </div>
+              <div class="text-xs text-gray-500 mt-1">Maximum: RM 10,000.00 per unit</div>
             </div>
           </div>
         </div>
@@ -277,7 +279,7 @@ Pharmacy Module
     }
 
     const formData = collectFormData();
-    const url = isNewMedicine ? API_BASE + '/medicines' : API_BASE + '/medicine/' + medicineData.medicineID;
+    const url = isNewMedicine ? API_BASE + '/medicines' : API_BASE + '/medicines/' + medicineData.medicineID;
     const method = isNewMedicine ? 'POST' : 'PUT';
     
     try {
@@ -353,8 +355,20 @@ Pharmacy Module
       return false;
     }
 
+    if (reorderLevel > 100000) {
+      showError('Reorder level cannot exceed 100,000 units');
+      document.getElementById('reorderLevel').focus();
+      return false;
+    }
+
     if (sellingPrice < 0) {
       showError('Selling price cannot be negative');
+      document.getElementById('sellingPrice').focus();
+      return false;
+    }
+
+    if (sellingPrice > 10000) {
+      showError('Selling price cannot exceed RM 10,000.00 per unit');
       document.getElementById('sellingPrice').focus();
       return false;
     }

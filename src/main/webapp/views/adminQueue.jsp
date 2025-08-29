@@ -288,7 +288,7 @@ Consultation Module
         <form id="patient-search-form">
           <div class="form-group">
             <label class="form-label">ID Type</label>
-            <select id="id-type" name="idType" class="form-select" required>
+            <select id="id-type" name="idType" class="form-select" required onchange="updateIdNumberPlaceholder()">
               <option value="">Select ID Type</option>
               <option value="IC">IC</option>
               <option value="Passport">Passport</option>
@@ -296,8 +296,11 @@ Consultation Module
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">ID Number</label>
+            <label class="form-label" id="id-number-label">ID Number</label>
             <input type="text" id="id-number" name="idNumber" class="form-select" placeholder="Enter ID number" required>
+            <small class="text-gray-500 text-xs mt-1" id="id-number-help">
+              Select an ID type to see specific instructions
+            </small>
           </div>
         </form>
 
@@ -380,6 +383,8 @@ Consultation Module
         colspan = '5'; // Waiting table has waiting time column
       } else if (tableId === 'in-progress-table') {
         colspan = '5'; // In Progress table has treatment count column
+      } else if (tableId === 'billing-table') {
+        colspan = '5'; // Billing table has invoice ID column
       }
       tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="text-center text-gray-500">No items in this queue</td></tr>';
       return;
@@ -938,6 +943,48 @@ Consultation Module
     }
 
     try {
+      // First, validate that the consultation has required fields
+      const consultationResponse = await fetch(API_BASE + '/consultations/' + consultationId);
+      if (!consultationResponse.ok) {
+        throw new Error('Failed to fetch consultation details');
+      }
+      
+      const consultation = await consultationResponse.json();
+      
+      // Check if required fields are filled
+      const missingFields = [];
+      if (!consultation.doctorID || consultation.doctorID.trim() === '') {
+        missingFields.push('Doctor in Charge');
+      }
+      if (!consultation.symptoms || consultation.symptoms.trim() === '') {
+        missingFields.push('Symptoms');
+      }
+      if (!consultation.diagnosis || consultation.diagnosis.trim() === '') {
+        missingFields.push('Diagnosis');
+      }
+      
+      if (missingFields.length > 0) {
+        alert('Cannot move to Billing stage. The following required fields are missing:\n\n' + 
+              missingFields.join('\n') + '\n\nPlease complete the consultation details first.');
+        return;
+      }
+
+      // Check if there are any treatments in progress
+      const treatmentsResponse = await fetch(API_BASE + '/treatments/by-consultation/' + consultationId);
+      if (treatmentsResponse.ok) {
+        const treatmentsData = await treatmentsResponse.json();
+        const treatments = Array.isArray(treatmentsData) ? treatmentsData : (treatmentsData.elements || []);
+        
+        const inProgressTreatments = treatments.filter(treatment => 
+          treatment.status && treatment.status.toLowerCase() === 'in progress'
+        );
+        
+        if (inProgressTreatments.length > 0) {
+          alert('Cannot move to Billing stage. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before moving to billing.');
+          return;
+        }
+      }
+
       // First, update consultation status to Billing
       const statusResponse = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
         method: 'PUT',
@@ -981,6 +1028,48 @@ Consultation Module
     }
 
     try {
+      // First, validate that the consultation has required fields
+      const consultationResponse = await fetch(API_BASE + '/consultations/' + consultationId);
+      if (!consultationResponse.ok) {
+        throw new Error('Failed to fetch consultation details');
+      }
+      
+      const consultation = await consultationResponse.json();
+      
+      // Check if required fields are filled
+      const missingFields = [];
+      if (!consultation.doctorID || consultation.doctorID.trim() === '') {
+        missingFields.push('Doctor in Charge');
+      }
+      if (!consultation.symptoms || consultation.symptoms.trim() === '') {
+        missingFields.push('Symptoms');
+      }
+      if (!consultation.diagnosis || consultation.diagnosis.trim() === '') {
+        missingFields.push('Diagnosis');
+      }
+      
+      if (missingFields.length > 0) {
+        alert('Cannot complete consultation. The following required fields are missing:\n\n' + 
+              missingFields.join('\n') + '\n\nPlease complete the consultation details first.');
+        return;
+      }
+
+      // Check if there are any treatments in progress
+      const treatmentsResponse = await fetch(API_BASE + '/treatments/by-consultation/' + consultationId);
+      if (treatmentsResponse.ok) {
+        const treatmentsData = await treatmentsResponse.json();
+        const treatments = Array.isArray(treatmentsData) ? treatmentsData : (treatmentsData.elements || []);
+        
+        const inProgressTreatments = treatments.filter(treatment => 
+          treatment.status && treatment.status.toLowerCase() === 'in progress'
+        );
+        
+        if (inProgressTreatments.length > 0) {
+          alert('Cannot complete consultation. There are ' + inProgressTreatments.length + ' treatment(s) still in progress.\n\nPlease complete or cancel all treatments before completing the consultation.');
+          return;
+        }
+      }
+
       // First, update consultation status to Billing
       const statusResponse = await fetch(API_BASE + '/queue/' + consultationId + '/status', {
         method: 'PUT',
@@ -1041,6 +1130,8 @@ Consultation Module
       document.getElementById('patient-search-results').style.display = 'none';
       document.getElementById('no-patient-found').style.display = 'none';
       document.getElementById('create-consultation-confirm-btn').style.display = 'none';
+      // Reset placeholder and help text
+      updateIdNumberPlaceholder();
     }
   }
 
@@ -1090,11 +1181,11 @@ Consultation Module
           return patientStudentId.toLowerCase() === searchIdNumber.toLowerCase();
         }
         
-        // For other ID types, search in idType and idNumber fields
+        // For IC and Passport, check if patient's idType matches and then compare idNumber
         const patientIdType = (p.idType || '').toString().trim();
         const patientIdNumber = (p.idNumber || '').toString().trim();
         
-        console.log('Comparing other ID types:', {
+        console.log('Comparing ID types:', {
           patientIdType: patientIdType,
           searchIdType: searchIdType,
           patientIdNumber: patientIdNumber,
@@ -1103,6 +1194,7 @@ Consultation Module
           idNumberMatch: patientIdNumber.toLowerCase() === searchIdNumber.toLowerCase()
         });
         
+        // Check if the patient's ID type matches the selected type, then compare the ID number
         return patientIdType.toLowerCase() === searchIdType.toLowerCase() && 
                patientIdNumber.toLowerCase() === searchIdNumber.toLowerCase();
       });
@@ -1137,6 +1229,37 @@ Consultation Module
     } catch (error) {
       console.error('Error searching patient:', error);
       alert('Error searching patient: ' + error.message);
+    }
+  }
+
+  // Update ID number placeholder and help text based on selected ID type
+  function updateIdNumberPlaceholder() {
+    const idType = document.getElementById('id-type').value;
+    const idNumberInput = document.getElementById('id-number');
+    const idNumberLabel = document.getElementById('id-number-label');
+    const idNumberHelp = document.getElementById('id-number-help');
+    
+    switch(idType) {
+      case 'IC':
+        idNumberLabel.textContent = 'IC Number';
+        idNumberInput.placeholder = 'Enter IC number (e.g., 123456-12-1234)';
+        idNumberHelp.textContent = 'Enter the patient\'s IC number as stored in the database';
+        break;
+      case 'Passport':
+        idNumberLabel.textContent = 'Passport Number';
+        idNumberInput.placeholder = 'Enter passport number (e.g., A12345678)';
+        idNumberHelp.textContent = 'Enter the patient\'s passport number as stored in the database';
+        break;
+      case 'Student ID':
+        idNumberLabel.textContent = 'Student ID';
+        idNumberInput.placeholder = 'Enter student ID (e.g., 2023123456)';
+        idNumberHelp.textContent = 'Enter the patient\'s student ID as stored in the database';
+        break;
+      default:
+        idNumberLabel.textContent = 'ID Number';
+        idNumberInput.placeholder = 'Enter ID number';
+        idNumberHelp.textContent = 'Select an ID type to see specific instructions';
+        break;
     }
   }
 

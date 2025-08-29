@@ -25,6 +25,7 @@
                 <thead>
                     <tr>
                         <th>Treatment ID</th>
+                        <th>Consultation ID</th>
                         <th>Patient</th>
                         <th>Treatment Type</th>
                         <th>Treatment Name</th>
@@ -168,6 +169,16 @@
                     }
                 },
                 { 
+                    data: 'consultationID', 
+                    title: 'Consultation ID',
+                    render: function(data, type, row) {
+                        if (data) {
+                            return '<a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + data + '" class="link link-primary hover:underline">' + data + '</a>';
+                        }
+                        return 'N/A';
+                    }
+                },
+                { 
                     data: 'patientID', 
                     title: 'Patient',
                     render: function(data, type, row) {
@@ -216,7 +227,7 @@
                     }
                 }
             ],
-            order: [[4, 'desc']], // Sort by date descending (now column 4 is Date & Time)
+            order: [[5, 'desc']], // Sort by date descending (now column 5 is Date & Time)
             rowCallback: function(row, data) {
                 if (data && data.treatmentID) {
                     row.addEventListener('click', function() {

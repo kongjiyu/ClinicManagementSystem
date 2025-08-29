@@ -59,7 +59,10 @@ Consultation Module
         <!-- Notes (Optional) -->
         <div>
             <label class="label">Notes / Reason</label>
-            <textarea name="note" id="note" class="textarea textarea-bordered w-full" placeholder="Describe your reason (optional)"></textarea>
+            <textarea name="note" id="note" class="textarea textarea-bordered w-full" placeholder="Describe your reason (optional)" maxlength="200" oninput="updateWordCount()"></textarea>
+            <div class="text-xs text-gray-500 mt-1">
+                <span id="wordCount">0</span> / 200 characters
+            </div>
         </div>
 
         <!-- Submit -->
@@ -396,6 +399,23 @@ Consultation Module
         document.getElementById('loadingSpinner').classList.add('hidden');
       }
     });
+
+    // Update word count for notes
+    function updateWordCount() {
+      const textarea = document.getElementById('note');
+      const wordCountSpan = document.getElementById('wordCount');
+      const currentLength = textarea.value.length;
+      wordCountSpan.textContent = currentLength;
+      
+      // Change color when approaching limit
+      if (currentLength > 180) {
+        wordCountSpan.className = 'text-warning';
+      } else if (currentLength > 150) {
+        wordCountSpan.className = 'text-orange-500';
+      } else {
+        wordCountSpan.className = '';
+      }
+    }
 
     // Initialize the page when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {

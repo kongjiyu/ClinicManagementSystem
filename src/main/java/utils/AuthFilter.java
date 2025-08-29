@@ -2,6 +2,14 @@ package utils;
 
 /**
  * Author: Kong Ji Yu
+ * 
+ * Authentication Filter that protects:
+ * - /views/* (JSP pages)
+ * - /patient/* (Patient-related servlets)
+ * - /api/* (API endpoints, except auth)
+ * - /test/* (Test endpoints)
+ * 
+ * Ensures users must be logged in before accessing protected resources.
  */
 
 import jakarta.servlet.*;
@@ -11,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-@WebFilter(urlPatterns = {"/views/*"})
+@WebFilter(urlPatterns = {"/views/*", "/patient/*", "/api/*", "/test/*"})
 public class AuthFilter implements Filter {
 
     @Override
@@ -42,6 +50,14 @@ public class AuthFilter implements Filter {
             return;
         }
         
+        // For API endpoints (except auth), require authentication
+        if (requestURI.contains("/api/") && !requestURI.contains("/api/auth/")) {
+            if (!isAuthenticated) {
+                httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+                return;
+            }
+        }
+        
         // Check role-based access
         String userType = (String) session.getAttribute("userType");
         
@@ -66,6 +82,28 @@ public class AuthFilter implements Filter {
         if (requestURI.contains("user") || requestURI.contains("patient")) {
             // Both staff and patients can access these pages
             // Staff can access for administrative purposes
+            // For patient detail pages, ensure proper access control
+            if (requestURI.contains("/patient/detail")) {
+                // Staff can access any patient detail
+                // Patients should only access their own details
+                if ("patient".equals(userType)) {
+                    // Get the patient ID from the URL parameter
+                    String patientId = httpRequest.getParameter("id");
+                    String sessionUserId = (String) session.getAttribute("userId");
+                    
+                    // If no patient ID in URL or no session user ID, deny access
+                    if (patientId == null || sessionUserId == null) {
+                        httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied: Invalid request");
+                        return;
+                    }
+                    
+                    // Check if the patient is trying to access their own details
+                    if (!patientId.equals(sessionUserId)) {
+                        httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied: You can only view your own details");
+                        return;
+                    }
+                }
+            }
         }
         
         // Continue with the request

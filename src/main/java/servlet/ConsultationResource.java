@@ -14,12 +14,14 @@ import jakarta.ws.rs.core.Response;
 import models.Consultation;
 import models.Prescription;
 import models.Medicine;
+import models.Treatment;
 import repositories.Consultation.ConsultationRepository;
 import repositories.Patient.PatientRepository;
 import repositories.Staff.StaffRepository;
 import repositories.Prescription.PrescriptionRepository;
 import repositories.Medicine.MedicineRepository;
 import repositories.Appointment.AppointmentRepository;
+import repositories.Treatment.TreatmentRepository;
 import utils.List;
 import utils.ErrorResponse;
 import utils.ListAdapter;
@@ -61,6 +63,9 @@ public class ConsultationResource {
 
     @Inject
     private AppointmentRepository appointmentRepository;
+
+    @Inject
+    private TreatmentRepository treatmentRepository;
 
     @GET
     public Response getAllConsultations() {
@@ -183,6 +188,44 @@ public class ConsultationResource {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("Failed to update consultation"))
                     .build();
+            }
+
+            // If consultation is being cancelled, automatically cancel all associated treatments and delete MC
+            if ("Cancelled".equals(consultation.getStatus()) && !"Cancelled".equals(existingConsultation.getStatus())) {
+                try {
+                    // Find all treatments for this consultation
+                    List<models.Treatment> treatments = treatmentRepository.findByConsultationId(id);
+                    if (treatments != null && !treatments.isEmpty()) {
+                        for (models.Treatment treatment : treatments) {
+                            // Only cancel treatments that are not already completed or cancelled
+                            if (!"Completed".equals(treatment.getStatus()) && !"Cancelled".equals(treatment.getStatus())) {
+                                treatment.setStatus("Cancelled");
+                                treatment.setOutcome("Cancelled due to consultation cancellation");
+                                treatmentRepository.update(treatment);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log the error but don't fail the consultation update
+                    System.err.println("Error cancelling treatments for consultation " + id + ": " + e.getMessage());
+                }
+                
+                // Delete MC if it exists
+                try {
+                    if (existingConsultation.getMcID() != null && !existingConsultation.getMcID().isEmpty()) {
+                        // Clear MC data from consultation
+                        consultation.setMcID(null);
+                        consultation.setStartDate(null);
+                        consultation.setEndDate(null);
+                        
+                        // Update the consultation to remove MC data
+                        consultationRepository.update(id, consultation);
+                        System.out.println("MC deleted for cancelled consultation " + id);
+                    }
+                } catch (Exception e) {
+                    // Log the error but don't fail the consultation update
+                    System.err.println("Error deleting MC for consultation " + id + ": " + e.getMessage());
+                }
             }
 
             String json = gson.toJson(updatedConsultation);

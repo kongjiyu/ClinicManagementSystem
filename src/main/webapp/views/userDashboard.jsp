@@ -13,7 +13,7 @@ General Module
 <body>
 <%@ include file="/views/userSidebar.jsp" %>
 
-<div class="flex flex-col gap-6 p-8 pt-[5.5rem] backdrop-blur-lg min-h-screen">
+<main class="flex-1 p-6 ml-64 space-y-6">
   <!-- Loading Spinner -->
   <div id="loadingSpinner" class="flex justify-center items-center py-8">
     <div class="loading loading-spinner loading-lg"></div>
@@ -83,7 +83,7 @@ General Module
     <span class="icon-[tabler--alert-circle] size-5"></span>
     <span id="errorMessage"></span>
   </div>
-</div>
+</main>
 
 <script>
   const API_BASE = '<%= request.getContextPath() %>/api';

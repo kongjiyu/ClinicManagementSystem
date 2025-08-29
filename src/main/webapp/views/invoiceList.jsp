@@ -123,8 +123,7 @@ Pharmacy Module
             return 'N/A';
           }
         },
-        type: 'date',
-        orderData: [5, 0] // Sort by date first, then by bill ID
+        type: 'date'
       }
     ],
     order: [[5, 'desc']], // Sort by date desc

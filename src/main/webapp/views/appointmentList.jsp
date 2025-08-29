@@ -166,6 +166,9 @@ Appointment Module
               case 'checked-in':
                 statusClass = 'badge badge-soft badge-primary';
                 break;
+              case 'scheduled':
+                statusClass = 'badge badge-soft badge-success';
+                break;
               case 'no show':
                 statusClass = 'badge badge-soft badge-secondary';
                 break;

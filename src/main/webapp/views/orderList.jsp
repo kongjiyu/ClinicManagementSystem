@@ -82,18 +82,21 @@ Pharmacy Module
         <div>
           <label class="label">Quantity *</label>
           <input type="number" id="modalQuantity" name="quantity" class="input input-bordered w-full" 
-                 min="1" required onchange="calculateModalTotal()">
+                 min="1" max="10000" required onchange="calculateModalTotal()">
+          <div class="text-xs text-gray-500 mt-1">Maximum: 10,000 units</div>
         </div>
         <div>
           <label class="label">Unit Price (RM) *</label>
           <input type="number" id="modalUnitPrice" name="unitPrice" class="input input-bordered w-full" 
-                 min="0" step="0.01" required onchange="calculateModalTotal()">
+                 min="0.01" max="1000" step="0.01" required onchange="calculateModalTotal()">
           <div id="priceInfo" class="text-sm text-gray-600 mt-1"></div>
+          <div class="text-xs text-gray-500 mt-1">Maximum: RM 1,000.00 per unit</div>
         </div>
         <div>
           <label class="label">Total Amount (RM)</label>
           <input type="number" id="modalTotalAmount" name="totalAmount" class="input input-bordered w-full" 
                  readonly>
+          <div id="totalAmountInfo" class="text-xs text-gray-500 mt-1"></div>
         </div>
       </div>
 
@@ -244,6 +247,19 @@ Pharmacy Module
     const unitPrice = parseFloat(document.getElementById('modalUnitPrice').value) || 0;
     const total = quantity * unitPrice;
     document.getElementById('modalTotalAmount').value = total.toFixed(2);
+    
+    // Update total amount info
+    const totalAmountInfo = document.getElementById('totalAmountInfo');
+    if (total > 10000000) { // 10 million RM limit
+      totalAmountInfo.textContent = 'Warning: Total amount exceeds RM 10,000,000.00 limit';
+      totalAmountInfo.className = 'text-xs text-red-500 mt-1';
+    } else if (total > 1000000) { // 1 million RM warning
+      totalAmountInfo.textContent = 'Note: Large order amount (RM ' + total.toLocaleString() + ')';
+      totalAmountInfo.className = 'text-xs text-yellow-600 mt-1';
+    } else {
+      totalAmountInfo.textContent = '';
+      totalAmountInfo.className = 'text-xs text-gray-500 mt-1';
+    }
   }
 
   // Reset modal form
@@ -345,8 +361,9 @@ Pharmacy Module
   function validateModalForm() {
     const medicineId = document.getElementById('modalMedicineId').value;
     const supplierId = document.getElementById('modalSupplierId').value;
-    const quantity = document.getElementById('modalQuantity').value;
-    const unitPrice = document.getElementById('modalUnitPrice').value;
+    const quantity = parseInt(document.getElementById('modalQuantity').value);
+    const unitPrice = parseFloat(document.getElementById('modalUnitPrice').value);
+    const totalAmount = parseFloat(document.getElementById('modalTotalAmount').value);
 
     if (!medicineId) {
       alert('Please select a medicine');
@@ -363,8 +380,23 @@ Pharmacy Module
       return false;
     }
 
+    if (quantity > 10000) {
+      alert('Quantity cannot exceed 10,000 units');
+      return false;
+    }
+
     if (!unitPrice || unitPrice <= 0) {
       alert('Please enter a valid unit price');
+      return false;
+    }
+
+    if (unitPrice > 1000) {
+      alert('Unit price cannot exceed RM 1,000.00');
+      return false;
+    }
+
+    if (totalAmount > 10000000) {
+      alert('Total amount cannot exceed RM 10,000,000.00');
       return false;
     }
 

@@ -118,7 +118,7 @@ General Module
   </div>
 
   <!-- Recent Activities -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
     <!-- Recent Appointments -->
     <div class="bg-base-100 p-6 rounded-lg shadow-lg">
       <div class="flex justify-between items-center mb-4">
@@ -165,6 +165,14 @@ General Module
 <script>
   const API_BASE = '<%= request.getContextPath() %>/api';
   let appointmentsChart;
+
+  // Format date to dd/mm/yyyy
+  function formatDate(date) {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return day + '/' + month + '/' + year;
+  }
 
   // Update current time
   function updateCurrentTime() {
@@ -265,18 +273,20 @@ General Module
         const statusBadge = getStatusBadge(appointment.status);
         
         const appointmentElement = document.createElement('div');
-        appointmentElement.className = 'flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200';
+        appointmentElement.className = 'p-3 bg-white rounded-lg border border-gray-200';
         
         const patientName = appointment.patientName || 'Unknown Patient';
-        const dateString = appointmentDate.toLocaleDateString();
+        const dateString = formatDate(appointmentDate);
         const timeString = appointmentDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
         
         appointmentElement.innerHTML = 
-          '<div>' +
-            '<p class="font-medium">' + patientName + '</p>' +
-            '<p class="text-sm text-base-content/70">' + dateString + ' ' + timeString + '</p>' +
-          '</div>' +
-          '<div>' + statusBadge + '</div>';
+          '<div class="flex justify-between items-start gap-3">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-medium break-words">' + patientName + '</p>' +
+              '<p class="text-sm text-base-content/70">' + dateString + ' ' + timeString + '</p>' +
+            '</div>' +
+            '<div class="flex-shrink-0">' + statusBadge + '</div>' +
+          '</div>';
         
         container.appendChild(appointmentElement);
       });
@@ -311,18 +321,20 @@ General Module
         const statusBadge = getStatusBadge(order.orderStatus);
         
         const orderElement = document.createElement('div');
-        orderElement.className = 'flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200';
+        orderElement.className = 'p-3 bg-white rounded-lg border border-gray-200';
         
         const medicineName = order.medicineName || 'Unknown Medicine';
-        const dateString = orderDate.toLocaleDateString();
+        const dateString = formatDate(orderDate);
         const quantity = order.quantity;
         
         orderElement.innerHTML = 
-          '<div>' +
-            '<p class="font-medium">' + medicineName + '</p>' +
-            '<p class="text-sm text-base-content/70">' + dateString + ' - Qty: ' + quantity + '</p>' +
-          '</div>' +
-          '<div>' + statusBadge + '</div>';
+          '<div class="flex justify-between items-start gap-3">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-medium break-words">' + medicineName + '</p>' +
+              '<p class="text-sm text-base-content/70">' + dateString + ' - Qty: ' + quantity + '</p>' +
+            '</div>' +
+            '<div class="flex-shrink-0">' + statusBadge + '</div>' +
+          '</div>';
         
         container.appendChild(orderElement);
       });
@@ -361,18 +373,20 @@ General Module
         const statusBadge = getTreatmentStatusBadge(treatment.status);
         
         const treatmentElement = document.createElement('div');
-        treatmentElement.className = 'flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200';
+        treatmentElement.className = 'p-3 bg-white rounded-lg border border-gray-200';
         
         const treatmentName = treatment.treatmentName || 'Unknown Treatment';
-        const dateString = treatmentDate.toLocaleDateString();
+        const dateString = formatDate(treatmentDate);
         const timeString = treatmentDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
         
         treatmentElement.innerHTML = 
-          '<div>' +
-            '<p class="font-medium">' + treatmentName + '</p>' +
-            '<p class="text-sm text-base-content/70">' + dateString + ' ' + timeString + '</p>' +
-          '</div>' +
-          '<div>' + statusBadge + '</div>';
+          '<div class="flex justify-between items-start gap-3">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-medium break-words">' + treatmentName + '</p>' +
+              '<p class="text-sm text-base-content/70">' + dateString + ' ' + timeString + '</p>' +
+            '</div>' +
+            '<div class="flex-shrink-0">' + statusBadge + '</div>' +
+          '</div>';
         
         container.appendChild(treatmentElement);
       });

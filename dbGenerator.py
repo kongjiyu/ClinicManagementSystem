@@ -97,7 +97,6 @@ def generate_staff_sql(n=15):  # 10 doctors + 5 admin staff (keeping the same)
         firstName = fake.first_name()
         lastName = fake.last_name()
         gender = random.choice(["Male", "Female"])
-        dob = fake.date_of_birth(minimum_age=22, maximum_age=65)
         nationality = random.choice(nationalities)
         idType = random.choice(["IC", "Passport"])
         
@@ -110,6 +109,8 @@ def generate_staff_sql(n=15):  # 10 doctors + 5 admin staff (keeping the same)
             pb = random.randint(1, 99)
             xxxx = random.randint(1, 9999)
             idNumber = f"{year:02d}{month:02d}{day:02d}-{pb:02d}-{xxxx:04d}"
+            # Set DOB to match IC date
+            dob = date(1900 + year, month, day)
         else:  # Passport
             # Passport format: 1-2 letters + 6-9 digits
             letters = random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
@@ -117,6 +118,8 @@ def generate_staff_sql(n=15):  # 10 doctors + 5 admin staff (keeping the same)
                 letters = letters + random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
             digits = random.randint(100000, 999999999)
             idNumber = f"{letters}{digits}"
+            # For passport, generate random DOB
+            dob = fake.date_of_birth(minimum_age=22, maximum_age=65)
         
         prefix = random.choice(["010", "011", "012", "013", "014", "016", "017", "018", "019"])
         contactNumber = f"{prefix}-{random.randint(1000000, 9999999)}"
@@ -182,12 +185,6 @@ def generate_patient_sql(n=100):
         firstName = fake.first_name()
         lastName = fake.last_name()
         gender = random.choice(["Male", "Female"])
-        dob_date = fake.date_of_birth(minimum_age=18, maximum_age=50)
-        # Age calculation based on dob
-        today = date.today()
-        age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
-        # Convert date to string for the model
-        dob = dob_date.strftime('%Y-%m-%d')
         nationality = random.choice(nationalities)
         idType = random.choice(["IC", "Passport"])
         
@@ -200,6 +197,8 @@ def generate_patient_sql(n=100):
             pb = random.randint(1, 99)
             xxxx = random.randint(1, 9999)
             idNumber = f"{year:02d}{month:02d}{day:02d}-{pb:02d}-{xxxx:04d}"
+            # Set DOB to match IC date
+            dob_date = date(1900 + year, month, day)
         else:  # Passport
             # Passport format: 1-2 letters + 6-9 digits
             letters = random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
@@ -207,6 +206,14 @@ def generate_patient_sql(n=100):
                 letters = letters + random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
             digits = random.randint(100000, 999999999)
             idNumber = f"{letters}{digits}"
+            # For passport, generate random DOB
+            dob_date = fake.date_of_birth(minimum_age=18, maximum_age=50)
+        
+        # Age calculation based on dob
+        today = date.today()
+        age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+        # Convert date to string for the model
+        dob = dob_date.strftime('%Y-%m-%d')
         
         # Generate student ID starting from 25WMR00001
         studentId = f"25WMR{str(i + 1).zfill(5)}"
@@ -471,6 +478,7 @@ def generate_treatment_sql(consultations):
     """
     inserts = []
     tr_index = 1
+    treatment_totals_by_consultation = {}
 
     TREATMENT_BY_DX = {
         "Back pain": [
@@ -545,12 +553,14 @@ def generate_treatment_sql(consultations):
     }
 
     status_options = ["In Progress", "Completed", "Cancelled"]
-    completed_outcomes = ["Successful", "Partial Success", "Failed"]
+    completed_outcomes = ["Successful", "Partial Success", "Unsuccessful", "Complications", "Patient Discontinued"]
 
     for c in consultations:
         dx = c['diagnosis']
         options = TREATMENT_BY_DX.get(dx, [])
         count = 0 if not options else 1  # 0 or 1 aligned treatment
+        consultation_total = 0.0
+        
         for _ in range(count):
             treatment_id = f"TR{str(tr_index).zfill(4)}"
             tr_index += 1
@@ -577,6 +587,7 @@ def generate_treatment_sql(consultations):
             # --- NEW: price calculation ---
             rule = TREATMENT_PRICING.get(ttype, {"base": 30.0, "per_min": 0.0})
             price = round(rule["base"] + rule["per_min"] * duration, 2)
+            consultation_total += price
 
             # IMPORTANT: Adjust column order below to match your DB schema.
             # This assumes the table columns are:
@@ -603,11 +614,14 @@ def generate_treatment_sql(consultations):
                 f"VALUES ({', '.join(formatted)});"
             )
             inserts.append(stmt)
+        
+        # Store total for this consultation
+        treatment_totals_by_consultation[c['consultationID']] = consultation_total
 
-    return inserts
+    return inserts, treatment_totals_by_consultation
 
 # --- Bill generation from consultation totals ---
-def generate_bill_sql(totals_by_consultation):
+def generate_bill_sql(totals_by_consultation, treatment_totals_by_consultation):
     inserts = []
     bill_ids = []
     bill_map = {}
@@ -616,7 +630,8 @@ def generate_bill_sql(totals_by_consultation):
     idx = 1
     for consultation_id, med_total in totals_by_consultation.items():
         bill_id = f"BI{str(idx).zfill(4)}"
-        total_amount = round(med_total + 20.0, 2)  # medicine total + consultation fee (20)
+        treatment_total = treatment_totals_by_consultation.get(consultation_id, 0.0)
+        total_amount = round(med_total + treatment_total + 20.0, 2)  # medicine total + treatment total + consultation fee (20)
         payment_method = random.choice(payment_methods)
 
         values = [bill_id, total_amount, payment_method]
@@ -691,19 +706,19 @@ def main():
     # Prescriptions consistent with diagnosis (build totals for bills)
     prescription_inserts, totals_by_consultation = generate_prescription_sql(consultations, name_to_id, price_map)
 
+    # Treatments aligned with diagnosis (generate first to get treatment totals)
+    treatment_inserts, treatment_totals_by_consultation = generate_treatment_sql(consultations)
+    for stmt in treatment_inserts:
+        print(stmt)
+
     # Bills (+20 consultation fee) and write back to consultation via bill_map
-    bill_inserts, bill_ids, bill_map = generate_bill_sql(totals_by_consultation)
+    bill_inserts, bill_ids, bill_map = generate_bill_sql(totals_by_consultation, treatment_totals_by_consultation)
     for stmt in bill_inserts:
         print(stmt)
 
     # Consultations with the correct billID
     consultation_inserts = render_consultation_inserts(consultations, bill_map)
     for stmt in consultation_inserts:
-        print(stmt)
-
-    # Treatments aligned with diagnosis
-    treatment_inserts = generate_treatment_sql(consultations)
-    for stmt in treatment_inserts:
         print(stmt)
 
     # Finally, prescriptions (after consultations/bills)

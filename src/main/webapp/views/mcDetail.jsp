@@ -150,11 +150,10 @@ Consultation Module
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return day + '/' + month + '/' + year;
     };
     
     // Get consultation ID from URL parameter
@@ -218,18 +217,110 @@ Consultation Module
             downloadBtn.innerHTML = '<span class="loading loading-spinner loading-sm mr-2"></span>Generating PDF...';
             downloadBtn.disabled = true;
 
-            // Get the MC content element
-            const element = document.getElementById('mc-content');
+            // Create a temporary container with simplified styling
+            const originalElement = document.getElementById('mc-content');
+            const tempContainer = document.createElement('div');
+            tempContainer.style.cssText = `
+                background: white;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                color: black;
+            `;
+            
+            // Clone the content and apply simplified styles
+            const clonedContent = originalElement.cloneNode(true);
+            
+            // Remove problematic classes and apply inline styles
+            const allElements = clonedContent.querySelectorAll('*');
+            allElements.forEach(el => {
+                // Remove Tailwind classes that might cause issues
+                el.className = '';
+                
+                // Apply basic styling based on element type
+                if (el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3') {
+                    el.style.fontWeight = 'bold';
+                    el.style.marginBottom = '10px';
+                    el.style.color = 'black';
+                }
+                
+                if (el.tagName === 'H2') {
+                    el.style.fontSize = '24px';
+                    el.style.textAlign = 'center';
+                    el.style.borderBottom = '2px solid #ccc';
+                    el.style.paddingBottom = '10px';
+                    el.style.marginBottom = '20px';
+                }
+                
+                if (el.tagName === 'H3') {
+                    el.style.fontSize = '18px';
+                    el.style.marginTop = '20px';
+                }
+                
+                if (el.tagName === 'P') {
+                    el.style.margin = '5px 0';
+                    el.style.color = 'black';
+                }
+                
+                if (el.tagName === 'LABEL') {
+                    el.style.fontWeight = 'bold';
+                    el.style.display = 'block';
+                    el.style.marginBottom = '5px';
+                    el.style.color = 'black';
+                }
+                
+                if (el.tagName === 'DIV' && el.style.backgroundColor) {
+                    el.style.backgroundColor = '#f5f5f5';
+                    el.style.padding = '15px';
+                    el.style.marginBottom = '15px';
+                    el.style.borderRadius = '5px';
+                }
+                
+                if (el.classList.contains('doctor-signature')) {
+                    el.style.fontFamily = 'Arial, cursive';
+                    el.style.fontSize = '18px';
+                    el.style.color = 'black';
+                }
+            });
+            
+            // Apply specific styling to sections
+            const sections = clonedContent.querySelectorAll('div[class*="bg-"]');
+            sections.forEach(section => {
+                section.style.backgroundColor = '#f5f5f5';
+                section.style.padding = '15px';
+                section.style.marginBottom = '15px';
+                section.style.borderRadius = '5px';
+            });
+            
+            // Style the blue section specifically
+            const blueSection = clonedContent.querySelector('div[class*="bg-blue"]');
+            if (blueSection) {
+                blueSection.style.backgroundColor = '#e6f3ff';
+                blueSection.style.border = '1px solid #b3d9ff';
+            }
+            
+            // Style the footer
+            const footer = clonedContent.querySelector('div[class*="border-t"]');
+            if (footer) {
+                footer.style.borderTop = '2px solid #ccc';
+                footer.style.paddingTop = '15px';
+                footer.style.marginTop = '20px';
+            }
+            
+            tempContainer.appendChild(clonedContent);
+            document.body.appendChild(tempContainer);
             
             // Configure PDF options
             const opt = {
-                margin: [10, 10, 10, 10],
+                margin: [15, 15, 15, 15],
                 filename: 'medical_certificate_' + consultationId + '.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2,
                     useCORS: true,
-                    allowTaint: true
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
                 },
                 jsPDF: { 
                     unit: 'mm', 
@@ -239,7 +330,10 @@ Consultation Module
             };
 
             // Generate and download PDF
-            await html2pdf().set(opt).from(element).save();
+            await html2pdf().set(opt).from(tempContainer).save();
+            
+            // Clean up temporary container
+            document.body.removeChild(tempContainer);
             
             // Reset button state
             downloadBtn.innerHTML = originalText;

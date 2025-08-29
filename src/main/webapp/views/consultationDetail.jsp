@@ -27,54 +27,6 @@ Consultation Module
     </div>
   </div>
 
-  <!-- Patient Basic Info Section -->
-  <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
-    <h2 class="text-xl font-semibold mb-2">Patient Basic Information</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="label">Patient Name</label>
-        <input type="text" id="patientName" class="input input-bordered w-full" disabled />
-      </div>
-      <div>
-        <label class="label">Age</label>
-        <input type="number" id="age" class="input input-bordered w-full" disabled />
-      </div>
-      <div>
-        <label class="label">Gender</label>
-        <select id="gender" class="select select-bordered w-full" disabled>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-    </div>
-  </section>
-
-  <!-- Medical Information Section -->
-  <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
-    <h2 class="text-xl font-semibold mb-2">Medical Information</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="label">Blood Type</label>
-        <select id="bloodType" class="select select-bordered w-full" disabled>
-          <option value="">-- Select --</option>
-          <option value="O+">O+</option>
-          <option value="O-">O-</option>
-          <option value="A+">A+</option>
-          <option value="A-">A-</option>
-          <option value="B+">B+</option>
-          <option value="B-">B-</option>
-          <option value="AB+">AB+</option>
-          <option value="AB-">AB-</option>
-        </select>
-      </div>
-      <div>
-        <label class="label">Allergies</label>
-        <input type="text" id="allergies" class="input input-bordered w-full" disabled />
-      </div>
-    </div>
-  </section>
-
   <!-- Consultation Information Section -->
   <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
     <h2 class="text-xl font-semibold mb-2">Consultation Information</h2>
@@ -137,6 +89,54 @@ Consultation Module
         <button type="submit" class="btn btn-primary">Save Consultation</button>
       </div>
     </form>
+  </section>
+
+  <!-- Patient Basic Info Section -->
+  <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
+    <h2 class="text-xl font-semibold mb-2">Patient Basic Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="label">Patient Name</label>
+        <input type="text" id="patientName" class="input input-bordered w-full" disabled />
+      </div>
+      <div>
+        <label class="label">Age</label>
+        <input type="number" id="age" class="input input-bordered w-full" disabled />
+      </div>
+      <div>
+        <label class="label">Gender</label>
+        <select id="gender" class="select select-bordered w-full" disabled>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Medical Information Section -->
+  <section class="bg-base-200 rounded-lg p-6 shadow space-y-4">
+    <h2 class="text-xl font-semibold mb-2">Medical Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="label">Blood Type</label>
+        <select id="bloodType" class="select select-bordered w-full" disabled>
+          <option value="">-- Select --</option>
+          <option value="O+">O+</option>
+          <option value="O-">O-</option>
+          <option value="A+">A+</option>
+          <option value="A-">A-</option>
+          <option value="B+">B+</option>
+          <option value="B-">B-</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB-</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Allergies</label>
+        <input type="text" id="allergies" class="input input-bordered w-full" disabled />
+      </div>
+    </div>
   </section>
 
   <!-- Prescription Section -->
@@ -217,6 +217,9 @@ Consultation Module
                 <option value="Complications">Complications</option>
                 <option value="Patient Discontinued">Patient Discontinued</option>
               </select>
+              <div id="outcome-required-hint" class="text-xs text-red-500 mt-1" style="display: none;">
+                Outcome is required when status is Completed
+              </div>
             </div>
           </div>
           <div class="mb-4">
@@ -258,8 +261,8 @@ Consultation Module
             </div>
             <div>
               <label class="label">Price (RM)</label>
-              <input type="number" id="treatmentPrice" name="price" class="input input-bordered w-full" min="1.00" step="0.01" placeholder="0.00" required />
-              <div class="text-xs text-gray-500 mt-1">Price must be higher than RM 1.00</div>
+              <input type="number" id="treatmentPrice" name="price" class="input input-bordered w-full" min="1.01" max="1000.00" step="0.01" placeholder="0.00" required />
+              <div class="text-xs text-gray-500 mt-1">Price must be between RM 1.01 and RM 1,000.00</div>
             </div>
           </div>
           <div class="mb-4">
@@ -570,6 +573,15 @@ Consultation Module
     
     // Show/hide cancel button based on consultation status
     updateCancelButtonVisibility();
+    
+    // Update MC button visibility based on consultation status
+    updateMCButtonVisibility();
+    
+    // Update form field states based on consultation status
+    updateFormFieldStates();
+    
+    // Update prescription and treatment section states based on consultation status
+    updatePrescriptionAndTreatmentStates();
   }
 
   // Check for existing MC data
@@ -609,6 +621,14 @@ Consultation Module
   // Show create MC form
   function showCreateMCForm() {
     console.log('DEBUG: showCreateMCForm called');
+    
+    // Check if consultation status allows MC creation
+    const currentStatus = consultationData.status;
+    if (!currentStatus || !['In Progress'].includes(currentStatus)) {
+      alert('Medical Certificate can only be created for consultations that are In Progress. Current status: ' + (currentStatus || 'Unknown'));
+      return;
+    }
+    
     document.getElementById('create-mc-form').style.display = 'block';
     document.getElementById('create-mc-btn').style.display = 'none';
     console.log('DEBUG: Create MC form should now be visible');
@@ -729,6 +749,13 @@ Consultation Module
   document.getElementById('consultation-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Check if consultation can be edited
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot edit consultation with status: ' + currentStatus);
+      return;
+    }
+
     // Get diagnosis value - if "Other" is selected, use the textarea value
     const diagnosisSelect = document.getElementById('diagnosis');
     const otherDiagnosis = document.getElementById('other-diagnosis').value;
@@ -825,6 +852,13 @@ Consultation Module
   // Handle MC form submission
   document.getElementById('mc-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot create Medical Certificates for a ' + currentStatus + ' consultation.');
+      return;
+    }
 
     // Validate dates before submission
     if (!validateMCDates()) {
@@ -945,6 +979,13 @@ Consultation Module
 
   // Add prescription row
   function addPrescriptionRow(prescription = null, index = null) {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot add prescriptions to a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     const container = document.getElementById('prescription-container');
     // Use provided index if available, otherwise use nextRowId
     const uniqueRowId = index !== null ? index : nextRowId++;
@@ -1005,15 +1046,17 @@ Consultation Module
           '<label class="label">Dosage</label>' +
           '<div class="flex gap-2">' +
             '<input type="number" class="input input-bordered w-20 prescription-dosage" data-row-id="' + uniqueRowId + '" ' +
-                   'value="' + (prescription ? prescription.dosage : '') + '" min="1" />' +
+                   'value="' + (prescription ? prescription.dosage : '') + '" min="1" max="10" />' +
             '<input type="text" class="input input-bordered w-24 prescription-unit" data-row-id="' + uniqueRowId + '" ' +
                    'value="' + (prescription ? prescription.dosageUnit : '') + '" readonly />' +
           '</div>' +
+          '<div class="text-xs text-gray-500 mt-1">Maximum: 10 units per dose</div>' +
         '</div>' +
         '<div>' +
           '<label class="label">Times per Day</label>' +
           '<input type="number" class="input input-bordered w-full prescription-frequency" data-row-id="' + uniqueRowId + '" ' +
-                 'value="' + (prescription ? prescription.servingPerDay : '') + '" min="1" max="6" />' +
+                 'value="' + (prescription ? prescription.servingPerDay : '') + '" min="1" max="4" />' +
+          '<div class="text-xs text-gray-500 mt-1">Maximum: 4 times per day</div>' +
         '</div>' +
         '<div>' +
           '<label class="label">Quantity Dispensed</label>' +
@@ -1059,6 +1102,18 @@ Consultation Module
     const quantityInput = row.querySelector('.prescription-quantity');
     quantityInput.addEventListener('input', function() {
       validateQuantity(uniqueRowId);
+    });
+    
+    // Add event listener to dosage input for validation
+    const dosageInput = row.querySelector('.prescription-dosage');
+    dosageInput.addEventListener('input', function() {
+      validateDosage(uniqueRowId);
+    });
+    
+    // Add event listener to frequency input for validation
+    const frequencyInput = row.querySelector('.prescription-frequency');
+    frequencyInput.addEventListener('input', function() {
+      validateFrequency(uniqueRowId);
     });
   }
 
@@ -1147,6 +1202,64 @@ Consultation Module
     return true;
   }
 
+  // Validate dosage (max 10 units per dose)
+  function validateDosage(rowId) {
+    const row = document.getElementById('prescription-row-' + rowId);
+    
+    if (!row) {
+      console.warn('Row not found for ID:', rowId);
+      return true;
+    }
+    
+    const dosageInput = row.querySelector('.prescription-dosage');
+    
+    if (!dosageInput) {
+      console.warn('Dosage input not found in row:', rowId);
+      return true;
+    }
+    
+    const dosage = parseInt(dosageInput.value) || 0;
+    
+    if (dosage > 10) {
+      dosageInput.classList.add('input-error');
+      dosageInput.title = 'Dosage cannot exceed 10 units per dose';
+      return false;
+    } else {
+      dosageInput.classList.remove('input-error');
+      dosageInput.title = '';
+      return true;
+    }
+  }
+
+  // Validate frequency (max 4 times per day)
+  function validateFrequency(rowId) {
+    const row = document.getElementById('prescription-row-' + rowId);
+    
+    if (!row) {
+      console.warn('Row not found for ID:', rowId);
+      return true;
+    }
+    
+    const frequencyInput = row.querySelector('.prescription-frequency');
+    
+    if (!frequencyInput) {
+      console.warn('Frequency input not found in row:', rowId);
+      return true;
+    }
+    
+    const frequency = parseInt(frequencyInput.value) || 0;
+    
+    if (frequency > 4) {
+      frequencyInput.classList.add('input-error');
+      frequencyInput.title = 'Frequency cannot exceed 4 times per day';
+      return false;
+    } else {
+      frequencyInput.classList.remove('input-error');
+      frequencyInput.title = '';
+      return true;
+    }
+  }
+
   // Update medicine options in all rows when a selection changes
   function updateMedicineOptions() {
     const container = document.getElementById('prescription-container');
@@ -1187,6 +1300,13 @@ Consultation Module
 
   // Remove prescription row
   async function removePrescriptionRow(rowId) {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot remove prescriptions from a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     const row = document.getElementById("prescription-row-" + rowId);
     
     if (row) {
@@ -1231,6 +1351,13 @@ Consultation Module
 
   // Save prescriptions
   async function savePrescriptions() {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot save prescriptions to a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     const container = document.getElementById('prescription-container');
     const rows = container.querySelectorAll('[id^="prescription-row-"]');
     
@@ -1249,6 +1376,22 @@ Consultation Module
         // Extract row ID from the row element
         const rowId = row.id.replace('prescription-row-', '');
         
+        // Validate dosage (max 10 units per dose)
+        const dosage = parseInt(dosageInput.value);
+        if (dosage > 10) {
+          alert('Dosage cannot exceed 10 units per dose. Please adjust the dosage.');
+          dosageInput.focus();
+          return;
+        }
+        
+        // Validate frequency (max 4 times per day)
+        const frequency = parseInt(frequencyInput.value);
+        if (frequency > 4) {
+          alert('Frequency cannot exceed 4 times per day. Please adjust the frequency.');
+          frequencyInput.focus();
+          return;
+        }
+        
         // Get the selected medicine to get its unit and check stock
         const selectedMedicine = medicines.find(med => med.medicineID === medicineSelect.value);
         const medicineUnit = selectedMedicine ? selectedMedicine.unit : 'tablet'; // Default fallback
@@ -1263,9 +1406,9 @@ Consultation Module
         prescriptionsToSave.push({
           consultationID: consultationId,
           medicineID: medicineSelect.value,
-          dosage: parseInt(dosageInput.value),
+          dosage: dosage,
           dosageUnit: medicineUnit,
-          servingPerDay: parseInt(frequencyInput.value),
+          servingPerDay: frequency,
           quantityDispensed: requestedQuantity,
           instruction: instructionSelect.value,
           description: descriptionTextarea.value,
@@ -1327,6 +1470,13 @@ Consultation Module
 
   // Show create treatment form
   function showCreateTreatmentForm() {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot start treatments for a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     document.getElementById('create-treatment-form').style.display = 'block';
     document.getElementById('treatments-list').style.display = 'none';
     loadDoctorsForTreatment();
@@ -1344,12 +1494,25 @@ Consultation Module
   document.getElementById('treatment-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot create treatments for a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     const formData = new FormData(e.target);
     const price = parseFloat(formData.get('price')) || 0.0;
     
-    // Validate price is higher than 1
-    if (price < 1.0) {
-      alert('Error: Treatment price must be higher than RM 1.00');
+    // Validate price is between RM 1.01 and RM 1,000.00
+    if (price < 1.01) {
+      alert('Error: Treatment price must be at least RM 1.01');
+      document.getElementById('treatmentPrice').focus();
+      return;
+    }
+    
+    if (price > 1000.00) {
+      alert('Error: Treatment price cannot exceed RM 1,000.00');
       document.getElementById('treatmentPrice').focus();
       return;
     }
@@ -1512,6 +1675,13 @@ Consultation Module
 
   // Show update progress form
   async function showUpdateProgressForm(treatmentId) {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     try {
       // Store treatment ID for the form
       window.currentTreatmentId = treatmentId;
@@ -1538,6 +1708,9 @@ Consultation Module
       // Scroll to form
       document.getElementById('update-progress-form').scrollIntoView({ behavior: 'smooth' });
       
+      // Update outcome field visibility based on status
+      updateOutcomeFieldVisibility();
+      
     } catch (error) {
       console.error('Error loading treatment data:', error);
       alert('Error loading treatment data: ' + error.message);
@@ -1554,9 +1727,37 @@ Consultation Module
     document.getElementById('treatment-progress-form').reset();
   }
 
+  // Update outcome field visibility based on status
+  function updateOutcomeFieldVisibility() {
+    const statusSelect = document.getElementById('progressStatus');
+    const outcomeField = document.getElementById('progressOutcome').closest('div');
+    const outcomeHint = document.getElementById('outcome-required-hint');
+    
+    if (statusSelect.value === 'Completed') {
+      outcomeField.style.display = 'block';
+      document.getElementById('progressOutcome').required = true;
+      if (outcomeHint) {
+        outcomeHint.style.display = 'block';
+      }
+    } else {
+      outcomeField.style.display = 'block'; // Keep visible but not required
+      document.getElementById('progressOutcome').required = false;
+      if (outcomeHint) {
+        outcomeHint.style.display = 'none';
+      }
+    }
+  }
+
   // Handle treatment progress form submission
   document.getElementById('treatment-progress-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot update treatment progress for a ' + currentStatus + ' consultation.');
+      return;
+    }
     
     if (!window.currentTreatmentId || !window.currentTreatmentData) {
       alert('No treatment selected');
@@ -1564,6 +1765,15 @@ Consultation Module
     }
     
     const formData = new FormData(e.target);
+    const status = formData.get('status');
+    const outcome = formData.get('outcome') || '';
+    
+    // Validate that completed treatments must have an outcome
+    if (status === 'Completed' && !outcome.trim()) {
+      alert('Validation Error: Outcome is required when status is Completed');
+      document.getElementById('progressOutcome').focus();
+      return;
+    }
     
           // Create update data by preserving existing treatment data and updating only specific fields
       const updateData = {
@@ -1581,8 +1791,8 @@ Consultation Module
         price: window.currentTreatmentData.price,
         
         // Update only the progress-related fields
-        status: formData.get('status'),
-        outcome: formData.get('outcome') || null,
+        status: status,
+        outcome: outcome || null,
         notes: formData.get('notes')
       };
 
@@ -1612,6 +1822,13 @@ Consultation Module
 
   // Show create follow-up form
   function showCreateFollowupForm() {
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
+      return;
+    }
+    
     document.getElementById('create-followup-form').style.display = 'block';
     document.getElementById('create-followup-btn').style.display = 'none';
     setDefaultFollowupDate();
@@ -1849,6 +2066,13 @@ Consultation Module
   document.getElementById('followup-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Check if consultation is completed, cancelled, or waiting
+    const currentStatus = consultationData.status;
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      alert('Cannot schedule follow-up appointments for a ' + currentStatus + ' consultation.');
+      return;
+    }
+
     // Check if availability is still being fetched
     if (isCheckingAvailability) {
       alert('Please wait while availability is being checked. You cannot schedule a follow-up appointment at this time.');
@@ -1971,6 +2195,410 @@ Consultation Module
     }
   }
 
+  // Update MC button visibility based on consultation status
+  function updateMCButtonVisibility() {
+    const createMCBtn = document.getElementById('create-mc-btn');
+    const currentStatus = consultationData.status;
+    
+    // Only allow MC creation for consultations that are In Progress
+    // Disable MC creation for Waiting, Completed, and Cancelled stages
+    if (currentStatus && ['In Progress'].includes(currentStatus)) {
+      createMCBtn.disabled = false;
+      createMCBtn.title = 'Create Medical Certificate';
+      createMCBtn.classList.remove('btn-disabled');
+      createMCBtn.classList.add('btn-primary');
+    } else {
+      createMCBtn.disabled = true;
+      createMCBtn.title = 'MC can only be created for consultations that are In Progress';
+      createMCBtn.classList.add('btn-disabled');
+      createMCBtn.classList.remove('btn-primary');
+    }
+  }
+
+  // Update form field states based on consultation status
+  function updateFormFieldStates() {
+    const currentStatus = consultationData.status;
+    const saveButton = document.querySelector('#consultation-form button[type="submit"]');
+    
+    // Disable form fields if consultation is Cancelled, Completed, or Waiting
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      // Disable editable fields
+      document.getElementById('doctor').disabled = true;
+      document.getElementById('symptoms').disabled = true;
+      document.getElementById('diagnosis').disabled = true;
+      document.getElementById('other-diagnosis').disabled = true;
+      
+      // Disable save button
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.title = 'Cannot edit consultation with status: ' + currentStatus;
+        saveButton.classList.add('btn-disabled');
+        saveButton.classList.remove('btn-primary');
+        saveButton.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Save (Disabled)';
+      }
+      
+      // Add visual indicator to form section
+      const formSection = document.querySelector('#consultation-form').closest('section');
+      if (formSection) {
+        formSection.classList.add('opacity-75');
+        formSection.title = 'Consultation cannot be edited - Status: ' + currentStatus;
+      }
+    } else {
+      // Enable form fields for other statuses
+      document.getElementById('doctor').disabled = false;
+      document.getElementById('symptoms').disabled = false;
+      document.getElementById('diagnosis').disabled = false;
+      document.getElementById('other-diagnosis').disabled = false;
+      
+      // Enable save button
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.title = 'Save consultation changes';
+        saveButton.classList.remove('btn-disabled');
+        saveButton.classList.add('btn-primary');
+        saveButton.innerHTML = 'Save Consultation';
+      }
+      
+      // Remove visual indicator
+      const formSection = document.querySelector('#consultation-form').closest('section');
+      if (formSection) {
+        formSection.classList.remove('opacity-75');
+        formSection.title = '';
+      }
+    }
+  }
+
+  // Update prescription and treatment section states based on consultation status
+  function updatePrescriptionAndTreatmentStates() {
+    const currentStatus = consultationData.status;
+    
+    // Get prescription and treatment sections
+    const prescriptionSection = document.querySelector('section:has(#prescription-container)');
+    const treatmentSection = document.querySelector('section:has(#treatments-list)');
+    const followupSection = document.querySelector('section:has(#create-followup-btn)');
+    const mcSection = document.querySelector('section:has(#create-mc-btn)');
+    
+    if (currentStatus && ['Cancelled', 'Completed', 'Waiting'].includes(currentStatus)) {
+      // Disable prescription section
+      if (prescriptionSection) {
+        // Disable "Add Medicine" button
+        const addMedicineBtn = prescriptionSection.querySelector('button[onclick="addPrescriptionRow()"]');
+        if (addMedicineBtn) {
+          addMedicineBtn.disabled = true;
+          addMedicineBtn.title = 'Cannot add prescriptions to ' + currentStatus + ' consultation';
+          addMedicineBtn.classList.add('btn-disabled');
+          addMedicineBtn.classList.remove('btn-primary');
+          addMedicineBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Add Medicine (Disabled)';
+        }
+        
+        // Disable "Save Prescriptions" button
+        const savePrescriptionsBtn = prescriptionSection.querySelector('button[onclick="savePrescriptions()"]');
+        if (savePrescriptionsBtn) {
+          savePrescriptionsBtn.disabled = true;
+          savePrescriptionsBtn.title = 'Cannot save prescriptions to ' + currentStatus + ' consultation';
+          savePrescriptionsBtn.classList.add('btn-disabled');
+          savePrescriptionsBtn.classList.remove('btn-primary');
+          savePrescriptionsBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Save Prescriptions (Disabled)';
+        }
+        
+        // Disable all prescription form fields
+        const prescriptionInputs = prescriptionSection.querySelectorAll('input, select, textarea');
+        prescriptionInputs.forEach(input => {
+          input.disabled = true;
+        });
+        
+        // Disable all prescription delete buttons
+        const prescriptionDeleteBtns = prescriptionSection.querySelectorAll('button[onclick*="removePrescriptionRow"]');
+        prescriptionDeleteBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.title = 'Cannot delete prescriptions from ' + currentStatus + ' consultation';
+          btn.classList.add('btn-disabled');
+          btn.classList.remove('btn-error');
+        });
+        
+        // Add visual indicator
+        prescriptionSection.classList.add('opacity-75');
+        prescriptionSection.title = 'Prescriptions cannot be modified - Status: ' + currentStatus;
+      }
+      
+      // Disable treatment section
+      if (treatmentSection) {
+        // Disable "Start Treatment" button
+        const startTreatmentBtn = treatmentSection.querySelector('button[onclick="showCreateTreatmentForm()"]');
+        if (startTreatmentBtn) {
+          startTreatmentBtn.disabled = true;
+          startTreatmentBtn.title = 'Cannot start treatments for ' + currentStatus + ' consultation';
+          startTreatmentBtn.classList.add('btn-disabled');
+          startTreatmentBtn.classList.remove('btn-primary');
+          startTreatmentBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Start Treatment (Disabled)';
+        }
+        
+        // Disable treatment form fields if form is visible
+        const treatmentForm = document.getElementById('treatment-form');
+        if (treatmentForm) {
+          const treatmentInputs = treatmentForm.querySelectorAll('input, select, textarea');
+          treatmentInputs.forEach(input => {
+            input.disabled = true;
+          });
+          
+          // Disable treatment form submit button
+          const treatmentSubmitBtn = treatmentForm.querySelector('button[type="submit"]');
+          if (treatmentSubmitBtn) {
+            treatmentSubmitBtn.disabled = true;
+            treatmentSubmitBtn.title = 'Cannot create treatments for ' + currentStatus + ' consultation';
+            treatmentSubmitBtn.classList.add('btn-disabled');
+            treatmentSubmitBtn.classList.remove('btn-primary');
+            treatmentSubmitBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Start Treatment (Disabled)';
+          }
+        }
+        
+        // Disable treatment progress update buttons
+        const treatmentUpdateBtns = treatmentSection.querySelectorAll('button[onclick*="showUpdateProgressForm"]');
+        treatmentUpdateBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.title = 'Cannot update treatment progress for ' + currentStatus + ' consultation';
+          btn.classList.add('btn-disabled');
+          btn.classList.remove('btn-primary');
+        });
+        
+        // Add visual indicator
+        treatmentSection.classList.add('opacity-75');
+        treatmentSection.title = 'Treatments cannot be modified - Status: ' + currentStatus;
+      }
+      
+      // Disable follow-up section
+      if (followupSection) {
+        // Disable "Schedule Follow-up" button
+        const scheduleFollowupBtn = followupSection.querySelector('button[onclick="showCreateFollowupForm()"]');
+        if (scheduleFollowupBtn) {
+          scheduleFollowupBtn.disabled = true;
+          scheduleFollowupBtn.title = 'Cannot schedule follow-up for ' + currentStatus + ' consultation';
+          scheduleFollowupBtn.classList.add('btn-disabled');
+          scheduleFollowupBtn.classList.remove('btn-primary');
+          scheduleFollowupBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Schedule Follow-up (Disabled)';
+        }
+        
+        // Disable follow-up form fields if form is visible
+        const followupForm = document.getElementById('followup-form');
+        if (followupForm) {
+          const followupInputs = followupForm.querySelectorAll('input, select, textarea');
+          followupInputs.forEach(input => {
+            input.disabled = true;
+          });
+          
+          // Disable follow-up form submit button
+          const followupSubmitBtn = followupForm.querySelector('button[type="submit"]');
+          if (followupSubmitBtn) {
+            followupSubmitBtn.disabled = true;
+            followupSubmitBtn.title = 'Cannot schedule follow-up for ' + currentStatus + ' consultation';
+            followupSubmitBtn.classList.add('btn-disabled');
+            followupSubmitBtn.classList.remove('btn-primary');
+            followupSubmitBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Schedule Follow-up (Disabled)';
+          }
+        }
+        
+        // Add visual indicator
+        followupSection.classList.add('opacity-75');
+        followupSection.title = 'Follow-up appointments cannot be scheduled - Status: ' + currentStatus;
+      }
+      
+      // Disable MC section
+      if (mcSection) {
+        // Disable "Create MC" button
+        const createMCBtn = mcSection.querySelector('button[onclick="showCreateMCForm()"]');
+        if (createMCBtn) {
+          createMCBtn.disabled = true;
+          createMCBtn.title = 'Cannot create MC for ' + currentStatus + ' consultation';
+          createMCBtn.classList.add('btn-disabled');
+          createMCBtn.classList.remove('btn-primary');
+          createMCBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Create MC (Disabled)';
+        }
+        
+        // Disable MC form fields if form is visible
+        const mcForm = document.getElementById('mc-form');
+        if (mcForm) {
+          const mcInputs = mcForm.querySelectorAll('input, select, textarea');
+          mcInputs.forEach(input => {
+            input.disabled = true;
+          });
+          
+          // Disable MC form submit button
+          const mcSubmitBtn = mcForm.querySelector('button[type="submit"]');
+          if (mcSubmitBtn) {
+            mcSubmitBtn.disabled = true;
+            mcSubmitBtn.title = 'Cannot create MC for ' + currentStatus + ' consultation';
+            mcSubmitBtn.classList.add('btn-disabled');
+            mcSubmitBtn.classList.remove('btn-primary');
+            mcSubmitBtn.innerHTML = '<span class="icon-[tabler--lock] size-4 mr-2"></span>Create MC (Disabled)';
+          }
+        }
+        
+        // Add visual indicator
+        mcSection.classList.add('opacity-75');
+        mcSection.title = 'Medical Certificates cannot be created - Status: ' + currentStatus;
+      }
+    } else {
+      // Enable prescription section
+      if (prescriptionSection) {
+        // Enable "Add Medicine" button
+        const addMedicineBtn = prescriptionSection.querySelector('button[onclick="addPrescriptionRow()"]');
+        if (addMedicineBtn) {
+          addMedicineBtn.disabled = false;
+          addMedicineBtn.title = 'Add new medicine to prescription';
+          addMedicineBtn.classList.remove('btn-disabled');
+          addMedicineBtn.classList.add('btn-primary');
+          addMedicineBtn.innerHTML = '<span class="icon-[tabler--plus] size-4"></span>Add Medicine';
+        }
+        
+        // Enable "Save Prescriptions" button
+        const savePrescriptionsBtn = prescriptionSection.querySelector('button[onclick="savePrescriptions()"]');
+        if (savePrescriptionsBtn) {
+          savePrescriptionsBtn.disabled = false;
+          savePrescriptionsBtn.title = 'Save all prescriptions';
+          savePrescriptionsBtn.classList.remove('btn-disabled');
+          savePrescriptionsBtn.classList.add('btn-primary');
+          savePrescriptionsBtn.innerHTML = 'Save Prescriptions';
+        }
+        
+        // Enable all prescription form fields
+        const prescriptionInputs = prescriptionSection.querySelectorAll('input, select, textarea');
+        prescriptionInputs.forEach(input => {
+          input.disabled = false;
+        });
+        
+        // Enable all prescription delete buttons
+        const prescriptionDeleteBtns = prescriptionSection.querySelectorAll('button[onclick*="removePrescriptionRow"]');
+        prescriptionDeleteBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.title = btn.getAttribute('data-original-title') || 'Remove prescription';
+          btn.classList.remove('btn-disabled');
+          btn.classList.add('btn-error');
+        });
+        
+        // Remove visual indicator
+        prescriptionSection.classList.remove('opacity-75');
+        prescriptionSection.title = '';
+      }
+      
+      // Enable treatment section
+      if (treatmentSection) {
+        // Enable "Start Treatment" button
+        const startTreatmentBtn = treatmentSection.querySelector('button[onclick="showCreateTreatmentForm()"]');
+        if (startTreatmentBtn) {
+          startTreatmentBtn.disabled = false;
+          startTreatmentBtn.title = 'Start a new treatment';
+          startTreatmentBtn.classList.remove('btn-disabled');
+          startTreatmentBtn.classList.add('btn-primary');
+          startTreatmentBtn.innerHTML = '<span class="icon-[tabler--plus] size-4 mr-2"></span>Start Treatment';
+        }
+        
+        // Enable treatment form fields if form is visible
+        const treatmentForm = document.getElementById('treatment-form');
+        if (treatmentForm) {
+          const treatmentInputs = treatmentForm.querySelectorAll('input, select, textarea');
+          treatmentInputs.forEach(input => {
+            input.disabled = false;
+          });
+          
+          // Enable treatment form submit button
+          const treatmentSubmitBtn = treatmentForm.querySelector('button[type="submit"]');
+          if (treatmentSubmitBtn) {
+            treatmentSubmitBtn.disabled = false;
+            treatmentSubmitBtn.title = 'Start the treatment';
+            treatmentSubmitBtn.classList.remove('btn-disabled');
+            treatmentSubmitBtn.classList.add('btn-primary');
+            treatmentSubmitBtn.innerHTML = 'Start Treatment';
+          }
+        }
+        
+        // Enable treatment progress update buttons
+        const treatmentUpdateBtns = treatmentSection.querySelectorAll('button[onclick*="showUpdateProgressForm"]');
+        treatmentUpdateBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.title = 'Update treatment progress';
+          btn.classList.remove('btn-disabled');
+          btn.classList.add('btn-primary');
+        });
+        
+        // Remove visual indicator
+        treatmentSection.classList.remove('opacity-75');
+        treatmentSection.title = '';
+      }
+      
+      // Enable follow-up section
+      if (followupSection) {
+        // Enable "Schedule Follow-up" button
+        const scheduleFollowupBtn = followupSection.querySelector('button[onclick="showCreateFollowupForm()"]');
+        if (scheduleFollowupBtn) {
+          scheduleFollowupBtn.disabled = false;
+          scheduleFollowupBtn.title = 'Schedule a follow-up appointment';
+          scheduleFollowupBtn.classList.remove('btn-disabled');
+          scheduleFollowupBtn.classList.add('btn-primary');
+          scheduleFollowupBtn.innerHTML = 'Schedule Follow-up';
+        }
+        
+        // Enable follow-up form fields if form is visible
+        const followupForm = document.getElementById('followup-form');
+        if (followupForm) {
+          const followupInputs = followupForm.querySelectorAll('input, select, textarea');
+          followupInputs.forEach(input => {
+            input.disabled = false;
+          });
+          
+          // Enable follow-up form submit button
+          const followupSubmitBtn = followupForm.querySelector('button[type="submit"]');
+          if (followupSubmitBtn) {
+            followupSubmitBtn.disabled = false;
+            followupSubmitBtn.title = 'Schedule the follow-up appointment';
+            followupSubmitBtn.classList.remove('btn-disabled');
+            followupSubmitBtn.classList.add('btn-primary');
+            followupSubmitBtn.innerHTML = 'Schedule Follow-up';
+          }
+        }
+        
+        // Remove visual indicator
+        followupSection.classList.remove('opacity-75');
+        followupSection.title = '';
+      }
+      
+      // Enable MC section
+      if (mcSection) {
+        // Enable "Create MC" button
+        const createMCBtn = mcSection.querySelector('button[onclick="showCreateMCForm()"]');
+        if (createMCBtn) {
+          createMCBtn.disabled = false;
+          createMCBtn.title = 'Create a Medical Certificate';
+          createMCBtn.classList.remove('btn-disabled');
+          createMCBtn.classList.add('btn-primary');
+          createMCBtn.innerHTML = 'Create MC';
+        }
+        
+        // Enable MC form fields if form is visible
+        const mcForm = document.getElementById('mc-form');
+        if (mcForm) {
+          const mcInputs = mcForm.querySelectorAll('input, select, textarea');
+          mcInputs.forEach(input => {
+            input.disabled = false;
+          });
+          
+          // Enable MC form submit button
+          const mcSubmitBtn = mcForm.querySelector('button[type="submit"]');
+          if (mcSubmitBtn) {
+            mcSubmitBtn.disabled = false;
+            mcSubmitBtn.title = 'Create the Medical Certificate';
+            mcSubmitBtn.classList.remove('btn-disabled');
+            mcSubmitBtn.classList.add('btn-primary');
+            mcSubmitBtn.innerHTML = 'Create MC';
+          }
+        }
+        
+        // Remove visual indicator
+        mcSection.classList.remove('opacity-75');
+        mcSection.title = '';
+      }
+    }
+  }
+
   // Cancel consultation
   async function cancelConsultation() {
     if (!confirm('Are you sure you want to cancel this consultation? This action cannot be undone.')) {
@@ -2009,13 +2637,22 @@ Consultation Module
         throw new Error('Failed to cancel consultation');
       }
 
-      alert('Consultation cancelled successfully!');
+      alert('Consultation cancelled successfully! All associated treatments and Medical Certificate have been cancelled/deleted.');
       
       // Reload consultation data to reflect the change
       await loadConsultationData();
       
       // Update cancel button visibility
       updateCancelButtonVisibility();
+      
+      // Update MC button visibility
+      updateMCButtonVisibility();
+      
+      // Update form field states
+      updateFormFieldStates();
+      
+      // Update prescription and treatment section states
+      updatePrescriptionAndTreatmentStates();
 
     } catch (error) {
       console.error('Error cancelling consultation:', error);
@@ -2032,6 +2669,12 @@ Consultation Module
     const followupDateInput = document.getElementById('followup-appointment-date');
     if (followupDateInput) {
       followupDateInput.addEventListener('change', checkFollowupAvailability);
+    }
+    
+    // Add event listener for treatment status to update outcome field visibility
+    const progressStatusSelect = document.getElementById('progressStatus');
+    if (progressStatusSelect) {
+      progressStatusSelect.addEventListener('change', updateOutcomeFieldVisibility);
     }
   });
 </script>

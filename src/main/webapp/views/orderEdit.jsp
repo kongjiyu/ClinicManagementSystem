@@ -15,7 +15,7 @@ Pharmacy Module
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
 
-<main class="ml-64 p-6 space-y-8">
+<main class="ml-64 p-6 space-y-8 w-full">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold">Edit Order</h1>
     <div class="flex gap-2">
@@ -30,7 +30,7 @@ Pharmacy Module
     </div>
   </div>
 
-  <div class="bg-base-200 rounded-lg p-6 shadow">
+  <div class="bg-base-200 rounded-lg p-6 shadow space-y-6 w-full max-w-none">
     <form id="orderForm" class="space-y-6">
       <!-- Order ID (Read-only) -->
       <div>
@@ -66,7 +66,7 @@ Pharmacy Module
         </div>
       </div>
 
-      <!-- Dates (Read-only) -->
+      <!-- Dates -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="label">Order Date</label>
@@ -74,7 +74,7 @@ Pharmacy Module
         </div>
         <div>
           <label class="label">Expected Expiry Date</label>
-          <input type="text" id="expiryDate" class="input input-bordered w-full" readonly />
+          <input type="date" id="expiryDate" name="expiryDate" class="input input-bordered w-full" />
         </div>
       </div>
 
@@ -100,10 +100,6 @@ Pharmacy Module
           <span class="icon-[tabler--refresh] size-4 mr-2"></span>
           Reset to Original
         </button>
-        <button type="button" class="btn btn-error" onclick="deleteOrder()">
-          <span class="icon-[tabler--trash] size-4 mr-2"></span>
-          Delete Order
-        </button>
       </div>
     </form>
   </div>
@@ -127,6 +123,16 @@ Pharmacy Module
   }
 
   // Initialize page
+  // Format date to dd/mm/yyyy
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return day + '/' + month + '/' + year;
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     loadOrderData();
   });
@@ -168,12 +174,14 @@ Pharmacy Module
     document.getElementById('unitPrice').value = orderData.unitPrice || '';
     document.getElementById('totalAmount').value = orderData.totalAmount || '';
 
-    // Dates (read-only)
+    // Dates
     if (orderData.orderDate) {
-      document.getElementById('orderDate').value = new Date(orderData.orderDate).toLocaleDateString();
+      document.getElementById('orderDate').value = formatDate(orderData.orderDate);
     }
     if (orderData.expiryDate) {
-      document.getElementById('expiryDate').value = new Date(orderData.expiryDate).toLocaleDateString();
+      // Convert to YYYY-MM-DD format for date input
+      const expiryDate = new Date(orderData.expiryDate);
+      document.getElementById('expiryDate').value = expiryDate.toISOString().split('T')[0];
     }
 
     // Status
@@ -190,29 +198,7 @@ Pharmacy Module
     }
   }
 
-  // Delete order
-  async function deleteOrder() {
-    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-      return;
-    }
 
-    try {
-      const response = await fetch(API_BASE + '/orders/' + orderId, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete order');
-      }
-
-      alert('Order deleted successfully');
-      window.location.href = '<%= request.getContextPath() %>/views/orderList.jsp';
-
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      alert('Error deleting order: ' + error.message);
-    }
-  }
 
   // Handle form submission
   document.getElementById('orderForm').addEventListener('submit', async function(e) {
@@ -231,11 +217,11 @@ Pharmacy Module
       supplierID: originalOrderData.supplierID,
       staffID: originalOrderData.staffID,
       orderDate: originalOrderData.orderDate,
-      orderStatus: formData.get('orderStatus'), // Only status can be changed
+      orderStatus: formData.get('orderStatus'), // Status can be changed
       unitPrice: originalOrderData.unitPrice,
       quantity: originalOrderData.quantity,
       totalAmount: originalOrderData.totalAmount,
-      expiryDate: originalOrderData.expiryDate,
+      expiryDate: formData.get('expiryDate'), // Expiry date can be changed
       stock: originalOrderData.stock
     };
 

@@ -7,8 +7,7 @@
   <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
 </head>
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
@@ -20,10 +19,6 @@
       <button class="btn btn-outline" onclick="refreshAllReports()">
         <span class="icon-[tabler--refresh] size-4 mr-2"></span>
         Refresh All
-      </button>
-      <button class="btn btn-primary" onclick="exportReports()">
-        <span class="icon-[tabler--download] size-4 mr-2"></span>
-        Export Reports
       </button>
     </div>
   </div>
@@ -61,14 +56,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div>
         <label class="label">Start Date</label>
-        <input type="date" id="startDate" class="input input-bordered w-full" onchange="loadSelectedReport()">
+        <input type="date" id="startDate" class="input input-bordered w-full" onchange="validateDateRange()">
       </div>
       <div>
         <label class="label">End Date</label>
-        <input type="date" id="endDate" class="input input-bordered w-full" onchange="loadSelectedReport()">
+        <input type="date" id="endDate" class="input input-bordered w-full" onchange="validateDateRange()">
       </div>
       <div class="flex items-end">
-        <button class="btn btn-primary w-full" onclick="loadSelectedReport()">
+        <button class="btn btn-primary w-full" onclick="validateAndLoadReport()">
           <span class="icon-[tabler--filter] size-4 mr-2"></span>
           Apply Filters
         </button>
@@ -343,8 +338,12 @@
   function selectModule(module) {
     selectedModule = module;
 
-    // Show date filter section
-    document.getElementById('dateFilterSection').style.display = 'block';
+    // Show date filter section only for non-patient modules
+    if (module === 'patient') {
+      document.getElementById('dateFilterSection').style.display = 'none';
+    } else {
+      document.getElementById('dateFilterSection').style.display = 'block';
+    }
 
     // Show reports grid
     document.getElementById('reportsGrid').style.display = 'grid';
@@ -379,6 +378,31 @@
     loadSelectedReport();
   }
 
+  // Validate date range
+  function validateDateRange() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (end < start) {
+        alert('End date cannot be earlier than start date. Please select a valid date range.');
+        document.getElementById('endDate').value = startDate; // Reset end date to start date
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Validate and load report
+  function validateAndLoadReport() {
+    if (validateDateRange()) {
+      loadSelectedReport();
+    }
+  }
+
   // Load selected report
   async function loadSelectedReport() {
     if (!selectedModule) return;
@@ -389,7 +413,7 @@
     try {
       switch(selectedModule) {
         case 'patient':
-          await loadPatientRegistrationReport(startDate, endDate);
+          await loadPatientRegistrationReport();
           break;
         case 'doctor':
           await loadDoctorManagementReport(startDate, endDate);
@@ -415,397 +439,7 @@
     loadSelectedReport();
   }
 
-  // Export reports function
-  async function exportReports() {
-    if (!selectedModule) {
-      alert('Please select a module first');
-      return;
-    }
 
-    try {
-      // Get the current report card
-      let reportCard;
-      switch(selectedModule) {
-        case 'patient':
-          reportCard = document.getElementById('patientReportCard');
-          break;
-        case 'doctor':
-          reportCard = document.getElementById('doctorReportCard');
-          break;
-        case 'consultation':
-          reportCard = document.getElementById('consultationReportCard');
-          break;
-        case 'medicine':
-          reportCard = document.getElementById('medicineReportCard');
-          break;
-        case 'treatment':
-          reportCard = document.getElementById('treatmentReportCard');
-          break;
-        default:
-          alert('No report selected');
-          return;
-      }
-
-      if (!reportCard || reportCard.style.display === 'none') {
-        alert('No report available to export');
-        return;
-      }
-
-      // Create new PDF document
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('landscape', 'mm', 'a4');
-
-      // Set document properties
-      doc.setProperties({
-        title: selectedModule + ' Report',
-        subject: 'Clinic Management System Report',
-        author: 'Clinic Management System',
-        creator: 'Clinic Management System'
-      });
-
-      // Add title
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Clinic Management System - Reports', 105, 20, { align: 'center' });
-
-      // Add date
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Generated on: ' + new Date().toLocaleDateString(), 105, 30, { align: 'center' });
-
-      // Add report title
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      let reportTitle = '';
-      switch(selectedModule) {
-        case 'patient':
-          reportTitle = 'Patient Registration Trends';
-          break;
-        case 'doctor':
-          reportTitle = 'Doctor Management Report';
-          break;
-        case 'consultation':
-          reportTitle = 'Consultation Volume Report';
-          break;
-        case 'medicine':
-          reportTitle = 'Medicine Sales Report';
-          break;
-        case 'treatment':
-          reportTitle = 'Treatment Management Report';
-          break;
-      }
-      doc.text(reportTitle, 105, 45, { align: 'center' });
-
-      // Get chart canvases and add them to PDF
-      const charts = reportCard.querySelectorAll('canvas');
-      const chartTitles = ['Gender Distribution', 'Age Distribution', 'Blood Type Distribution', 'Nationality Distribution'];
-
-      // Add charts in 2x2 grid
-      for (let i = 0; i < charts.length; i++) {
-        const canvas = charts[i];
-        const imgData = canvas.toDataURL('image/png');
-
-        // Calculate position for 2x2 grid
-        const row = Math.floor(i / 2);
-        const col = i % 2;
-        const x = 20 + (col * 130);
-        const y = 60 + (row * 80);
-
-        // Add chart title
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text(chartTitles[i] || 'Chart ' + (i + 1), x + 60, y - 5, { align: 'center' });
-
-        // Add chart image
-        doc.addImage(imgData, 'PNG', x, y, 120, 70);
-      }
-
-      // Add data summary section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Data Summary', 20, 200);
-
-      // Add summary statistics
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-
-      // Get statistics from the report
-      const statsElements = reportCard.querySelectorAll('.stat-value');
-      if (statsElements.length > 0) {
-        let yPos = 210;
-        statsElements.forEach((stat, index) => {
-          const statTitle = stat.previousElementSibling?.textContent || 'Statistic ' + (index + 1);
-          const statValue = stat.textContent || 'N/A';
-          doc.text(statTitle + ': ' + statValue, 20, yPos);
-          yPos += 8;
-        });
-      }
-
-      // Add detailed data tables if available
-      if (selectedModule === 'patient') {
-        // Add patient data table
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detailed Patient Data', 20, 240);
-
-        // Extract data from Chart.js instances
-        const chartInstances = Chart.getChart ? Object.values(Chart.instances) : [];
-        let allData = [];
-
-        // Try to get data from chart instances
-        chartInstances.forEach(chart => {
-          if (chart && chart.data && chart.data.datasets) {
-            chart.data.datasets.forEach(dataset => {
-              if (dataset.data && dataset.data.length > 0) {
-                const labels = chart.data.labels || [];
-                dataset.data.forEach((value, index) => {
-                  const label = labels[index] || 'Unknown';
-                  const percentage = ((value / dataset.data.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
-                  allData.push([label, value.toString(), percentage + '%']);
-                });
-              }
-            });
-          }
-        });
-
-        // If no chart data found, use sample data
-        if (allData.length === 0) {
-          allData = [
-            ['Male', '45', '52.3%'],
-            ['Female', '41', '47.7%'],
-            ['Age 0-17', '12', '14.0%'],
-            ['Age 18-29', '23', '26.7%'],
-            ['Age 30-49', '28', '32.6%'],
-            ['Age 50-69', '15', '17.4%'],
-            ['Age 70+', '8', '9.3%'],
-            ['Blood Type A', '25', '29.1%'],
-            ['Blood Type B', '18', '20.9%'],
-            ['Blood Type AB', '8', '9.3%'],
-            ['Blood Type O', '35', '40.7%']
-          ];
-        }
-
-        // Split data into multiple tables if too long
-        const maxRowsPerTable = 8;
-        const tables = [];
-        for (let i = 0; i < allData.length; i += maxRowsPerTable) {
-          tables.push(allData.slice(i, i + maxRowsPerTable));
-        }
-
-        let currentY = 250;
-        tables.forEach((tableData, tableIndex) => {
-          if (tableIndex > 0) {
-            // Check if we need a new page for the next table
-            const estimatedTableHeight = (tableData.length + 1) * 8; // Approximate height per row
-            if (currentY + estimatedTableHeight > 180) { // Leave margin for page
-              doc.addPage();
-              currentY = 30; // Start from top of new page
-            } else {
-              currentY += 20; // Add space between tables
-            }
-          }
-
-          doc.autoTable({
-            startY: currentY,
-            head: [['Category', 'Count', 'Percentage']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-            styles: { fontSize: 8 },
-            margin: { top: 5, right: 20, bottom: 5, left: 20 },
-            pageBreak: 'avoid', // Prevent table from breaking across pages
-            didDrawPage: function(data) {
-              // Add page number
-              doc.setFontSize(8);
-              doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-            }
-          });
-
-          currentY = doc.lastAutoTable.finalY + 10;
-        });
-      } else if (selectedModule === 'doctor') {
-        // Add doctor data table
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Doctor Statistics', 20, 240);
-
-        const doctorData = [
-          ['Metric', 'Value'],
-          ['Total Doctors', document.getElementById('totalDoctors').textContent],
-          ['Avg Consultations', document.getElementById('avgConsultations').textContent],
-          ['Total Schedules', document.getElementById('totalSchedules').textContent],
-          ['Avg Hours/Week', document.getElementById('avgHoursPerWeek').textContent]
-        ];
-
-        doc.autoTable({
-          startY: 250,
-          head: [doctorData[0]],
-          body: doctorData.slice(1),
-          theme: 'grid',
-          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-          styles: { fontSize: 8 },
-          pageBreak: 'avoid', // Prevent table from breaking across pages
-          didDrawPage: function(data) {
-            // Add page number
-            doc.setFontSize(8);
-            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-          }
-        });
-
-        // Add schedule data table
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Doctor Schedule Information', 20, 320);
-
-        const scheduleData = [
-          ['Doctor', 'Hours/Week', 'Days/Week', 'Status'],
-          ['ST0001', '40', '5', 'Active'],
-          ['ST0003', '35', '5', 'Active'],
-          ['ST0004', '30', '4', 'Active'],
-          ['ST0006', '25', '3', 'Part-time'],
-          ['ST0009', '20', '2', 'Part-time']
-        ];
-
-        doc.autoTable({
-          startY: 330,
-          head: [scheduleData[0]],
-          body: scheduleData.slice(1),
-          theme: 'grid',
-          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-          styles: { fontSize: 8 },
-          pageBreak: 'avoid', // Prevent table from breaking across pages
-          didDrawPage: function(data) {
-            // Add page number
-            doc.setFontSize(8);
-            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-          }
-        });
-
-        // Add doctor experience data table
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Doctor Experience Information', 20, 400);
-
-        // Get experience data from the chart
-        const experienceData = [];
-        if (window.doctorReportData && window.doctorReportData.doctorPerformance && window.doctorReportData.doctorPerformance.elements) {
-          window.doctorReportData.doctorPerformance.elements.forEach(doctor => {
-            experienceData.push([doctor.doctorName, doctor.experience || 0 + ' years']);
-          });
-        } else {
-          experienceData.push(['No data available', '']);
-        }
-
-        doc.autoTable({
-          startY: 410,
-          head: [['Doctor', 'Experience']],
-          body: experienceData,
-          theme: 'grid',
-          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-          styles: { fontSize: 8 },
-          pageBreak: 'avoid',
-          didDrawPage: function(data) {
-            // Add page number
-            doc.setFontSize(8);
-            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-          }
-        });
-      } else if (selectedModule === 'consultation') {
-        // Add consultation data table
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Consultation Statistics', 20, 240);
-
-        const consultationData = [
-          ['Metric', 'Value'],
-          ['Total Consultations', document.getElementById('totalConsultations').textContent],
-          ['Average per Day', document.getElementById('avgConsultationsPerDay').textContent],
-          ['Peak Hour', document.getElementById('peakHour').textContent]
-        ];
-
-        doc.autoTable({
-          startY: 250,
-          head: [consultationData[0]],
-          body: consultationData.slice(1),
-          theme: 'grid',
-          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-          styles: { fontSize: 8 },
-          pageBreak: 'avoid', // Prevent table from breaking across pages
-          didDrawPage: function(data) {
-            // Add page number
-            doc.setFontSize(8);
-            doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-          }
-        });
-                 } else if (selectedModule === 'medicine') {
-             // Add medicine sales data table
-             doc.setFontSize(12);
-             doc.setFont('helvetica', 'bold');
-             doc.text('Top Selling Medicines', 20, 240);
-
-             const medicineData = [
-               ['Medicine', 'Quantity Sold', 'Revenue'],
-                       ['Paracetamol', '150', 'RM 750.00'],
-        ['Amoxicillin', '120', 'RM 1,200.00'],
-        ['Ibuprofen', '95', 'RM 475.00'],
-        ['Omeprazole', '80', 'RM 1,600.00'],
-        ['Cetirizine', '65', 'RM 325.00']
-             ];
-
-             doc.autoTable({
-               startY: 250,
-               head: [medicineData[0]],
-               body: medicineData.slice(1),
-               theme: 'grid',
-               headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-               styles: { fontSize: 8 },
-               pageBreak: 'avoid', // Prevent table from breaking across pages
-               didDrawPage: function(data) {
-                 // Add page number
-                 doc.setFontSize(8);
-                 doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-               }
-             });
-                       } else if (selectedModule === 'treatment') {
-              // Add treatment data table
-              doc.setFontSize(12);
-              doc.setFont('helvetica', 'bold');
-              doc.text('Treatment Performance by Doctor', 20, 240);
-
-              const treatmentData = [
-                ['Doctor', 'Total Treatments', 'Completed', 'Success Rate', 'Top Treatment Type'],
-                ['ST0001', '8', '7', '87.5%', 'Surgery'],
-                ['ST0003', '6', '5', '83.3%', 'Vaccination'],
-                ['ST0004', '5', '4', '80.0%', 'Physical Therapy'],
-                ['ST0006', '4', '3', '75.0%', 'Laboratory Test'],
-                ['ST0009', '3', '2', '66.7%', 'Emergency Treatment']
-              ];
-
-              doc.autoTable({
-                startY: 250,
-                head: [treatmentData[0]],
-                body: treatmentData.slice(1),
-                theme: 'grid',
-                headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-                styles: { fontSize: 8 },
-                pageBreak: 'avoid', // Prevent table from breaking across pages
-                didDrawPage: function(data) {
-                  // Add page number
-                  doc.setFontSize(8);
-                  doc.text('Page ' + doc.internal.getNumberOfPages(), 105, 200, { align: 'center' });
-                }
-              });
-            }
-
-      // Save the PDF
-      const filename = selectedModule + '_report_' + new Date().toISOString().split('T')[0] + '.pdf';
-      doc.save(filename);
-
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      alert('Error generating PDF: ' + error.message);
-    }
-  }
 
   // Load Doctor Management Report
   async function loadDoctorManagementReport(startDate, endDate) {
@@ -885,17 +519,15 @@
   }
 
   // Load Patient Registration Report
-  async function loadPatientRegistrationReport(startDate, endDate) {
+  async function loadPatientRegistrationReport() {
     try {
-      const url = API_BASE + '/reports/patient-registration?startDate=' + startDate + '&endDate=' + endDate;
+      const url = API_BASE + '/reports/patient-registration';
       console.log('Fetching patient registration report from:', url);
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load patient registration report');
 
       const data = await response.json();
       const reportData = data.data;
-
-
 
       // Create gender distribution chart
       createPieChart('patientGenderChart', 'Gender Distribution', reportData.genderDistribution);

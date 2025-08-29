@@ -49,7 +49,7 @@ General Module
             <label class="label">
               <span class="label-text font-semibold">Staff ID</span>
             </label>
-            <input type="text" id="staffID" class="input input-bordered w-full" readonly>
+            <input type="text" id="staffID" class="input input-bordered w-full" disabled>
             <label class="label">
               <span class="label-text-alt">Your unique staff identifier</span>
             </label>
@@ -148,9 +148,9 @@ General Module
             <label class="label">
               <span class="label-text font-semibold">Contact Number *</span>
             </label>
-            <input type="tel" id="contactNumber" class="input input-bordered w-full" required>
+            <input type="tel" id="contactNumber" class="input input-bordered w-full" required placeholder="e.g., 012-3456789">
             <label class="label">
-              <span class="label-text-alt">Your phone number</span>
+              <span class="label-text-alt">Your phone number (Malaysian format: 012-3456789)</span>
             </label>
           </div>
 
@@ -159,7 +159,7 @@ General Module
             <label class="label">
               <span class="label-text font-semibold">Email *</span>
             </label>
-            <input type="email" id="email" class="input input-bordered w-full" required>
+            <input type="email" id="email" class="input input-bordered w-full" required placeholder="e.g., staff@clinic.com">
             <label class="label">
               <span class="label-text-alt">Your email address</span>
             </label>
@@ -170,9 +170,9 @@ General Module
             <label class="label">
               <span class="label-text font-semibold">Address</span>
             </label>
-            <textarea id="address" class="textarea textarea-bordered h-20" placeholder="Enter your full address"></textarea>
+            <textarea id="address" class="textarea textarea-bordered h-20" placeholder="Enter your full address" maxlength="500"></textarea>
             <label class="label">
-              <span class="label-text-alt">Your residential address</span>
+              <span class="label-text-alt">Your residential address (max 500 characters)</span>
             </label>
           </div>
 
@@ -393,12 +393,38 @@ General Module
       return;
     }
 
+    // Validate contact number (Malaysian format)
+    const contactNumber = document.getElementById('contactNumber').value;
+    const phoneRegex = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
+    if (!phoneRegex.test(contactNumber.replace(/\s/g, ''))) {
+      showError('Please enter a valid Malaysian phone number (e.g., 012-3456789, +6012-3456789)');
+      document.getElementById('contactNumber').focus();
+      return;
+    }
+
+    // Validate email format
+    const email = document.getElementById('email').value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError('Please enter a valid email address');
+      document.getElementById('email').focus();
+      return;
+    }
+
+    // Validate address length
+    const address = document.getElementById('address').value;
+    if (address && address.length > 500) {
+      showError('Address cannot exceed 500 characters');
+      document.getElementById('address').focus();
+      return;
+    }
+
     // Only include editable fields in the update
     const profileData = {
       staffID: document.getElementById('staffID').value,
-      contactNumber: document.getElementById('contactNumber').value,
-      email: document.getElementById('email').value,
-      address: document.getElementById('address').value
+      contactNumber: contactNumber,
+      email: email,
+      address: address
     };
 
     try {

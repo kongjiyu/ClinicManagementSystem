@@ -314,6 +314,50 @@
         opt2.textContent = d.firstName + ' ' + d.lastName + ' (' + d.staffID + ')';
         doctorSelect2.appendChild(opt2);
       });
+
+      // Add event listener to doctor 1 to filter doctor 2 options
+      doctorSelect1.addEventListener('change', function() {
+        const selectedDoctor1 = doctorSelect1.value;
+        const doctor2Options = doctorSelect2.querySelectorAll('option');
+        
+        doctor2Options.forEach(option => {
+          if (option.value === '') {
+            // Keep placeholder
+            option.disabled = false;
+          } else if (option.value === selectedDoctor1) {
+            // Disable the same doctor
+            option.disabled = true;
+            if (doctorSelect2.value === selectedDoctor1) {
+              doctorSelect2.value = '';
+            }
+          } else {
+            // Enable other doctors
+            option.disabled = false;
+          }
+        });
+      });
+
+      // Add event listener to doctor 2 to filter doctor 1 options
+      doctorSelect2.addEventListener('change', function() {
+        const selectedDoctor2 = doctorSelect2.value;
+        const doctor1Options = doctorSelect1.querySelectorAll('option');
+        
+        doctor1Options.forEach(option => {
+          if (option.value === '') {
+            // Keep placeholder
+            option.disabled = false;
+          } else if (option.value === selectedDoctor2) {
+            // Disable the same doctor
+            option.disabled = true;
+            if (doctorSelect1.value === selectedDoctor2) {
+              doctorSelect1.value = '';
+            }
+          } else {
+            // Enable other doctors
+            option.disabled = false;
+          }
+        });
+      });
     }
 
     // ====== Build schedule lookup ======

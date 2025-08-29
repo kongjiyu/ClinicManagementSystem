@@ -124,7 +124,6 @@ Pharmacy Module
 
     <!-- Status Update Section -->
     <div>
-      <h2 class="text-xl font-semibold mb-4">Order Status Management</h2>
       
       <!-- Status Progression Buttons -->
       <div class="flex gap-4 mb-6">
@@ -161,13 +160,7 @@ Pharmacy Module
         </div>
       </div>
 
-      <!-- Status History -->
-      <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Status History</h3>
-        <div id="statusHistory" class="space-y-2">
-          <!-- Status history will be populated here -->
-        </div>
-      </div>
+
     </div>
   </div>
 </main>
@@ -210,8 +203,8 @@ Pharmacy Module
 
     // Order Information
     document.getElementById('orderId').value = orderData.ordersID || '';
-    document.getElementById('orderDate').value = orderData.orderDate ? new Date(orderData.orderDate).toLocaleDateString() : '';
-    document.getElementById('expiryDate').value = orderData.expiryDate ? new Date(orderData.expiryDate).toLocaleDateString() : '';
+    document.getElementById('orderDate').value = orderData.orderDate ? formatDate(orderData.orderDate) : '';
+    document.getElementById('expiryDate').value = orderData.expiryDate ? formatDate(orderData.expiryDate) : '';
     
     // Set status badge
     const statusElement = document.getElementById('orderStatus');
@@ -238,9 +231,6 @@ Pharmacy Module
 
     // Update status buttons visibility
     updateStatusButtons();
-    
-    // Update status history
-    updateStatusHistory();
   }
 
   // Get status badge class
@@ -289,40 +279,7 @@ Pharmacy Module
     }
   }
 
-  // Update status history display
-  function updateStatusHistory() {
-    const historyContainer = document.getElementById('statusHistory');
-    const currentStatus = orderData.orderStatus;
-    const orderDate = orderData.orderDate;
-    
-    let historyHTML = '';
-    
-    // Add order creation
-    if (orderDate) {
-      const formattedDate = new Date(orderDate).toLocaleDateString();
-      historyHTML += '<div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg">' +
-        '<div class="badge badge-success">✓</div>' +
-        '<div>' +
-        '<div class="font-medium">Order Created</div>' +
-        '<div class="text-sm text-base-content/70">' + formattedDate + '</div>' +
-        '</div>' +
-        '</div>';
-    }
 
-    // Add current status
-    if (currentStatus && currentStatus !== 'Pending') {
-      const statusBadgeClass = getStatusBadgeClass(currentStatus).replace('badge-', 'badge-');
-      historyHTML += '<div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg">' +
-        '<div class="badge ' + statusBadgeClass + '">✓</div>' +
-        '<div>' +
-        '<div class="font-medium">Status: ' + currentStatus + '</div>' +
-        '<div class="text-sm text-base-content/70">Updated</div>' +
-        '</div>' +
-        '</div>';
-    }
-
-    historyContainer.innerHTML = historyHTML;
-  }
 
   // Ship order
   async function shipOrder() {
@@ -475,6 +432,16 @@ Pharmacy Module
   // Edit order
   function editOrder() {
     window.location.href = '<%= request.getContextPath() %>/views/orderEdit.jsp?id=' + orderId;
+  }
+
+  // Format date to dd/mm/yyyy
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return day + '/' + month + '/' + year;
   }
 
   // Load data when page loads

@@ -299,8 +299,10 @@
             
             const outcomeClasses = {
                 'Successful': 'badge badge-soft badge-success',
-                'Failed': 'badge badge-soft badge-error',
-                'Partial Success': 'badge badge-soft badge-warning'
+                'Partial Success': 'badge badge-soft badge-warning',
+                'Unsuccessful': 'badge badge-soft badge-error',
+                'Complications': 'badge badge-soft badge-error',
+                'Patient Discontinued': 'badge badge-soft badge-secondary'
             };
             
             const className = outcomeClasses[outcome] || 'badge badge-soft badge-secondary';
