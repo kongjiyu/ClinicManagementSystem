@@ -1607,7 +1607,6 @@ public class ReportResource {
             // Calculate statistics
             int totalTreatments = filteredTreatments.size();
             int completedTreatments = 0;
-            int scheduledTreatments = 0;
             int successfulTreatments = 0;
 
             // Data collection for charts
@@ -1621,8 +1620,6 @@ public class ReportResource {
                 // Count by status
                 if ("Completed".equals(treatment.getStatus())) {
                     completedTreatments++;
-                } else if ("Scheduled".equals(treatment.getStatus())) {
-                    scheduledTreatments++;
                 }
 
                 // Count by outcome
@@ -1759,7 +1756,6 @@ public class ReportResource {
             JsonObject data = new JsonObject();
             data.addProperty("totalTreatments", totalTreatments);
             data.addProperty("completedTreatments", completedTreatments);
-            data.addProperty("scheduledTreatments", scheduledTreatments);
             data.addProperty("successRate", successRate);
             
             // Chart data

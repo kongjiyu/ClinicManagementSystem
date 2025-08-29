@@ -66,15 +66,58 @@ def generate_staff_sql(n=15):  # 10 doctors + 5 admin staff (keeping the same)
     inserts = []
     staff_ids = []
     doctor_ids = []
+    
+    # Predefined nationality list matching the form
+    nationalities = [
+        "Malaysian", "Singaporean", "Indonesian", "Thai", "Filipino", "Vietnamese", "Chinese", "Indian", 
+        "Pakistani", "Bangladeshi", "Sri Lankan", "Nepalese", "Myanmar", "Cambodian", "Laotian", "Bruneian",
+        "American", "Canadian", "British", "Australian", "New Zealander", "German", "French", "Italian", 
+        "Spanish", "Portuguese", "Dutch", "Belgian", "Swiss", "Austrian", "Swedish", "Norwegian", "Danish", 
+        "Finnish", "Polish", "Czech", "Slovak", "Hungarian", "Romanian", "Bulgarian", "Croatian", "Serbian", 
+        "Slovenian", "Bosnian", "Montenegrin", "Macedonian", "Albanian", "Greek", "Turkish", "Russian", 
+        "Ukrainian", "Belarusian", "Moldovan", "Georgian", "Armenian", "Azerbaijani", "Kazakh", "Uzbek", 
+        "Kyrgyz", "Tajik", "Turkmen", "Afghan", "Iranian", "Iraqi", "Syrian", "Lebanese", "Jordanian", 
+        "Palestinian", "Israeli", "Saudi Arabian", "Kuwaiti", "Bahraini", "Qatari", "UAE", "Omani", "Yemeni",
+        "Egyptian", "Sudanese", "Libyan", "Tunisian", "Algerian", "Moroccan", "Mauritanian", "Senegalese", 
+        "Gambian", "Guinea-Bissauan", "Guinean", "Sierra Leonean", "Liberian", "Ivorian", "Ghanaian", 
+        "Togolese", "Beninese", "Nigerian", "Nigerien", "Chadian", "Cameroonian", "Central African", 
+        "Equatorial Guinean", "Gabonese", "Congolese", "DR Congolese", "Angolan", "Zambian", "Malawian", 
+        "Mozambican", "Zimbabwean", "Botswanan", "Namibian", "South African", "Lesothan", "Eswatini", 
+        "Madagascan", "Comorian", "Mauritian", "Seychellois", "Kenyan", "Ugandan", "Tanzanian", "Rwandan", 
+        "Burundian", "Ethiopian", "Eritrean", "Djiboutian", "Somali", "South Sudanese", "Brazilian", 
+        "Argentine", "Chilean", "Peruvian", "Colombian", "Venezuelan", "Ecuadorian", "Bolivian", 
+        "Paraguayan", "Uruguayan", "Guyanese", "Surinamese", "Mexican", "Guatemalan", "Belizean", 
+        "Honduran", "Salvadoran", "Nicaraguan", "Costa Rican", "Panamanian", "Cuban", "Jamaican", 
+        "Haitian", "Dominican", "Puerto Rican", "Bahamian", "Barbadian", "Trinidadian", "Grenadian", 
+        "Saint Lucian", "Vincentian", "Antiguan", "Kittitian", "Other"
+    ]
+    
     for i in range(n):
         staffID = f"ST{str(i + 1).zfill(4)}"
         firstName = fake.first_name()
         lastName = fake.last_name()
         gender = random.choice(["Male", "Female"])
         dob = fake.date_of_birth(minimum_age=22, maximum_age=65)
-        nationality = fake.country()
+        nationality = random.choice(nationalities)
         idType = random.choice(["IC", "Passport"])
-        idNumber = fake.ssn()
+        
+        # Generate proper ID numbers based on type
+        if idType == "IC":
+            # Malaysian IC format: YYMMDD-PB-XXXX
+            year = random.randint(60, 99)  # 1960-1999
+            month = random.randint(1, 12)
+            day = random.randint(1, 28)  # Use 28 to avoid invalid dates
+            pb = random.randint(1, 99)
+            xxxx = random.randint(1, 9999)
+            idNumber = f"{year:02d}{month:02d}{day:02d}-{pb:02d}-{xxxx:04d}"
+        else:  # Passport
+            # Passport format: 1-2 letters + 6-9 digits
+            letters = random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
+            if random.random() < 0.5:
+                letters = letters + random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
+            digits = random.randint(100000, 999999999)
+            idNumber = f"{letters}{digits}"
+        
         prefix = random.choice(["010", "011", "012", "013", "014", "016", "017", "018", "019"])
         contactNumber = f"{prefix}-{random.randint(1000000, 9999999)}"
         email = fake.email()
@@ -108,6 +151,32 @@ def generate_staff_sql(n=15):  # 10 doctors + 5 admin staff (keeping the same)
 def generate_patient_sql(n=100):
     inserts = []
     patient_ids = []
+    
+    # Predefined nationality list matching the form
+    nationalities = [
+        "Malaysian", "Singaporean", "Indonesian", "Thai", "Filipino", "Vietnamese", "Chinese", "Indian", 
+        "Pakistani", "Bangladeshi", "Sri Lankan", "Nepalese", "Myanmar", "Cambodian", "Laotian", "Bruneian",
+        "American", "Canadian", "British", "Australian", "New Zealander", "German", "French", "Italian", 
+        "Spanish", "Portuguese", "Dutch", "Belgian", "Swiss", "Austrian", "Swedish", "Norwegian", "Danish", 
+        "Finnish", "Polish", "Czech", "Slovak", "Hungarian", "Romanian", "Bulgarian", "Croatian", "Serbian", 
+        "Slovenian", "Bosnian", "Montenegrin", "Macedonian", "Albanian", "Greek", "Turkish", "Russian", 
+        "Ukrainian", "Belarusian", "Moldovan", "Georgian", "Armenian", "Azerbaijani", "Kazakh", "Uzbek", 
+        "Kyrgyz", "Tajik", "Turkmen", "Afghan", "Iranian", "Iraqi", "Syrian", "Lebanese", "Jordanian", 
+        "Palestinian", "Israeli", "Saudi Arabian", "Kuwaiti", "Bahraini", "Qatari", "UAE", "Omani", "Yemeni",
+        "Egyptian", "Sudanese", "Libyan", "Tunisian", "Algerian", "Moroccan", "Mauritanian", "Senegalese", 
+        "Gambian", "Guinea-Bissauan", "Guinean", "Sierra Leonean", "Liberian", "Ivorian", "Ghanaian", 
+        "Togolese", "Beninese", "Nigerian", "Nigerien", "Chadian", "Cameroonian", "Central African", 
+        "Equatorial Guinean", "Gabonese", "Congolese", "DR Congolese", "Angolan", "Zambian", "Malawian", 
+        "Mozambican", "Zimbabwean", "Botswanan", "Namibian", "South African", "Lesothan", "Eswatini", 
+        "Madagascan", "Comorian", "Mauritian", "Seychellois", "Kenyan", "Ugandan", "Tanzanian", "Rwandan", 
+        "Burundian", "Ethiopian", "Eritrean", "Djiboutian", "Somali", "South Sudanese", "Brazilian", 
+        "Argentine", "Chilean", "Peruvian", "Colombian", "Venezuelan", "Ecuadorian", "Bolivian", 
+        "Paraguayan", "Uruguayan", "Guyanese", "Surinamese", "Mexican", "Guatemalan", "Belizean", 
+        "Honduran", "Salvadoran", "Nicaraguan", "Costa Rican", "Panamanian", "Cuban", "Jamaican", 
+        "Haitian", "Dominican", "Puerto Rican", "Bahamian", "Barbadian", "Trinidadian", "Grenadian", 
+        "Saint Lucian", "Vincentian", "Antiguan", "Kittitian", "Other"
+    ]
+    
     for i in range(n):
         patientID = f"PA{str(i + 1).zfill(4)}"
         firstName = fake.first_name()
@@ -119,9 +188,26 @@ def generate_patient_sql(n=100):
         age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
         # Convert date to string for the model
         dob = dob_date.strftime('%Y-%m-%d')
-        nationality = fake.country()
+        nationality = random.choice(nationalities)
         idType = random.choice(["IC", "Passport"])
-        idNumber = fake.ssn()
+        
+        # Generate proper ID numbers based on type
+        if idType == "IC":
+            # Malaysian IC format: YYMMDD-PB-XXXX
+            year = random.randint(70, 99)  # 1970-1999 for patients (younger than staff)
+            month = random.randint(1, 12)
+            day = random.randint(1, 28)  # Use 28 to avoid invalid dates
+            pb = random.randint(1, 99)
+            xxxx = random.randint(1, 9999)
+            idNumber = f"{year:02d}{month:02d}{day:02d}-{pb:02d}-{xxxx:04d}"
+        else:  # Passport
+            # Passport format: 1-2 letters + 6-9 digits
+            letters = random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
+            if random.random() < 0.5:
+                letters = letters + random.choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"])
+            digits = random.randint(100000, 999999999)
+            idNumber = f"{letters}{digits}"
+        
         # Generate student ID starting from 25WMR00001
         studentId = f"25WMR{str(i + 1).zfill(5)}"
         contactNumber = f"01{random.randint(0, 9)}-{random.randint(1000000, 9999999)}"
@@ -458,7 +544,7 @@ def generate_treatment_sql(consultations):
         "Healthy": [],
     }
 
-    status_options = ["Scheduled", "In Progress", "Completed", "Cancelled"]
+    status_options = ["In Progress", "Completed", "Cancelled"]
     completed_outcomes = ["Successful", "Partial Success", "Failed"]
 
     for c in consultations:
@@ -478,8 +564,8 @@ def generate_treatment_sql(consultations):
             # Set status based on treatment date (September 2025 as cutoff)
             september_2025 = date(2025, 9, 1)
             if base_date >= september_2025:
-                # After September 2025: Only Scheduled
-                status = "Scheduled"
+                # After September 2025: Only In Progress
+                status = "In Progress"
             else:
                 # Before September 2025: Mostly Completed, some Cancelled
                 status = random.choices(["Completed", "Cancelled"], weights=[85, 15])[0]

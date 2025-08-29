@@ -80,7 +80,7 @@ Author: Kong Ji Yu
             >
           </div>
 
-          <!-- Remember Me -->
+          <!-- Remember Me
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <input 
@@ -94,7 +94,7 @@ Author: Kong Ji Yu
             <div class="text-sm">
               <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Forgot password?</a>
             </div>
-          </div>
+          </div> -->
 
           <!-- Submit Button -->
           <div>

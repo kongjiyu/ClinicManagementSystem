@@ -384,19 +384,26 @@ public class QueueResource {
       if (!patientConsultations.isEmpty()) {
         Consultation patientConsultation = patientConsultations.get(0);
         
-        // Count consultations before this patient's consultation
-        for (Consultation consultation : todayConsultations) {
-          if (consultation.getConsultationDate().equals(today)) {
-            if (consultation.getCheckInTime() != null && 
+        // Only calculate queue position if patient's consultation is in "Waiting" status
+        if ("Waiting".equalsIgnoreCase(patientConsultation.getStatus())) {
+          // Count consultations in "Waiting" status that checked in before this patient
+          for (Consultation consultation : todayConsultations) {
+            if (consultation.getConsultationDate().equals(today) && 
+                "Waiting".equalsIgnoreCase(consultation.getStatus()) &&
+                consultation.getCheckInTime() != null && 
                 patientConsultation.getCheckInTime() != null &&
                 consultation.getCheckInTime().isBefore(patientConsultation.getCheckInTime())) {
               queuePosition++;
             }
           }
+          
+          // Estimate wait time (15 minutes per person in queue)
+          estimatedWaitTime = queuePosition * 15;
+        } else {
+          // If consultation is not in "Waiting" status, no queue position
+          queuePosition = 0;
+          estimatedWaitTime = 0;
         }
-        
-        // Estimate wait time (15 minutes per person in queue)
-        estimatedWaitTime = queuePosition * 15;
       } else if (!patientAppointments.isEmpty()) {
         // Patient has appointment but no consultation yet
         Appointment patientAppointment = patientAppointments.get(0);

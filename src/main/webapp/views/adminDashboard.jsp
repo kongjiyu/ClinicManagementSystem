@@ -16,7 +16,7 @@ General Module
 <body class="flex min-h-screen text-base-content">
 <%@ include file="/views/adminSidebar.jsp" %>
 
-<main class="ml-64 p-6 space-y-6">
+<main class="p-6 space-y-6 ml-64">
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
@@ -35,7 +35,7 @@ General Module
   </div>
 
   <!-- Statistics Cards -->
-  <div id="statsSection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 hidden">
+  <div id="statsSection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
     <div class="stat bg-base-100 shadow-lg rounded-lg">
       <div class="stat-figure text-primary">
         <span class="icon-[tabler--users] size-8"></span>
@@ -74,9 +74,9 @@ General Module
   </div>
 
     <!-- Charts Row -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
     <!-- Appointments Chart -->
-    <div class="bg-base-100 p-6 rounded-lg shadow-lg">
+    <div class="bg-base-100 p-6 rounded-lg shadow-lg xl:col-span-3">
       <h3 class="text-xl font-semibold mb-4">Appointments This Week</h3>
       <canvas id="appointmentsChart" width="400" height="200"></canvas>
     </div>
@@ -84,18 +84,30 @@ General Module
     <!-- Quick Actions -->
     <div class="bg-base-100 p-6 rounded-lg shadow-lg">
       <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
-      <div class="space-y-3">
-        <a href="<%= request.getContextPath() %>/views/patientAdd.jsp" class="btn btn-primary w-full justify-start">
-          <span class="icon-[tabler--user-plus] size-4 mr-2"></span>
-          Add New Patient
-        </a>
-        <a href="<%= request.getContextPath() %>/views/orderCreate.jsp" class="btn btn-secondary w-full justify-start">
-          <span class="icon-[tabler--shopping-cart-plus] size-4 mr-2"></span>
-          Create Order
-        </a>
-        <a href="<%= request.getContextPath() %>/views/adminQueue.jsp" class="btn btn-accent w-full justify-start">
+      <div class="grid grid-cols-1 gap-3">
+        <a href="<%= request.getContextPath() %>/views/adminQueue.jsp" class="btn btn-primary w-full justify-start">
           <span class="icon-[tabler--list] size-4 mr-2"></span>
-          Manage Queue
+          View Queue
+        </a>
+        <a href="<%= request.getContextPath() %>/views/consultationList.jsp" class="btn btn-secondary w-full justify-start">
+          <span class="icon-[tabler--stethoscope] size-4 mr-2"></span>
+          View Consultation
+        </a>
+        <a href="<%= request.getContextPath() %>/views/treatmentList.jsp" class="btn btn-accent w-full justify-start">
+          <span class="icon-[tabler--medical-cross] size-4 mr-2"></span>
+          View Treatment
+        </a>
+        <a href="<%= request.getContextPath() %>/views/medicineList.jsp" class="btn btn-info w-full justify-start">
+          <span class="icon-[tabler--pills] size-4 mr-2"></span>
+          View Medicine
+        </a>
+        <a href="<%= request.getContextPath() %>/views/patientList.jsp" class="btn btn-success w-full justify-start">
+          <span class="icon-[tabler--users] size-4 mr-2"></span>
+          View Patient
+        </a>
+        <a href="<%= request.getContextPath() %>/views/staffList.jsp" class="btn btn-warning w-full justify-start">
+          <span class="icon-[tabler--user-check] size-4 mr-2"></span>
+          View Staff
         </a>
         <a href="<%= request.getContextPath() %>/views/reportsDashboard.jsp" class="btn btn-outline w-full justify-start">
           <span class="icon-[tabler--chart-bar] size-4 mr-2"></span>
@@ -106,7 +118,7 @@ General Module
   </div>
 
   <!-- Recent Activities -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
     <!-- Recent Appointments -->
     <div class="bg-base-100 p-6 rounded-lg shadow-lg">
       <div class="flex justify-between items-center mb-4">

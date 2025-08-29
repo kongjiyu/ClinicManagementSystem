@@ -165,8 +165,8 @@ public class AuthResource {
 
     private Staff authenticateStaff(String username, String password) {
         try {
-            // Find staff by staffID
-            Staff staff = staffRepository.findById(username);
+            // Find staff by staffID (case-insensitive)
+            Staff staff = staffRepository.findById(username.toUpperCase());
             if (staff != null && password.equals(staff.getPassword())) {
                 return staff;
             }
@@ -180,10 +180,10 @@ public class AuthResource {
 
     private Patient authenticatePatient(String username, String password) {
         try {
-            // Find patient by studentID
+            // Find patient by studentID (case-insensitive)
             utils.List<Patient> allPatients = patientRepository.findAll();
             for (Patient patient : allPatients) {
-                if (username.equals(patient.getStudentId()) && password.equals(patient.getPassword())) {
+                if (username.equalsIgnoreCase(patient.getStudentId()) && password.equals(patient.getPassword())) {
                     return patient;
                 }
             }

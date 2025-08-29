@@ -1,5 +1,5 @@
 <%--
-Author: Yap Yu Xin
+Author: Chia Yu Xin
 Consultation Module
 --%>
 
@@ -10,6 +10,8 @@ Consultation Module
   <meta charset="UTF-8">
   <title>Queue Management</title>
   <link href="<% out.print(request.getContextPath()); %>/static/output.css" rel="stylesheet">
+  <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
+  <script defer src="<%= request.getContextPath() %>/static/malaysian-date-utils.js"></script>
   <style>
     /* Custom Modal Styles */
     .custom-modal {
@@ -171,7 +173,7 @@ Consultation Module
       <table class="table" id="appointments-table">
         <thead>
         <tr>
-          <th>Consultation ID</th>
+          <th>Appointment ID</th>
           <th>Appointment Time</th>
           <th>Name</th>
           <th>Actions</th>
@@ -291,7 +293,6 @@ Consultation Module
               <option value="IC">IC</option>
               <option value="Passport">Passport</option>
               <option value="Student ID">Student ID</option>
-              <option value="Driver License">Driver License</option>
             </select>
           </div>
           <div class="form-group">
@@ -299,7 +300,7 @@ Consultation Module
             <input type="text" id="id-number" name="idNumber" class="form-select" placeholder="Enter ID number" required>
           </div>
         </form>
-        
+
         <!-- Patient Search Results -->
         <div id="patient-search-results" style="display: none;">
           <div class="form-group">
@@ -309,7 +310,7 @@ Consultation Module
             </div>
           </div>
         </div>
-        
+
         <!-- No Patient Found Message -->
         <div id="no-patient-found" style="display: none;">
           <div class="alert alert-warning">
@@ -386,7 +387,7 @@ Consultation Module
 
     data.forEach(item => {
       const row = document.createElement('tr');
-      
+
       // Handle QueueItem DTO objects
       let consultationId = item.consultationId;
       let status = item.status || 'Waiting';
@@ -397,10 +398,16 @@ Consultation Module
       let actionButton;
       if (status === 'Appointment') {
         actionButton =
-          '<button type="button" class="btn btn-circle btn-text btn-sm checkin-appointment-btn" ' +
-                  'data-appointment-id="' + consultationId + '">' +
-            '<span class="icon-[tabler--check] size-5"></span>' +
-          '</button>';
+          '<div class="flex gap-2">' +
+            '<button type="button" class="btn btn-primary btn-soft checkin-appointment-btn" ' +
+                    'data-appointment-id="' + consultationId + '">' +
+              'Check-in' +
+            '</button>' +
+            '<button type="button" class="btn btn-error btn-soft mark-no-show-btn" ' +
+                    'data-appointment-id="' + consultationId + '">' +
+              'No Show' +
+            '</button>' +
+          '</div>';
       } else if (tableId === 'waiting-table') {
         // Waiting table: Start Consult button
         actionButton =
@@ -471,10 +478,10 @@ Consultation Module
       } else if (tableId === 'billing-table') {
         // Billing table: includes invoice ID
         const invoiceId = item.invoiceID || 'N/A';
-        const invoiceLink = invoiceId !== 'N/A' ? 
-          '<a href="<%= request.getContextPath() %>/views/invoiceDetail.jsp?id=' + invoiceId + '" class="link link-primary hover:underline">' + invoiceId + '</a>' : 
+        const invoiceLink = invoiceId !== 'N/A' ?
+          '<a href="<%= request.getContextPath() %>/views/invoiceDetail.jsp?id=' + invoiceId + '" class="link link-primary hover:underline">' + invoiceId + '</a>' :
           'N/A';
-        
+
         row.innerHTML =
           '<td><a href="<%= request.getContextPath() %>/views/consultationDetail.jsp?id=' + consultationId + '" class="link link-primary hover:underline">' + consultationId + '</a></td>' +
           '<td>' + (formatTime(checkInTime) || 'N/A') + '</td>' +
@@ -496,7 +503,7 @@ Consultation Module
           '<td>' + (patientName || 'Unknown') + '</td>' +
           '<td>' + actionButton + '</td>';
       }
-      
+
       tbody.appendChild(row);
     });
   }
@@ -506,10 +513,10 @@ Consultation Module
     if (!dateTimeString) return 'N/A';
     try {
       const date = new Date(dateTimeString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
         minute: '2-digit',
-        hour12: true
+        hour12: true 
       });
     } catch (error) {
       return 'N/A';
@@ -519,21 +526,21 @@ Consultation Module
   // Calculate waiting time in real-time from check-in time
   function calculateWaitingTime(checkInTimeString) {
     if (!checkInTimeString) return '00:00:00';
-    
+
     try {
       const checkInTime = new Date(checkInTimeString);
       const now = new Date();
       const diffMs = now - checkInTime;
-      
+
       if (diffMs < 0) {
         return '00:00:00';
       }
-      
+
       const diffMinutes = Math.floor(diffMs / (1000 * 60));
       const hours = Math.floor(diffMinutes / 60);
       const minutes = diffMinutes % 60;
       const seconds = Math.floor((diffMs / 1000) % 60);
-      
+
       return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
     } catch (error) {
       return '00:00:00';
@@ -543,7 +550,7 @@ Consultation Module
   // Update all waiting times in real-time
   function updateWaitingTimes() {
     const waitingTimeCells = document.querySelectorAll('.waiting-time');
-    waitingTimeCells.forEach(cell => {  
+    waitingTimeCells.forEach(cell => {
       const checkInTime = cell.getAttribute('data-checkin');
       if (checkInTime) {
         // Only update the text content, not the entire cell
@@ -590,7 +597,7 @@ Consultation Module
     allConsultations.forEach(item => {
       let consultationId = item.consultationId;
       let currentStatus = item.status || 'Waiting';
-      
+
       console.log('Generating modal for:', consultationId, currentStatus);
 
       // Different modal for appointments vs consultations
@@ -739,6 +746,34 @@ Consultation Module
     }
   }
 
+  // Handle mark appointment as no show
+  async function handleMarkNoShow(appointmentId) {
+    if (!confirm('Are you sure you want to mark this appointment as "No Show"? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE + '/appointments/' + appointmentId + '/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'No show' })
+      });
+
+      if (response.ok) {
+        alert('Appointment marked as "No Show" successfully!');
+        // Reload queue data
+        await loadQueueData();
+      } else {
+        const error = await response.json();
+        alert('Error marking appointment as no show: ' + error.error);
+      }
+    } catch (error) {
+      alert('Error marking appointment as no show: ' + error.message);
+    }
+  }
+
   // Handle start consult (move from waiting to in progress)
   async function handleStartConsult(consultationId) {
     if (!confirm('Are you sure you want to start consultation for this patient? This will move them to In Progress.')) {
@@ -790,13 +825,13 @@ Consultation Module
       ...(queueData.completed?.elements || []),
       ...(queueData.cancelled?.elements || [])
     ];
-    
+
     return allConsultations.find(c => c.consultationId === consultationId);
   }
 
   // Open payment method selection modal
   function openPaymentMethodModal(billId, consultationId) {
-    const modalHtml = 
+    const modalHtml =
       '<div id="payment-method-modal" class="custom-modal show">' +
         '<div class="modal-content">' +
           '<div class="modal-header">' +
@@ -844,7 +879,7 @@ Consultation Module
   // Confirm payment with selected method
   async function confirmPayment(billId, consultationId) {
     const paymentMethod = document.getElementById('payment-method-select').value;
-    
+
     if (!paymentMethod) {
       alert('Please select a payment method');
       return;
@@ -1036,14 +1071,46 @@ Consultation Module
       const data = await response.json();
       const patients = data.elements || data || [];
 
-      // Find patient by ID type and number
-      const patient = patients.find(p => 
-        p.idType === idType && p.idNumber === idNumber
-      );
+      console.log('Searching for ID Type:', idType, 'ID Number:', idNumber);
+      console.log('Total patients found:', patients.length);
+
+      // Find patient by ID type and number (case-insensitive and trim whitespace)
+      const patient = patients.find(p => {
+        const searchIdType = idType.trim();
+        const searchIdNumber = idNumber.trim();
+        
+        // Special handling for Student ID - search in studentId field
+        if (searchIdType.toLowerCase() === 'student id') {
+          const patientStudentId = (p.studentId || '').toString().trim();
+          console.log('Comparing Student ID:', {
+            patientStudentId: patientStudentId,
+            searchIdNumber: searchIdNumber,
+            match: patientStudentId.toLowerCase() === searchIdNumber.toLowerCase()
+          });
+          return patientStudentId.toLowerCase() === searchIdNumber.toLowerCase();
+        }
+        
+        // For other ID types, search in idType and idNumber fields
+        const patientIdType = (p.idType || '').toString().trim();
+        const patientIdNumber = (p.idNumber || '').toString().trim();
+        
+        console.log('Comparing other ID types:', {
+          patientIdType: patientIdType,
+          searchIdType: searchIdType,
+          patientIdNumber: patientIdNumber,
+          searchIdNumber: searchIdNumber,
+          idTypeMatch: patientIdType.toLowerCase() === searchIdType.toLowerCase(),
+          idNumberMatch: patientIdNumber.toLowerCase() === searchIdNumber.toLowerCase()
+        });
+        
+        return patientIdType.toLowerCase() === searchIdType.toLowerCase() && 
+               patientIdNumber.toLowerCase() === searchIdNumber.toLowerCase();
+      });
 
       if (patient) {
+        console.log('Patient found:', patient);
         // Show patient info
-        document.getElementById('patient-info').innerHTML = 
+        document.getElementById('patient-info').innerHTML =
           '<div class="grid grid-cols-2 gap-2 text-sm">' +
             '<div><strong>Name:</strong> ' + patient.firstName + ' ' + patient.lastName + '</div>' +
             '<div><strong>Age:</strong> ' + patient.age + '</div>' +
@@ -1056,10 +1123,11 @@ Consultation Module
         document.getElementById('patient-search-results').style.display = 'block';
         document.getElementById('no-patient-found').style.display = 'none';
         document.getElementById('create-consultation-confirm-btn').style.display = 'inline-block';
-        
+
         // Store patient data for consultation creation
         window.selectedPatientForConsultation = patient;
       } else {
+        console.log('No patient found with the given criteria');
         // Show no patient found message
         document.getElementById('patient-search-results').style.display = 'none';
         document.getElementById('no-patient-found').style.display = 'block';
@@ -1119,7 +1187,7 @@ Consultation Module
   document.addEventListener('DOMContentLoaded', function() {
     loadQueueData();
     startRealTimeUpdates();
-    
+
     // Add event delegation for all buttons (only once)
     document.addEventListener('click', function(e) {
       // Update status buttons
@@ -1131,7 +1199,7 @@ Consultation Module
         console.log('Button data:', { consultationId, status });
         openUpdateModal(consultationId, status);
       }
-      
+
       // Checkin appointment buttons
       if (e.target.closest('.checkin-appointment-btn')) {
         console.log('Checkin appointment button clicked');
@@ -1140,7 +1208,16 @@ Consultation Module
         console.log('Button data:', { appointmentId });
         openCheckinModal(appointmentId);
       }
-      
+
+      // Mark no show buttons
+      if (e.target.closest('.mark-no-show-btn')) {
+        console.log('Mark no show button clicked');
+        const btn = e.target.closest('.mark-no-show-btn');
+        const appointmentId = btn.getAttribute('data-appointment-id');
+        console.log('Button data:', { appointmentId });
+        handleMarkNoShow(appointmentId);
+      }
+
       // Start consult buttons
       if (e.target.closest('.start-consult-btn')) {
         console.log('Start consult button clicked');
@@ -1149,7 +1226,7 @@ Consultation Module
         console.log('Button data:', { consultationId });
         handleStartConsult(consultationId);
       }
-      
+
       // Done consult buttons
       if (e.target.closest('.done-consult-btn')) {
         console.log('Done consult button clicked');
@@ -1158,9 +1235,9 @@ Consultation Module
         console.log('Button data:', { consultationId });
         handleDoneConsult(consultationId);
       }
-      
 
-      
+
+
       // Manage treatments buttons
       if (e.target.closest('.manage-treatments-btn')) {
         console.log('Manage treatments button clicked');
@@ -1169,7 +1246,7 @@ Consultation Module
         console.log('Button data:', { consultationId });
         handleManageTreatments(consultationId);
       }
-      
+
       // Move to billing buttons
       if (e.target.closest('.move-to-billing-btn')) {
         console.log('Move to billing button clicked');
@@ -1178,7 +1255,7 @@ Consultation Module
         console.log('Button data:', { consultationId });
         handleMoveToBilling(consultationId);
       }
-      
+
       // Paid buttons
       if (e.target.closest('.paid-btn')) {
         console.log('Paid button clicked');

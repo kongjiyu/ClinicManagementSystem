@@ -134,6 +134,10 @@ Appointment Module
     setDefaultDateTime();
     hideLoading();
     showForm();
+    
+    // Disable submit button initially since no date is selected
+    const submitBtn = document.querySelector('#createAppointmentForm button[type="submit"]');
+    submitBtn.disabled = true;
   });
 
   // Load patients for the datalist
@@ -218,6 +222,11 @@ Appointment Module
     const timeSelect = document.getElementById('appointmentTime');
     const availabilityInfo = document.getElementById('availabilityInfo');
     const availabilityText = document.getElementById('availabilityText');
+    const submitBtn = document.querySelector('#createAppointmentForm button[type="submit"]');
+    
+    // Disable submit button while loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Loading availability...';
     
     // Clear current options
     timeSelect.innerHTML = '<option value="" disabled selected>Loading availability...</option>';
@@ -284,12 +293,20 @@ Appointment Module
         availabilityText.className = 'text-green-600';
       }
       
+      // Re-enable submit button after availability check
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="icon-[tabler--plus] size-4 mr-2"></span>Create Appointment';
+      
     } catch (error) {
       console.error('Error checking availability:', error);
       timeSelect.innerHTML = '<option value="" disabled selected>Error loading availability</option>';
       availabilityInfo.classList.remove('hidden');
       availabilityText.textContent = 'Error loading availability. Please try again.';
       availabilityText.className = 'text-red-600';
+      
+      // Re-enable submit button even on error
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="icon-[tabler--plus] size-4 mr-2"></span>Create Appointment';
     }
   }
 
@@ -302,8 +319,14 @@ Appointment Module
       // Reset time select if no date is selected
       const timeSelect = document.getElementById('appointmentTime');
       const availabilityInfo = document.getElementById('availabilityInfo');
+      const submitBtn = document.querySelector('#createAppointmentForm button[type="submit"]');
+      
       timeSelect.innerHTML = '<option value="" disabled selected>Select a date first to see available time slots</option>';
       availabilityInfo.classList.add('hidden');
+      
+      // Disable submit button when no date is selected
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="icon-[tabler--plus] size-4 mr-2"></span>Create Appointment';
     }
   });
 

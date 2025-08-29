@@ -120,20 +120,30 @@ Appointment Module
         },
         { 
           data: 'appointmentTime',
-          render: function(data) {
+          render: function(data, type, row) {
             if (!data) return 'N/A';
             try {
               const dateTime = new Date(data);
-              return dateTime.toLocaleString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-              });
+              if (isNaN(dateTime.getTime())) return 'N/A';
+              
+              // For sorting, return the original date string
+              if (type === 'sort') {
+                return data;
+              }
+              
+              // For display, format as dd/mm/yyyy HH:MM AM/PM
+              const day = dateTime.getDate().toString().padStart(2, '0');
+              const month = (dateTime.getMonth() + 1).toString().padStart(2, '0');
+              const year = dateTime.getFullYear();
+              const hours = dateTime.getHours();
+              const minutes = dateTime.getMinutes().toString().padStart(2, '0');
+              const ampm = hours >= 12 ? 'PM' : 'AM';
+              const displayHours = hours % 12 || 12;
+              
+              return day + '/' + month + '/' + year + ' ' + displayHours + ':' + minutes + ' ' + ampm;
             } catch (error) {
-              return data;
+              console.error('Error formatting date:', error);
+              return 'N/A';
             }
           },
           type: 'date',

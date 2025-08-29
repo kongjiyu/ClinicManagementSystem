@@ -28,10 +28,6 @@
                         <span class="icon-[tabler--edit] size-4 mr-2"></span>
                         Edit
                     </button>
-                    <button id="deleteBtn" class="btn btn-error">
-                        <span class="icon-[tabler--trash] size-4 mr-2"></span>
-                        Delete
-                    </button>
                 </div>
             </div>
 
@@ -106,7 +102,7 @@
                     </div>
 
                     <!-- Outcome -->
-                    <div class="form-control">
+                    <div class="form-control" id="outcomeSection" style="display: none;">
                         <label class="label">
                             <span class="label-text font-semibold">Outcome</span>
                         </label>
@@ -168,10 +164,6 @@
             // Event listeners
             document.getElementById('editBtn').addEventListener('click', function() {
                 window.location.href = '<%= request.getContextPath() %>/views/treatmentEdit.jsp?id=' + treatmentData.treatmentID;
-            });
-
-            document.getElementById('deleteBtn').addEventListener('click', function() {
-                deleteTreatment(treatmentData.treatmentID);
             });
         });
 
@@ -238,6 +230,15 @@
             document.getElementById('procedure').value = treatment.treatmentProcedure || 'N/A';
             document.getElementById('notes').value = treatment.notes || 'N/A';
 
+            // Disable edit button if treatment is completed
+            const editBtn = document.getElementById('editBtn');
+            if (treatment.status === 'Completed') {
+                editBtn.disabled = true;
+                editBtn.title = 'Cannot edit completed treatments';
+                editBtn.classList.add('btn-disabled');
+                editBtn.innerHTML = '<span class="icon-[tabler--edit] size-4 mr-2"></span>Edit (Completed)';
+            }
+
             // Patient info
             if (patient) {
                 document.getElementById('patientInfo').value = patient.patientID + ' - ' + patient.firstName + ' ' + patient.lastName;
@@ -256,9 +257,16 @@
             const statusBadge = document.getElementById('statusBadge');
             statusBadge.innerHTML = getStatusBadge(treatment.status);
 
-            // Outcome badge
+            // Outcome badge - only show when status is Completed
+            const outcomeSection = document.getElementById('outcomeSection');
             const outcomeBadge = document.getElementById('outcomeBadge');
-            outcomeBadge.innerHTML = getOutcomeBadge(treatment.outcome);
+            
+            if (treatment.status === 'Completed') {
+                outcomeSection.style.display = 'block';
+                outcomeBadge.innerHTML = getOutcomeBadge(treatment.outcome);
+            } else {
+                outcomeSection.style.display = 'none';
+            }
         }
 
         function formatDateTime(dateTimeString) {
@@ -274,59 +282,32 @@
         }
 
         function getStatusBadge(status) {
-            // Handle null, undefined, or boolean values
-            if (!status || status === 'false' || status === false || status === '') {
-                return '<span style="background-color: #e5e7eb; color: #374151; padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500;">Unknown</span>';
-            }
+            if (!status) return '<span class="badge badge-soft badge-secondary">N/A</span>';
             
-            const statusStyles = {
-                'Scheduled': 'background-color: #dbeafe; color: #1e40af;',
-                'In Progress': 'background-color: #fef3c7; color: #d97706;',
-                'Completed': 'background-color: #d1fae5; color: #065f46;',
-                'Cancelled': 'background-color: #fee2e2; color: #dc2626;'
+            const statusClasses = {
+                'In Progress': 'badge badge-soft badge-warning',
+                'Completed': 'badge badge-soft badge-success',
+                'Cancelled': 'badge badge-soft badge-error'
             };
             
-            const style = statusStyles[status] || 'background-color: #e5e7eb; color: #374151;';
-            return '<span style="' + style + ' padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500;">' + status + '</span>';
+            const className = statusClasses[status] || 'badge badge-soft badge-secondary';
+            return '<span class="' + className + '">' + status + '</span>';
         }
 
         function getOutcomeBadge(outcome) {
-            // Handle null, undefined, or boolean values
-            if (!outcome || outcome === 'false' || outcome === false || outcome === '') {
-                return '<span style="background-color: #e5e7eb; color: #374151; padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500;">N/A</span>';
-            }
+            if (!outcome) return '<span class="badge badge-soft badge-secondary">N/A</span>';
             
-            const outcomeStyles = {
-                'Successful': 'background-color: #d1fae5; color: #065f46;',
-                'Failed': 'background-color: #fee2e2; color: #dc2626;',
-                'Partial Success': 'background-color: #fef3c7; color: #d97706;'
+            const outcomeClasses = {
+                'Successful': 'badge badge-soft badge-success',
+                'Failed': 'badge badge-soft badge-error',
+                'Partial Success': 'badge badge-soft badge-warning'
             };
             
-            const style = outcomeStyles[outcome] || 'background-color: #e5e7eb; color: #374151;';
-            return '<span style="' + style + ' padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500;">' + outcome + '</span>';
+            const className = outcomeClasses[outcome] || 'badge badge-soft badge-secondary';
+            return '<span class="' + className + '">' + outcome + '</span>';
         }
 
-        function deleteTreatment(treatmentId) {
-            if (!confirm('Are you sure you want to delete this treatment? This action cannot be undone.')) {
-                return;
-            }
 
-            fetch('<%= request.getContextPath() %>/api/treatments/' + treatmentId, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('Treatment deleted successfully');
-                    window.location.href = '<%= request.getContextPath() %>/views/treatmentList.jsp';
-                } else {
-                    throw new Error('Failed to delete treatment');
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting treatment:', error);
-                alert('Error: Failed to delete treatment');
-            });
-        }
 
         function showError(message) {
             document.getElementById('loadingSpinner').classList.add('hidden');

@@ -1,5 +1,5 @@
 <%--
-Author: Yap Yu Xin
+Author: Chia Yu Xin
 Consultation Module
 --%>
 
@@ -16,19 +16,19 @@ Consultation Module
   <div class="max-w-3xl mx-auto bg-white shadow-md p-8 rounded-md">
     <div class="max-w-xl mx-auto">
       <h2 class="text-2xl font-semibold mb-6">Create New Appointment</h2>
-      
+
       <!-- Success Alert -->
       <div id="successAlert" class="alert alert-success hidden mb-4">
         <span class="icon-[tabler--check] size-5"></span>
         <span id="successMessage"></span>
       </div>
-      
+
       <!-- Error Alert -->
       <div id="errorAlert" class="alert alert-error hidden mb-4">
         <span class="icon-[tabler--alert-circle] size-5"></span>
         <span id="errorMessage"></span>
       </div>
-      
+
       <!-- Loading Spinner -->
       <div id="loadingSpinner" class="flex justify-center items-center py-8 hidden">
         <div class="loading loading-spinner loading-lg"></div>
@@ -76,7 +76,8 @@ Consultation Module
 
   <script>
     const API_BASE = '<%= request.getContextPath() %>/api';
-    
+    let patientId = null;
+
     // Available time slots (8 AM to 8 PM with 30-minute intervals)
     const timeSlots = [
       { value: '08:00', label: '08:00 AM' },
@@ -105,7 +106,7 @@ Consultation Module
       { value: '19:30', label: '07:30 PM' },
       { value: '20:00', label: '08:00 PM' }
     ];
-    
+
     // Get patient ID from session
     async function getPatientId() {
       try {
@@ -121,26 +122,103 @@ Consultation Module
       }
       return null;
     }
-    
+
+    // Check if user can create an appointment
+    async function checkCanCreateAppointment() {
+      try {
+        const response = await fetch(API_BASE + '/appointments/can-create/' + patientId);
+        if (response.ok) {
+          const result = await response.json();
+          return result;
+        }
+      } catch (error) {
+        console.error('Error checking appointment eligibility:', error);
+      }
+      return { canCreate: false, message: 'Error checking appointment eligibility' };
+    }
+
+    // Check for existing active appointments
+    async function checkExistingAppointments(patientId) {
+      try {
+        const response = await fetch(API_BASE + '/appointments/by-patient/' + patientId);
+        if (response.ok) {
+          const appointments = await response.json();
+          const appointmentList = appointments.elements || appointments || [];
+          
+          // Filter for active appointments only
+          const activeAppointments = appointmentList.filter(appointment => {
+            const status = appointment.status ? appointment.status.toLowerCase() : '';
+            return status === 'scheduled' || status === 'confirmed' || status === 'check in' || status === 'checked-in';
+          });
+          
+          return activeAppointments;
+        }
+      } catch (error) {
+        console.error('Error checking existing appointments:', error);
+      }
+      return [];
+    }
+
+    // Initialize the page
+    async function initializePage() {
+      // Get patient ID
+      patientId = await getPatientId();
+      if (!patientId) {
+        document.getElementById('errorMessage').textContent = 'You must be logged in as a patient to create appointments';
+        document.getElementById('errorAlert').classList.remove('hidden');
+        return;
+      }
+
+      // Check if user can create appointment
+      const eligibilityCheck = await checkCanCreateAppointment();
+      if (!eligibilityCheck.canCreate) {
+        document.getElementById('errorMessage').textContent = eligibilityCheck.message;
+        document.getElementById('errorAlert').classList.remove('hidden');
+        
+        // Disable the form
+        const form = document.getElementById('appointmentForm');
+        const inputs = form.querySelectorAll('input, select, textarea, button');
+        inputs.forEach(input => {
+          input.disabled = true;
+        });
+        
+        // Add a message to the form
+        const formContainer = document.querySelector('.max-w-xl.mx-auto');
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'alert alert-warning mb-4';
+        warningDiv.innerHTML = 
+          '<span class="icon-[tabler--alert-triangle] size-5"></span>' +
+          '<span>You cannot create a new appointment because you already have an active appointment. Please cancel your existing appointment first.</span>';
+        formContainer.insertBefore(warningDiv, form);
+      }
+    }
+
     // Load appointments for a specific date and check availability
     async function checkAvailability(selectedDate) {
       const timeSelect = document.getElementById('appointmentTime');
       const availabilityInfo = document.getElementById('availabilityInfo');
       const availabilityText = document.getElementById('availabilityText');
-      
+      const submitButton = document.querySelector('#appointmentForm button[type="submit"]');
+
+      // Disable submit button and show loading state
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Loading...';
+      }
+
       // Clear current options
       timeSelect.innerHTML = '<option value="" disabled selected>Loading availability...</option>';
-      
+
       try {
         // Get all appointments
         const response = await fetch(API_BASE + '/appointments');
         if (!response.ok) {
           throw new Error('Failed to load appointments');
         }
-        
+
         const appointments = await response.json();
         const appointmentList = appointments.elements || appointments || [];
-        
+
         // Filter appointments for the selected date
         const selectedDateAppointments = appointmentList.filter(apt => {
           if (!apt.appointmentTime) return false;
@@ -148,7 +226,7 @@ Consultation Module
           const selected = new Date(selectedDate);
           return aptDate.toDateString() === selected.toDateString();
         });
-        
+
         // Count appointments per time slot
         const slotCounts = {};
         selectedDateAppointments.forEach(apt => {
@@ -156,19 +234,19 @@ Consultation Module
           const timeSlot = aptTime.toTimeString().substring(0, 5); // Get HH:MM format
           slotCounts[timeSlot] = (slotCounts[timeSlot] || 0) + 1;
         });
-        
+
         // Populate time slots with availability
         timeSelect.innerHTML = '<option value="" disabled selected>Select a time slot</option>';
-        
+
         let availableCount = 0;
         let totalCount = timeSlots.length;
-        
+
         timeSlots.forEach(slot => {
           const currentCount = slotCounts[slot.value] || 0;
           const isAvailable = currentCount < 2; // Allow up to 2 patients per slot
           const option = document.createElement('option');
           option.value = slot.value;
-          
+
           if (isAvailable) {
             const remainingSlots = 2 - currentCount;
             option.textContent = slot.label + ' - ' + remainingSlots + ' slot' + (remainingSlots > 1 ? 's' : '') + ' available';
@@ -179,10 +257,10 @@ Consultation Module
             option.disabled = true;
             option.className = 'text-red-600';
           }
-          
+
           timeSelect.appendChild(option);
         });
-        
+
         // Show availability summary
         availabilityInfo.classList.remove('hidden');
         if (availableCount === 0) {
@@ -192,16 +270,28 @@ Consultation Module
           availabilityText.textContent = availableCount + ' of ' + totalCount + ' time slots have availability (max 2 patients per slot)';
           availabilityText.className = 'text-green-600';
         }
-        
+
+        // Re-enable submit button
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = '<span class="icon-[tabler--calendar-plus] size-4"></span> Create Appointment';
+        }
+
       } catch (error) {
         console.error('Error checking availability:', error);
         timeSelect.innerHTML = '<option value="" disabled selected>Error loading availability</option>';
         availabilityInfo.classList.remove('hidden');
         availabilityText.textContent = 'Error loading availability. Please try again.';
         availabilityText.className = 'text-red-600';
+        
+        // Re-enable submit button on error
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = '<span class="icon-[tabler--calendar-plus] size-4"></span> Create Appointment';
+        }
       }
     }
-    
+
     // Add event listener for date selection
     document.getElementById('appointmentDate').addEventListener('change', function(e) {
       const selectedDate = e.target.value;
@@ -215,36 +305,52 @@ Consultation Module
         availabilityInfo.classList.add('hidden');
       }
     });
-    
+
     document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       // Show loading spinner
       document.getElementById('loadingSpinner').classList.remove('hidden');
       document.getElementById('successAlert').classList.add('hidden');
       document.getElementById('errorAlert').classList.add('hidden');
-      
+
       try {
-        // Get patient ID from session
-        const patientId = await getPatientId();
+        // Use the patientId from the global variable
         if (!patientId) {
           document.getElementById('errorMessage').textContent = 'You must be logged in as a patient to create appointments';
           document.getElementById('errorAlert').classList.remove('hidden');
           return;
         }
-        
+
         // Get form data
         const appointmentDate = document.getElementById('appointmentDate').value;
         const appointmentTime = document.getElementById('appointmentTime').value;
         const notes = document.getElementById('note').value;
-        
+
         // Validate required fields
         if (!appointmentDate || !appointmentTime) {
           document.getElementById('errorMessage').textContent = 'Please select both date and time';
           document.getElementById('errorAlert').classList.remove('hidden');
           return;
         }
-        
+
+        // Check if availability is still loading
+        const timeSelect = document.getElementById('appointmentTime');
+        const firstOption = timeSelect.options[0];
+        if (firstOption && firstOption.textContent.includes('Loading availability')) {
+          document.getElementById('errorMessage').textContent = 'Please wait for availability to load before creating appointment';
+          document.getElementById('errorAlert').classList.remove('hidden');
+          return;
+        }
+
+        // Check for existing active appointments
+        const existingAppointments = await checkExistingAppointments(patientId);
+        if (existingAppointments.length > 0) {
+          document.getElementById('errorMessage').textContent = 'You already have active appointments. Please cancel existing appointments before creating new ones.';
+          document.getElementById('errorAlert').classList.remove('hidden');
+          return;
+        }
+
         // Create appointment object
         const appointmentData = {
           patientID: patientId,
@@ -252,7 +358,7 @@ Consultation Module
           status: 'Scheduled',
           description: notes || ''
         };
-        
+
         // Send to API
         const response = await fetch(API_BASE + '/appointments', {
           method: 'POST',
@@ -261,17 +367,17 @@ Consultation Module
           },
           body: JSON.stringify(appointmentData)
         });
-        
+
         if (response.ok) {
           const result = await response.json();
-          
+
           // Show success message
           document.getElementById('successMessage').textContent = 'Appointment created successfully! (ID: ' + result.appointmentID + ')';
           document.getElementById('successAlert').classList.remove('hidden');
-          
+
           // Reset form
           document.getElementById('appointmentForm').reset();
-          
+
           // Redirect to dashboard after 2 seconds
           setTimeout(() => {
             window.location.href = '<%= request.getContextPath() %>/views/userDashboard.jsp';
@@ -289,6 +395,11 @@ Consultation Module
         // Hide loading spinner
         document.getElementById('loadingSpinner').classList.add('hidden');
       }
+    });
+
+    // Initialize the page when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      initializePage();
     });
   </script>
 </body>

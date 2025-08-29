@@ -359,4 +359,51 @@ public class AppointmentResource {
         }
     }
 
+    @GET
+    @Path("/can-create/{patientId}")
+    public Response canCreateAppointment(@PathParam("patientId") String patientId) {
+        try {
+            // Get all appointments for this patient
+            List<Appointment> patientAppointments = appointmentRepo.findByPatientId(patientId);
+            
+            if (patientAppointments == null || patientAppointments.isEmpty()) {
+                // No appointments found, can create
+                return Response.ok("{\"canCreate\": true, \"message\": \"No existing appointments found\"}")
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
+            }
+            
+            // Check for active appointments (scheduled, confirmed, check in)
+            boolean hasActiveAppointment = false;
+            for (Appointment appointment : patientAppointments) {
+                String status = appointment.getStatus();
+                if (status != null) {
+                    String statusLower = status.toLowerCase();
+                    if (statusLower.equals("scheduled") || 
+                        statusLower.equals("confirmed") || 
+                        statusLower.equals("check in") ||
+                        statusLower.equals("checked-in")) {
+                        hasActiveAppointment = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasActiveAppointment) {
+                return Response.ok("{\"canCreate\": false, \"message\": \"You already have an active appointment. Please cancel your existing appointment first.\"}")
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
+            } else {
+                return Response.ok("{\"canCreate\": true, \"message\": \"No active appointments found\"}")
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
+            }
+            
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Error checking appointment eligibility: " + e.getMessage()))
+                    .build();
+        }
+    }
+
 }

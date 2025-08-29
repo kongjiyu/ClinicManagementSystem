@@ -8,11 +8,12 @@ General Module
   <title>User Dashboard</title>
   <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
+  <script defer src="<%= request.getContextPath() %>/static/malaysian-date-utils.js"></script>
 </head>
 <body>
 <%@ include file="/views/userSidebar.jsp" %>
 
-<div class="flex flex-col gap-6 p-8 pt-[5.5rem] backdrop-blur-lg min-h-screen md:ml-64">
+<div class="flex flex-col gap-6 p-8 pt-[5.5rem] backdrop-blur-lg min-h-screen">
   <!-- Loading Spinner -->
   <div id="loadingSpinner" class="flex justify-center items-center py-8">
     <div class="loading loading-spinner loading-lg"></div>
@@ -27,7 +28,7 @@ General Module
   <!-- Patient Appointments -->
   <div id="appointmentSection" class="bg-base-100 p-6 rounded-lg shadow-md hidden">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold">Your Appointments</h3>
+      <h3 class="text-xl font-semibold">Your Active Appointments</h3>
       <a href="<%= request.getContextPath() %>/views/userCreateAppointment.jsp" class="btn btn-sm btn-accent flex items-center gap-2">
         <span class="icon-[tabler--calendar-plus] size-3"></span>
         New Appointment
@@ -39,7 +40,6 @@ General Module
           <tr>
             <th>Date</th>
             <th>Time</th>
-            <th>Type</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -116,23 +116,25 @@ General Module
     }
     
     try {
-      // Load patient information
-      const patientResponse = await fetch(API_BASE + '/patients/' + patientId);
+      // Load both patient information and appointments in parallel for better performance
+      const [patientResponse, appointmentsResponse] = await Promise.all([
+        fetch(API_BASE + '/patients/' + patientId),
+        fetch(API_BASE + '/appointments/by-patient/' + patientId)
+      ]);
+
       if (!patientResponse.ok) {
         throw new Error('Failed to load patient information');
       }
-      const patientData = await patientResponse.json();
-      
-      // Load patient's appointments
-      const appointmentsResponse = await fetch(API_BASE + '/appointments');
       if (!appointmentsResponse.ok) {
         throw new Error('Failed to load appointments');
       }
-      const allAppointments = await appointmentsResponse.json();
-      
-      // Filter appointments for this patient
-      const appointments = allAppointments.elements || allAppointments || [];
-      const patientAppointments = appointments.filter(apt => apt.patientID === patientId);
+
+      const [patientData, appointmentsData] = await Promise.all([
+        patientResponse.json(),
+        appointmentsResponse.json()
+      ]);
+
+      const patientAppointments = appointmentsData.elements || appointmentsData || [];
       
       const dashboardData = {
         patient: patientData,
@@ -172,46 +174,63 @@ General Module
     const appointments = data.appointments || [];
 
     if (!appointments || appointments.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No appointments found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">No appointments found</td></tr>';
       return;
     }
 
-    appointments.forEach((appointment, index) => {
-      console.log('Processing appointment ' + index + ':', appointment);
-      
+    // Filter for active appointments only
+    const activeAppointments = appointments.filter(appointment => {
+      const status = appointment.status ? appointment.status.toLowerCase() : '';
+      return status === 'scheduled' || status === 'confirmed' || status === 'check in' || status === 'checked-in';
+    });
+
+    if (activeAppointments.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">No active appointments found</td></tr>';
+      return;
+    }
+
+    // Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+
+    activeAppointments.forEach((appointment) => {
       const row = document.createElement('tr');
       
       // Format appointment date and time
       const appointmentDateTime = appointment.appointmentTime ? new Date(appointment.appointmentTime) : null;
-      const date = appointmentDateTime ? appointmentDateTime.toLocaleDateString() : 'N/A';
-      const time = appointmentDateTime ? appointmentDateTime.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : 'N/A';
-
-      console.log('Appointment ' + index + ' - Date: ' + date + ', Time: ' + time + ', Status: ' + appointment.status);
+      const date = appointmentDateTime ? formatMalaysianDate(appointmentDateTime) : 'N/A';
+      const time = appointmentDateTime ? formatMalaysianTime(appointmentDateTime) : 'N/A';
 
       // Get status badge
       const statusBadge = getStatusBadge(appointment.status);
 
+      // Check if appointment is cancelled, completed, or no-show - if so, don't show action buttons
+      const isCancelled = appointment.status && appointment.status.toLowerCase() === 'cancelled';
+      const isCompleted = appointment.status && appointment.status.toLowerCase() === 'completed';
+      const isNoShow = appointment.status && (appointment.status.toLowerCase() === 'noshow' || appointment.status.toLowerCase() === 'no shown');
+      
       row.innerHTML = 
         '<td>' + date + '</td>' +
         '<td>' + time + '</td>' +
-        '<td>' + (appointment.appointmentType || 'Consultation') + '</td>' +
         '<td>' + statusBadge + '</td>' +
         '<td class="flex gap-2">' +
-          '<button class="btn btn-sm btn-warning flex items-center gap-1" onclick="rescheduleAppointment(\'' + appointment.appointmentID + '\')">' +
-            '<span class="icon-[tabler--calendar-time] size-3"></span>' +
-            'Reschedule' +
-          '</button>' +
-          '<button class="btn btn-sm btn-error flex items-center gap-1" onclick="cancelAppointment(\'' + appointment.appointmentID + '\')">' +
-            '<span class="icon-[tabler--x] size-3"></span>' +
-            'Cancel' +
-          '</button>' +
+          (isCancelled || isCompleted || isNoShow ? 
+            '<span class="text-gray-500 text-sm">No actions available</span>' :
+            '<button class="btn btn-sm btn-warning flex items-center gap-1" onclick="rescheduleAppointment(\'' + appointment.appointmentID + '\')">' +
+              '<span class="icon-[tabler--calendar-time] size-3"></span>' +
+              'Reschedule' +
+            '</button>' +
+            '<button class="btn btn-sm btn-error flex items-center gap-1" onclick="cancelAppointment(\'' + appointment.appointmentID + '\')">' +
+              '<span class="icon-[tabler--x] size-3"></span>' +
+              'Cancel' +
+            '</button>'
+          ) +
         '</td>';
       
-      tbody.appendChild(row);
+      fragment.appendChild(row);
     });
+
+    // Append all rows at once for better performance
+    tbody.appendChild(fragment);
   }
 
   // Get status badge HTML
@@ -266,6 +285,12 @@ General Module
   async function cancelAppointment(appointmentId) {
     if (confirm('Are you sure you want to cancel this appointment?')) {
       try {
+        // Show loading state on the button
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Cancelling...';
+        button.disabled = true;
+        
         const response = await fetch(API_BASE + '/appointments/' + appointmentId + '/cancel', {
           method: 'PUT',
           headers: {
@@ -275,16 +300,33 @@ General Module
         });
         
         if (response.ok) {
-          alert('Appointment cancelled successfully!');
-          // Reload dashboard data
-          loadDashboardData();
+          // Show success message briefly
+          button.innerHTML = '<span class="icon-[tabler--check] size-3"></span> Cancelled!';
+          button.className = 'btn btn-sm btn-success flex items-center gap-1';
+          
+          // Refresh the appointments table immediately
+          await refreshAppointmentsTable();
+          
+          // Reset button after 2 seconds
+          setTimeout(() => {
+            button.innerHTML = originalText;
+            button.className = 'btn btn-sm btn-error flex items-center gap-1';
+            button.disabled = false;
+          }, 2000);
         } else {
           const errorResult = await response.json();
           alert('Failed to cancel appointment: ' + (errorResult.message || 'Unknown error'));
+          // Reset button
+          button.innerHTML = originalText;
+          button.disabled = false;
         }
       } catch (error) {
         console.error('Error cancelling appointment:', error);
         alert('Failed to cancel appointment: ' + error.message);
+        // Reset button
+        const button = event.target.closest('button');
+        button.innerHTML = originalText;
+        button.disabled = false;
       }
     }
   }
@@ -323,6 +365,13 @@ General Module
     const timeSelect = document.getElementById('rescheduleTime');
     const availabilityInfo = document.getElementById('rescheduleAvailabilityInfo');
     const availabilityText = document.getElementById('rescheduleAvailabilityText');
+    const rescheduleSubmitButton = document.querySelector('#rescheduleForm button[type="submit"]');
+    
+    // Disable submit button and show loading state
+    if (rescheduleSubmitButton) {
+      rescheduleSubmitButton.disabled = true;
+      rescheduleSubmitButton.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Loading...';
+    }
     
     // Clear current options
     timeSelect.innerHTML = '<option value="" disabled selected>Loading availability...</option>';
@@ -391,6 +440,12 @@ General Module
         }
       }
       
+      // Re-enable submit button
+      if (rescheduleSubmitButton) {
+        rescheduleSubmitButton.disabled = false;
+        rescheduleSubmitButton.innerHTML = '<span class="icon-[tabler--calendar-time] size-4"></span> Reschedule';
+      }
+      
     } catch (error) {
       console.error('Error checking availability:', error);
       timeSelect.innerHTML = '<option value="" disabled selected>Error loading availability</option>';
@@ -398,6 +453,12 @@ General Module
         availabilityInfo.classList.remove('hidden');
         availabilityText.textContent = 'Error loading availability. Please try again.';
         availabilityText.className = 'text-red-600';
+      }
+      
+      // Re-enable submit button on error
+      if (rescheduleSubmitButton) {
+        rescheduleSubmitButton.disabled = false;
+        rescheduleSubmitButton.innerHTML = '<span class="icon-[tabler--calendar-time] size-4"></span> Reschedule';
       }
     }
   }
@@ -497,6 +558,20 @@ General Module
       return;
     }
     
+    // Check if availability is still loading
+    const timeSelect = document.getElementById('rescheduleTime');
+    const firstOption = timeSelect.options[0];
+    if (firstOption && firstOption.textContent.includes('Loading availability')) {
+      alert('Please wait for availability to load before rescheduling');
+      return;
+    }
+    
+    // Show loading state on submit button
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Rescheduling...';
+    submitButton.disabled = true;
+    
     try {
       // Get current appointment data
       const response = await fetch(API_BASE + '/appointments/' + appointmentId);
@@ -525,17 +600,29 @@ General Module
       });
       
       if (updateResponse.ok) {
-        alert('Appointment rescheduled successfully!');
+        // Show success message briefly
+        submitButton.innerHTML = '<span class="icon-[tabler--check] size-3"></span> Rescheduled!';
+        submitButton.className = 'btn btn-success flex items-center gap-2';
+        
+        // Close modal and refresh appointments table immediately
         closeRescheduleModal();
-        // Reload dashboard data
-        loadDashboardData();
+        await refreshAppointmentsTable();
+        
+        // Show brief success notification
+        showSuccessNotification('Appointment rescheduled successfully!');
       } else {
         const errorResult = await updateResponse.json();
         alert('Failed to reschedule appointment: ' + (errorResult.message || 'Unknown error'));
+        // Reset button
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
       }
     } catch (error) {
       console.error('Error rescheduling appointment:', error);
       alert('Failed to reschedule appointment: ' + error.message);
+      // Reset button
+      submitButton.innerHTML = originalText;
+      submitButton.disabled = false;
     }
   }
 
@@ -560,6 +647,44 @@ General Module
   // Hide loading spinner
   function hideLoading() {
     document.getElementById('loadingSpinner').classList.add('hidden');
+  }
+
+  // Refresh only the appointments table (more efficient than full dashboard reload)
+  async function refreshAppointmentsTable() {
+    if (!patientId) return;
+    
+    try {
+      const response = await fetch(API_BASE + '/appointments/by-patient/' + patientId);
+      if (response.ok) {
+        const appointmentsData = await response.json();
+        const patientAppointments = appointmentsData.elements || appointmentsData || [];
+        
+        // Update only the appointments table
+        populateAppointmentsTable({ appointments: patientAppointments });
+      }
+    } catch (error) {
+      console.error('Error refreshing appointments:', error);
+    }
+  }
+
+  // Show success notification
+  function showSuccessNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-success text-success-content px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2';
+    notification.innerHTML = 
+      '<span class="icon-[tabler--check] size-4"></span>' +
+      '<span>' + message + '</span>';
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
   }
 
 

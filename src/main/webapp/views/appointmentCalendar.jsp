@@ -118,9 +118,9 @@ Appointment Module
     .fc-timegrid-event,
     .fc-list-event,
     .fc-list-event-title {
-      color: white !important;
+      color: black !important;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-    }
+
   </style>
   
   <!-- FullCalendar CSS -->
@@ -146,7 +146,14 @@ Appointment Module
 
   <!-- Calendar Container -->
   <div class="bg-white rounded-lg shadow-lg p-6">
-    <div id="calendar"></div>
+    <!-- Loading Indicator -->
+    <div id="calendarLoading" class="flex flex-col items-center justify-center py-12">
+      <div class="loading loading-spinner loading-lg text-primary mb-4"></div>
+      <p class="text-gray-600">Loading appointments...</p>
+    </div>
+    
+    <!-- Calendar (hidden initially) -->
+    <div id="calendar" style="display: none;"></div>
   </div>
 
 
@@ -166,6 +173,7 @@ Appointment Module
   // Initialize FullCalendar
   document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
+    const loadingEl = document.getElementById('calendarLoading');
     
     calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'timeGridWeek',
@@ -187,7 +195,13 @@ Appointment Module
       eventClick: handleEventClick,
       eventDidMount: handleEventDidMount,
       loading: function(isLoading) {
-        // You can add loading indicators here
+        if (isLoading) {
+          loadingEl.style.display = 'flex';
+          calendarEl.style.display = 'none';
+        } else {
+          loadingEl.style.display = 'none';
+          calendarEl.style.display = 'block';
+        }
       }
     });
 
@@ -227,6 +241,22 @@ Appointment Module
     } catch (error) {
       console.error('Error fetching appointments:', error);
       failureCallback(error);
+      
+      // Show error message in loading area
+      const loadingEl = document.getElementById('calendarLoading');
+      if (loadingEl) {
+        loadingEl.innerHTML = `
+          <div class="text-center">
+            <div class="text-red-500 mb-4">
+              <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            <p class="text-gray-600 mb-2">Failed to load appointments</p>
+            <button class="btn btn-outline btn-sm" onclick="location.reload()">Retry</button>
+          </div>
+        `;
+      }
     }
   }
 

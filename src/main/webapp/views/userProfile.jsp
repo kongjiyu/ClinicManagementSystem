@@ -92,28 +92,34 @@
 
         <!-- Editable fields -->
         <div>
-          <label class="label">Contact Number</label>
+          <label class="label">Contact Number <span class="text-error">*</span></label>
           <input type="text" id="contactNumber" class="input input-bordered w-full" required />
+          <div id="contactNumberError" class="text-error text-sm mt-1 hidden"></div>
         </div>
         <div>
-          <label class="label">Email</label>
+          <label class="label">Email <span class="text-error">*</span></label>
           <input type="email" id="email" class="input input-bordered w-full" required />
+          <div id="emailError" class="text-error text-sm mt-1 hidden"></div>
         </div>
         <div class="md:col-span-2">
-          <label class="label">Address</label>
+          <label class="label">Address <span class="text-error">*</span></label>
           <input type="text" id="address" class="input input-bordered w-full" required />
+          <div id="addressError" class="text-error text-sm mt-1 hidden"></div>
         </div>
         <div>
-          <label class="label">Emergency Contact Name</label>
+          <label class="label">Emergency Contact Name <span class="text-error">*</span></label>
           <input type="text" id="emergencyContactName" class="input input-bordered w-full" required />
+          <div id="emergencyContactNameError" class="text-error text-sm mt-1 hidden"></div>
         </div>
         <div>
-          <label class="label">Emergency Contact Number</label>
+          <label class="label">Emergency Contact Number <span class="text-error">*</span></label>
           <input type="text" id="emergencyContactNumber" class="input input-bordered w-full" required />
+          <div id="emergencyContactNumberError" class="text-error text-sm mt-1 hidden"></div>
         </div>
         <div class="md:col-span-2">
           <label class="label">Allergies</label>
           <textarea id="allergies" class="textarea textarea-bordered w-full" placeholder="List any allergies or leave blank if none"></textarea>
+          <div id="allergiesError" class="text-error text-sm mt-1 hidden"></div>
         </div>
       </div>
 
@@ -201,11 +207,20 @@
 
     // Show form
     document.getElementById('profileContent').classList.remove('hidden');
+    
+    // Add validation listeners after form is populated
+    addValidationListeners();
   }
 
   // Handle form submission
   document.getElementById('profileForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      showError('Please fix the validation errors before submitting');
+      return;
+    }
     
     // Show loading state
     const submitButton = e.target.querySelector('button[type="submit"]');
@@ -220,12 +235,12 @@
     try {
       // Get form data
       const updatedData = {
-        contactNumber: document.getElementById('contactNumber').value,
-        email: document.getElementById('email').value,
-        address: document.getElementById('address').value,
-        emergencyContactName: document.getElementById('emergencyContactName').value,
-        emergencyContactNumber: document.getElementById('emergencyContactNumber').value,
-        allergies: document.getElementById('allergies').value
+        contactNumber: document.getElementById('contactNumber').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
+        emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
+        allergies: document.getElementById('allergies').value.trim()
       };
 
       // Send update request
@@ -241,6 +256,7 @@
         const updatedPatient = await response.json();
         originalData = { ...updatedPatient };
         showSuccess('Profile updated successfully!');
+        clearAllFieldErrors(); // Clear any remaining errors
       } else {
         const errorResult = await response.json();
         showError('Failed to update profile: ' + (errorResult.message || 'Unknown error'));
@@ -258,6 +274,7 @@
   // Reset form to original values
   function resetForm() {
     if (originalData) {
+      clearAllFieldErrors(); // Clear any validation errors
       populateForm(originalData);
       showSuccess('Form reset to original values');
     }
@@ -278,6 +295,190 @@
   // Hide loading spinner
   function hideLoading() {
     document.getElementById('loadingSpinner').classList.add('hidden');
+  }
+
+  // Validation functions
+  function validateContactNumber(value) {
+    const phoneRegex = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
+    if (!value.trim()) {
+      return 'Contact number is required';
+    }
+    if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+      return 'Please enter a valid Malaysian phone number (e.g., 012-3456789 or +6012-3456789)';
+    }
+    return null;
+  }
+
+  function validateEmail(value) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!value.trim()) {
+      return 'Email is required';
+    }
+    if (!emailRegex.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+  function validateAddress(value) {
+    if (!value.trim()) {
+      return 'Address is required';
+    }
+    if (value.trim().length < 10) {
+      return 'Address must be at least 10 characters long';
+    }
+    if (value.trim().length > 200) {
+      return 'Address must not exceed 200 characters';
+    }
+    return null;
+  }
+
+  function validateEmergencyContactName(value) {
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    if (!value.trim()) {
+      return 'Emergency contact name is required';
+    }
+    if (!nameRegex.test(value.trim())) {
+      return 'Emergency contact name can only contain letters and spaces';
+    }
+    if (value.trim().length < 2) {
+      return 'Emergency contact name must be at least 2 characters long';
+    }
+    if (value.trim().length > 50) {
+      return 'Emergency contact name must not exceed 50 characters';
+    }
+    return null;
+  }
+
+  function validateEmergencyContactNumber(value) {
+    const phoneRegex = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
+    if (!value.trim()) {
+      return 'Emergency contact number is required';
+    }
+    if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+      return 'Please enter a valid Malaysian phone number (e.g., 012-3456789 or +6012-3456789)';
+    }
+    return null;
+  }
+
+  function validateAllergies(value) {
+    if (value.trim() && value.trim().length > 500) {
+      return 'Allergies description must not exceed 500 characters';
+    }
+    return null;
+  }
+
+  // Show field error
+  function showFieldError(fieldId, message) {
+    const errorElement = document.getElementById(fieldId + 'Error');
+    const inputElement = document.getElementById(fieldId);
+    
+    if (errorElement && inputElement) {
+      errorElement.textContent = message;
+      errorElement.classList.remove('hidden');
+      inputElement.classList.add('input-error');
+    }
+  }
+
+  // Hide field error
+  function hideFieldError(fieldId) {
+    const errorElement = document.getElementById(fieldId + 'Error');
+    const inputElement = document.getElementById(fieldId);
+    
+    if (errorElement && inputElement) {
+      errorElement.classList.add('hidden');
+      inputElement.classList.remove('input-error');
+    }
+  }
+
+  // Clear all field errors
+  function clearAllFieldErrors() {
+    const fields = ['contactNumber', 'email', 'address', 'emergencyContactName', 'emergencyContactNumber', 'allergies'];
+    fields.forEach(field => hideFieldError(field));
+  }
+
+  // Validate all fields
+  function validateForm() {
+    clearAllFieldErrors();
+    
+    const contactNumber = document.getElementById('contactNumber').value;
+    const email = document.getElementById('email').value;
+    const address = document.getElementById('address').value;
+    const emergencyContactName = document.getElementById('emergencyContactName').value;
+    const emergencyContactNumber = document.getElementById('emergencyContactNumber').value;
+    const allergies = document.getElementById('allergies').value;
+
+    let isValid = true;
+
+    // Validate each field
+    const contactNumberError = validateContactNumber(contactNumber);
+    if (contactNumberError) {
+      showFieldError('contactNumber', contactNumberError);
+      isValid = false;
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      showFieldError('email', emailError);
+      isValid = false;
+    }
+
+    const addressError = validateAddress(address);
+    if (addressError) {
+      showFieldError('address', addressError);
+      isValid = false;
+    }
+
+    const emergencyContactNameError = validateEmergencyContactName(emergencyContactName);
+    if (emergencyContactNameError) {
+      showFieldError('emergencyContactName', emergencyContactNameError);
+      isValid = false;
+    }
+
+    const emergencyContactNumberError = validateEmergencyContactNumber(emergencyContactNumber);
+    if (emergencyContactNumberError) {
+      showFieldError('emergencyContactNumber', emergencyContactNumberError);
+      isValid = false;
+    }
+
+    const allergiesError = validateAllergies(allergies);
+    if (allergiesError) {
+      showFieldError('allergies', allergiesError);
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  // Add real-time validation event listeners
+  function addValidationListeners() {
+    const fields = [
+      { id: 'contactNumber', validator: validateContactNumber },
+      { id: 'email', validator: validateEmail },
+      { id: 'address', validator: validateAddress },
+      { id: 'emergencyContactName', validator: validateEmergencyContactName },
+      { id: 'emergencyContactNumber', validator: validateEmergencyContactNumber },
+      { id: 'allergies', validator: validateAllergies }
+    ];
+
+    fields.forEach(field => {
+      const element = document.getElementById(field.id);
+      if (element) {
+        element.addEventListener('blur', function() {
+          const error = field.validator(this.value);
+          if (error) {
+            showFieldError(field.id, error);
+          } else {
+            hideFieldError(field.id);
+          }
+        });
+
+        element.addEventListener('input', function() {
+          // Clear error when user starts typing
+          hideFieldError(field.id);
+        });
+      }
+    });
   }
 
   // Initialize profile

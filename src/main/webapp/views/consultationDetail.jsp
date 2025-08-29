@@ -258,7 +258,8 @@ Consultation Module
             </div>
             <div>
               <label class="label">Price (RM)</label>
-              <input type="number" id="treatmentPrice" name="price" class="input input-bordered w-full" min="0" step="0.01" placeholder="0.00" required />
+              <input type="number" id="treatmentPrice" name="price" class="input input-bordered w-full" min="1.00" step="0.01" placeholder="0.00" required />
+              <div class="text-xs text-gray-500 mt-1">Price must be higher than RM 1.00</div>
             </div>
           </div>
           <div class="mb-4">
@@ -409,11 +410,12 @@ Consultation Module
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label class="label">Start Date</label>
-              <input type="date" id="mc-start-date" name="startDate" class="input input-bordered w-full" required />
+              <input type="date" id="mc-start-date" name="startDate" class="input input-bordered w-full" required onchange="validateMCDates()" />
+              <div class="text-xs text-gray-500 mt-1">Cannot be more than 1 week before today</div>
             </div>
             <div>
               <label class="label">End Date</label>
-              <input type="date" id="mc-end-date" name="endDate" class="input input-bordered w-full" required />
+              <input type="date" id="mc-end-date" name="endDate" class="input input-bordered w-full" required onchange="validateMCDates()" />
             </div>
           </div>
           <div class="mb-4">
@@ -442,6 +444,7 @@ Consultation Module
   let prescriptions = [];
   let doctors = []; // Array to store doctors
   let nextRowId = 0; // For generating unique row IDs
+  let isCheckingAvailability = false; // Track availability checking state
 
   // Get consultation ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -781,9 +784,52 @@ Consultation Module
     }
   });
 
+  // Validate MC dates
+  function validateMCDates() {
+    const startDateInput = document.getElementById('mc-start-date');
+    const endDateInput = document.getElementById('mc-end-date');
+    
+    if (!startDateInput.value || !endDateInput.value) {
+      return true; // Allow empty values for now
+    }
+    
+    const startDate = new Date(startDateInput.value);
+    const endDate = new Date(endDateInput.value);
+    const today = new Date();
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(today.getDate() - 7);
+    
+    // Reset any previous error styling
+    startDateInput.classList.remove('input-error');
+    endDateInput.classList.remove('input-error');
+    
+    let isValid = true;
+    
+    // Check if start date is more than 1 week before today
+    if (startDate < oneWeekAgo) {
+      startDateInput.classList.add('input-error');
+      alert('Start date cannot be more than 1 week before today.');
+      isValid = false;
+    }
+    
+    // Check if end date is before start date
+    if (endDate < startDate) {
+      endDateInput.classList.add('input-error');
+      alert('End date cannot be before start date.');
+      isValid = false;
+    }
+    
+    return isValid;
+  }
+
   // Handle MC form submission
   document.getElementById('mc-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    // Validate dates before submission
+    if (!validateMCDates()) {
+      return;
+    }
 
     const formData = {
       startDate: document.getElementById('mc-start-date').value,
@@ -1299,6 +1345,15 @@ Consultation Module
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const price = parseFloat(formData.get('price')) || 0.0;
+    
+    // Validate price is higher than 1
+    if (price < 1.0) {
+      alert('Error: Treatment price must be higher than RM 1.00');
+      document.getElementById('treatmentPrice').focus();
+      return;
+    }
+    
     const treatmentData = {
       consultationID: consultationId,
       patientID: patientId,
@@ -1307,7 +1362,7 @@ Consultation Module
       description: formData.get('description'),
       treatmentProcedure: formData.get('treatmentProcedure'),
       duration: parseInt(formData.get('duration')),
-      price: parseFloat(formData.get('price')) || 0.0,
+      price: price,
       treatmentDate: new Date().toISOString().slice(0, 19), // Remove timezone info, keep only YYYY-MM-DDTHH:mm:ss
       status: 'In Progress',
       outcome: null,
@@ -1619,12 +1674,22 @@ Consultation Module
     const dateInput = document.getElementById('followup-appointment-date');
     const timeSelect = document.getElementById('followup-appointment-time');
     const availabilityInfo = document.getElementById('followup-availability-info');
+    const submitButton = document.querySelector('#followup-form button[type="submit"]');
     
     if (!dateInput.value) {
       timeSelect.innerHTML = '<option value="">-- Select Time --</option>';
       availabilityInfo.textContent = '';
       return;
     }
+
+    // Set loading state
+    isCheckingAvailability = true;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Checking Availability...';
+    }
+    availabilityInfo.textContent = 'Checking availability...';
+    availabilityInfo.className = 'text-blue-600';
 
     try {
       // Get all appointments for the selected date
@@ -1691,6 +1756,14 @@ Consultation Module
     } catch (error) {
       console.error('Error checking followup availability:', error);
       availabilityInfo.textContent = 'Error checking availability';
+      availabilityInfo.className = 'text-red-600';
+    } finally {
+      // Reset loading state
+      isCheckingAvailability = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Schedule Follow-up';
+      }
     }
   }
 
@@ -1763,12 +1836,24 @@ Consultation Module
 
   // View follow-up appointment
   function viewFollowup() {
-    window.open('<%= request.getContextPath() %>/views/appointmentDetail.jsp?from=consultation&id=' + consultationId, '_blank');
+    // Get the appointment ID from the follow-up info
+    const appointmentId = document.getElementById('followupAppointmentId').value;
+    if (appointmentId) {
+      window.open('<%= request.getContextPath() %>/views/appointmentDetail.jsp?from=consultation&id=' + appointmentId, '_blank');
+    } else {
+      alert('No follow-up appointment found');
+    }
   }
 
   // Handle follow-up form submission
   document.getElementById('followup-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    // Check if availability is still being fetched
+    if (isCheckingAvailability) {
+      alert('Please wait while availability is being checked. You cannot schedule a follow-up appointment at this time.');
+      return;
+    }
 
     // Get reason value - if "Other" is selected, use the textarea value
     const reasonSelect = document.getElementById('followup-reason');
@@ -1778,6 +1863,14 @@ Consultation Module
     // Combine date and time into appointmentTime
     const appointmentDate = document.getElementById('followup-appointment-date').value;
     const appointmentTime = document.getElementById('followup-appointment-time').value;
+    
+    // Validate that a time slot is selected
+    if (!appointmentTime) {
+      alert('Please select a time slot for the follow-up appointment.');
+      document.getElementById('followup-appointment-time').focus();
+      return;
+    }
+    
     const combinedDateTime = appointmentDate + 'T' + appointmentTime + ':00';
 
     const formData = {

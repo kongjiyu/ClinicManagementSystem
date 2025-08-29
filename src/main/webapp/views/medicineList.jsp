@@ -34,7 +34,6 @@ Pharmacy Module
       <tr>
         <th>Medicine ID</th>
         <th>Medicine Name</th>
-        <th>Description</th>
         <th>Available Stock</th>
         <th>Reorder Level</th>
         <th>Selling Price</th>
@@ -75,12 +74,6 @@ Pharmacy Module
           data: 'medicineName',
           render: function(data) {
             return data || 'N/A';
-          }
-        },
-        { 
-          data: 'description',
-          render: function(data) {
-            return data ? (data.length > 50 ? data.substring(0, 50) + '...' : data) : 'N/A';
           }
         },
         { 

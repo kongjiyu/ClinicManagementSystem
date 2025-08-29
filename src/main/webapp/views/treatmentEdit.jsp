@@ -38,7 +38,7 @@
                         <label class="label">
                             <span class="label-text font-semibold">Treatment ID</span>
                         </label>
-                        <input type="text" id="treatmentID" class="input input-bordered w-full" readonly>
+                        <input type="text" id="treatmentID" class="input input-bordered w-full" readonly disabled>
                     </div>
 
                     <!-- Patient Selection -->
@@ -46,7 +46,7 @@
                         <label class="label">
                             <span class="label-text font-semibold">Patient *</span>
                         </label>
-                        <select id="patientID" name="patientID" class="select select-bordered w-full" required>
+                        <select id="patientID" name="patientID" class="select select-bordered w-full" required disabled>
                             <option value="">Select Patient</option>
                         </select>
                     </div>
@@ -103,7 +103,6 @@
                         </label>
                         <select id="status" name="status" class="select select-bordered w-full" required>
                             <option value="">Select Status</option>
-                            <option value="Scheduled">Scheduled</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
@@ -111,7 +110,7 @@
                     </div>
 
                     <!-- Outcome -->
-                    <div class="form-control">
+                    <div class="form-control" id="outcomeSection" style="display: none;">
                         <label class="label">
                             <span class="label-text font-semibold">Outcome</span>
                         </label>
@@ -189,6 +188,19 @@
             } else {
                 showError('No treatment ID provided');
             }
+
+            // Add event listener for status change
+            document.getElementById('status').addEventListener('change', function() {
+                const outcomeSection = document.getElementById('outcomeSection');
+                const outcomeSelect = document.getElementById('outcome');
+                
+                if (this.value === 'Completed') {
+                    outcomeSection.style.display = 'block';
+                } else {
+                    outcomeSection.style.display = 'none';
+                    outcomeSelect.value = '';
+                }
+            });
         });
 
         function loadTreatmentData(treatmentId) {
@@ -252,10 +264,21 @@
             document.getElementById('treatmentType').value = treatment.treatmentType;
             document.getElementById('duration').value = treatment.duration;
             document.getElementById('status').value = treatment.status;
-            document.getElementById('outcome').value = treatment.outcome || '';
             document.getElementById('description').value = treatment.description || '';
             document.getElementById('procedure').value = treatment.treatmentProcedure || '';
             document.getElementById('notes').value = treatment.notes || '';
+
+            // Show/hide outcome section based on status
+            const outcomeSection = document.getElementById('outcomeSection');
+            const outcomeSelect = document.getElementById('outcome');
+            
+            if (treatment.status === 'Completed') {
+                outcomeSection.style.display = 'block';
+                outcomeSelect.value = treatment.outcome || '';
+            } else {
+                outcomeSection.style.display = 'none';
+                outcomeSelect.value = '';
+            }
 
             // Format datetime for input field
             if (treatment.treatmentDate) {
@@ -312,6 +335,16 @@
                 }
             }
 
+            // Validate outcome is required when status is Completed
+            const status = document.getElementById('status').value;
+            const outcome = document.getElementById('outcome').value;
+            
+            if (status === 'Completed' && !outcome.trim()) {
+                alert('Validation Error: Outcome is required when status is Completed');
+                document.getElementById('outcome').focus();
+                return false;
+            }
+
             const duration = parseInt(document.getElementById('duration').value);
             if (duration <= 0) {
                 alert('Validation Error: Duration must be greater than 0');
@@ -323,6 +356,7 @@
 
         function collectFormData() {
             return {
+                consultationID: treatmentData.consultationID, // Preserve the consultation ID
                 patientID: document.getElementById('patientID').value,
                 treatmentType: document.getElementById('treatmentType').value,
                 treatmentName: document.getElementById('treatmentName').value,

@@ -43,14 +43,26 @@ Consultation Module
 <script>
   const API_BASE = '<%= request.getContextPath() %>/api';
 
-  // Custom date sorting function
+  // Custom date sorting function for dd/mm/yyyy format
   function customDateSort(a, b) {
     if (a === 'N/A' && b === 'N/A') return 0;
     if (a === 'N/A') return 1;
     if (b === 'N/A') return -1;
     
-    const dateA = new Date(a);
-    const dateB = new Date(b);
+    // Parse dd/mm/yyyy format
+    function parseDate(dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const year = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+      }
+      return new Date(dateStr); // Fallback to standard parsing
+    }
+    
+    const dateA = parseDate(a);
+    const dateB = parseDate(b);
     
     if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
     if (isNaN(dateA.getTime())) return 1;
@@ -67,6 +79,7 @@ Consultation Module
           return json.elements || json || [];
         }
       },
+
       columns: [
         { 
           data: 'consultationID',
@@ -88,11 +101,29 @@ Consultation Module
         },
         { 
           data: 'consultationDate',
-          render: function(data) {
-            return data ? new Date(data).toLocaleDateString() : 'N/A';
+          render: function(data, type, row) {
+            if (!data) return 'N/A';
+            try {
+              const date = new Date(data);
+              if (isNaN(date.getTime())) return 'N/A';
+              
+              // For sorting, return the original date string
+              if (type === 'sort') {
+                return data;
+              }
+              
+              // For display, format as dd/mm/yyyy
+              const day = date.getDate().toString().padStart(2, '0');
+              const month = (date.getMonth() + 1).toString().padStart(2, '0');
+              const year = date.getFullYear();
+              
+              return day + '/' + month + '/' + year;
+            } catch (error) {
+              console.error('Error formatting date:', error);
+              return 'N/A';
+            }
           },
-          type: 'date',
-          orderData: [3, 0] // Sort by date first, then by consultation ID
+          type: 'date'
         },
         { 
           data: 'status',

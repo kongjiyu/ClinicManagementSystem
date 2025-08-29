@@ -1,5 +1,5 @@
 <%--
-Author: Yap Yu Xin
+Author: Chia Yu Xin
 Consultation Module
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -8,6 +8,7 @@ Consultation Module
   <title>Appointment History</title>
   <link href="<%= request.getContextPath() %>/static/output.css" rel="stylesheet">
   <script defer src="<%= request.getContextPath() %>/static/flyonui.js"></script>
+  <script defer src="<%= request.getContextPath() %>/static/malaysian-date-utils.js"></script>
 </head>
 <body>
 
@@ -26,14 +27,54 @@ Consultation Module
 
   <div id="appointmentHistoryContent" class="hidden">
     <div class="bg-base-100 p-6 rounded-lg shadow-md">
-      <h3 class="text-xl font-semibold mb-4">Your Appointment History</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Your Appointment History</h3>
+        <div class="flex gap-4 items-end">
+          <!-- Status Filter -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Filter by Status</span>
+            </label>
+            <select id="statusFilter" class="select select-bordered select-sm">
+              <option value="">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="completed">Completed</option>
+              <option value="check in">Checked In</option>
+              <option value="noshow">No Show</option>
+            </select>
+          </div>
+          
+          <!-- Date Range Filter -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">From Date</span>
+            </label>
+            <input type="date" id="fromDateFilter" class="input input-bordered input-sm">
+          </div>
+          
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">To Date</span>
+            </label>
+            <input type="date" id="toDateFilter" class="input input-bordered input-sm">
+          </div>
+          
+          <!-- Clear Filters Button -->
+          <button id="clearFilters" class="btn btn-outline btn-sm">
+            <span class="icon-[tabler--filter-off] size-4"></span>
+            Clear Filters
+          </button>
+        </div>
+      </div>
+      
       <div class="overflow-x-auto">
         <table class="table table-zebra w-full">
           <thead>
             <tr>
               <th>Date</th>
               <th>Time</th>
-              <th>Type</th>
               <th>Status</th>
               <th>Notes</th>
             </tr>
@@ -56,6 +97,7 @@ Consultation Module
 <script>
   const API_BASE = '<%= request.getContextPath() %>/api';
   let patientId = null;
+  let allAppointments = []; // Store all appointments for filtering
 
   // Get patient ID from session
   async function getPatientId() {
@@ -76,21 +118,38 @@ Consultation Module
   // Load appointment history data
   async function loadAppointmentHistory() {
     patientId = await getPatientId();
-    
+
     if (!patientId) {
       showError('You must be logged in as a patient to access this page');
       hideLoading();
       return;
     }
-    
+
     try {
       const response = await fetch(API_BASE + '/patients/' + patientId + '/appointment-history');
       if (!response.ok) {
         throw new Error('Failed to load appointment history');
       }
-      
+
       const appointments = await response.json();
-      populateAppointmentHistoryTable(appointments);
+      
+      // Handle custom List structure and store all appointments
+      if (appointments && appointments.elements) {
+        allAppointments = appointments.elements;
+      } else if (Array.isArray(appointments)) {
+        allAppointments = appointments;
+      } else {
+        allAppointments = [];
+      }
+      
+      // Sort appointments by date in descending order (newest first)
+      allAppointments.sort((a, b) => {
+        const dateA = new Date(a.appointmentTime);
+        const dateB = new Date(b.appointmentTime);
+        return dateB - dateA;
+      });
+      
+      populateAppointmentHistoryTable(allAppointments);
       hideLoading();
     } catch (error) {
       console.error('Error loading appointment history:', error);
@@ -104,48 +163,92 @@ Consultation Module
     const tbody = document.getElementById('appointmentHistoryTableBody');
     tbody.innerHTML = '';
 
-    // Handle custom List structure
-    let appointmentArray = [];
-    if (appointments && appointments.elements) {
-      appointmentArray = appointments.elements;
-    } else if (Array.isArray(appointments)) {
-      appointmentArray = appointments;
-    }
+    // Apply filters
+    const filteredAppointments = applyFilters(appointments);
 
-    if (!appointmentArray || appointmentArray.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No appointment history found</td></tr>';
+    if (!filteredAppointments || filteredAppointments.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">No appointment history found</td></tr>';
       return;
     }
 
-    appointmentArray.forEach((appointment) => {
+    filteredAppointments.forEach((appointment) => {
       const row = document.createElement('tr');
+
+      // Format appointment date and time with better error handling
+      let date = 'N/A';
+      let time = 'N/A';
       
-      // Format appointment date and time
-      const appointmentDateTime = appointment.appointmentTime ? new Date(appointment.appointmentTime) : null;
-      const date = appointmentDateTime ? appointmentDateTime.toLocaleDateString() : 'N/A';
-      const time = appointmentDateTime ? appointmentDateTime.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : 'N/A';
+      if (appointment.appointmentTime) {
+        try {
+          const appointmentDateTime = new Date(appointment.appointmentTime);
+          if (!isNaN(appointmentDateTime.getTime())) {
+            date = formatDateDDMMYYYY(appointmentDateTime);
+            time = formatMalaysianTime(appointmentDateTime);
+          }
+        } catch (error) {
+          console.error('Error parsing appointment date:', appointment.appointmentTime, error);
+        }
+      }
 
       // Get status badge
       const statusBadge = getStatusBadge(appointment.status);
 
-      row.innerHTML = 
+      row.innerHTML =
         '<td>' + date + '</td>' +
         '<td>' + time + '</td>' +
-        '<td>' + (appointment.appointmentType || 'Consultation') + '</td>' +
         '<td>' + statusBadge + '</td>' +
         '<td>' + (appointment.description || '-') + '</td>';
-      
+
       tbody.appendChild(row);
     });
+  }
+
+  // Apply filters to appointments
+  function applyFilters(appointments) {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const fromDateFilter = document.getElementById('fromDateFilter').value;
+    const toDateFilter = document.getElementById('toDateFilter').value;
+
+    return appointments.filter(appointment => {
+      // Status filter
+      if (statusFilter && appointment.status && appointment.status.toLowerCase() !== statusFilter) {
+        return false;
+      }
+
+      // Date range filter
+      if (appointment.appointmentTime) {
+        const appointmentDate = new Date(appointment.appointmentTime);
+        const appointmentDateStr = appointmentDate.toISOString().split('T')[0];
+
+        if (fromDateFilter && appointmentDateStr < fromDateFilter) {
+          return false;
+        }
+        if (toDateFilter && appointmentDateStr > toDateFilter) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  // Format date as dd/mm/yyyy
+  function formatDateDDMMYYYY(date) {
+    // Check if date is valid
+    if (!date || isNaN(date.getTime())) {
+      return 'N/A';
+    }
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return day + '/' + month + '/' + year;
   }
 
   // Get status badge HTML
   function getStatusBadge(status) {
     if (!status) return '<span class="badge badge-soft badge-neutral">Unknown</span>';
-    
+
     const statusLower = status.toLowerCase();
     switch (statusLower) {
       case 'scheduled':
@@ -183,6 +286,27 @@ Consultation Module
   // Initialize appointment history
   document.addEventListener('DOMContentLoaded', function() {
     loadAppointmentHistory();
+    
+    // Add event listeners for filters
+    document.getElementById('statusFilter').addEventListener('change', function() {
+      populateAppointmentHistoryTable(allAppointments);
+    });
+    
+    document.getElementById('fromDateFilter').addEventListener('change', function() {
+      populateAppointmentHistoryTable(allAppointments);
+    });
+    
+    document.getElementById('toDateFilter').addEventListener('change', function() {
+      populateAppointmentHistoryTable(allAppointments);
+    });
+    
+    // Clear filters button
+    document.getElementById('clearFilters').addEventListener('click', function() {
+      document.getElementById('statusFilter').value = '';
+      document.getElementById('fromDateFilter').value = '';
+      document.getElementById('toDateFilter').value = '';
+      populateAppointmentHistoryTable(allAppointments);
+    });
   });
 </script>
 </body>

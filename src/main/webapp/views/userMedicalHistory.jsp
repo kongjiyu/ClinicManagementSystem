@@ -107,11 +107,13 @@
       
       // Format prescription date
       const prescriptionDate = prescription.prescriptionDate ? new Date(prescription.prescriptionDate) : null;
-      const dateIssued = prescriptionDate ? prescriptionDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }) : 'N/A';
+      let dateIssued = 'N/A';
+      if (prescriptionDate && !isNaN(prescriptionDate.getTime())) {
+        const day = prescriptionDate.getDate().toString().padStart(2, '0');
+        const month = (prescriptionDate.getMonth() + 1).toString().padStart(2, '0');
+        const year = prescriptionDate.getFullYear();
+        dateIssued = day + '/' + month + '/' + year;
+      }
 
       // Get status badge
       const statusBadge = getStatusBadge(prescription.status);

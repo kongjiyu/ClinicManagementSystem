@@ -191,7 +191,7 @@ Consultation Module
 
             // Populate the page
             document.getElementById('mc-id').textContent = consultation.mcID || 'N/A';
-            document.getElementById('issue-date').textContent = consultation.consultationDate || 'N/A';
+            document.getElementById('issue-date').textContent = formatDate(consultation.consultationDate);
             document.getElementById('patient-name').textContent = patient.firstName + ' ' + patient.lastName;
             document.getElementById('patient-ic').textContent = patient.idNumber || 'N/A';
             document.getElementById('doctor-name').textContent = doctor.firstName + ' ' + doctor.lastName;
@@ -202,7 +202,6 @@ Consultation Module
             document.getElementById('symptoms').textContent = consultation.symptoms || 'N/A';
             document.getElementById('doctor-signature').textContent = doctor.firstName + ' ' + doctor.lastName;
             document.getElementById('mc-date').textContent = formatDate(consultation.consultationDate);
-            document.getElementById('issue-date').textContent = formatDate(consultation.consultationDate);
 
         } catch (error) {
             console.error('Error loading MC data:', error);

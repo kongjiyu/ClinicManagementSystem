@@ -266,10 +266,7 @@
             <div class="stat-title">Completed</div>
             <div id="completedTreatments" class="stat-value text-success">-</div>
           </div>
-          <div class="stat">
-            <div class="stat-title">Scheduled</div>
-            <div id="scheduledTreatments" class="stat-value text-warning">-</div>
-          </div>
+
         </div>
 
         <!-- First Row: Treatment Types and Outcomes -->
@@ -1116,7 +1113,6 @@
       // Update statistics
       document.getElementById('totalTreatments').textContent = reportData.totalTreatments || '0';
       document.getElementById('completedTreatments').textContent = reportData.completedTreatments || '0';
-      document.getElementById('scheduledTreatments').textContent = reportData.scheduledTreatments || '0';
       document.getElementById('treatmentSuccessRate').textContent = (reportData.successRate || 0).toFixed(1) + '%';
 
       // Load charts
@@ -1140,7 +1136,6 @@
     document.getElementById('totalTreatments').textContent = 'Error';
     document.getElementById('treatmentSuccessRate').textContent = 'Error';
     document.getElementById('completedTreatments').textContent = 'Error';
-    document.getElementById('scheduledTreatments').textContent = 'Error';
 
     showChartError('treatmentTypeChart', message);
     showChartError('treatmentOutcomeChart', message);

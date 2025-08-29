@@ -54,13 +54,15 @@
             try {
                 const date = new Date(dateTimeString);
                 if (isNaN(date.getTime())) return 'N/A';
-                return date.toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                
+                // Format as dd/mm/yyyy, time
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                
+                return day + '/' + month + '/' + year + ', ' + hours + ':' + minutes;
             } catch (error) {
                 console.error('Error formatting date:', error);
                 return 'N/A';
@@ -71,7 +73,6 @@
             if (!status) return '<span class="badge badge-soft badge-secondary">N/A</span>';
             
             const statusClasses = {
-                'Scheduled': 'badge badge-soft badge-info',
                 'In Progress': 'badge badge-soft badge-warning',
                 'Completed': 'badge badge-soft badge-success',
                 'Cancelled': 'badge badge-soft badge-error'
@@ -191,8 +192,14 @@
                     data: 'treatmentDate', 
                     title: 'Date & Time',
                     render: function(data, type, row) {
+                        // For sorting, return the original date string
+                        if (type === 'sort') {
+                            return data;
+                        }
+                        // For display, use the formatDateTime function
                         return formatDateTime(data);
-                    }
+                    },
+                    type: 'date'
                 },
                 { 
                     data: 'status', 

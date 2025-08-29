@@ -33,7 +33,7 @@ public class Treatment {
     private String treatmentProcedure;
 
     private LocalDateTime treatmentDate;
-    private String status;          // "Scheduled", "In Progress", "Completed", "Cancelled"
+    private String status;          // "In Progress", "Completed", "Cancelled"
     private String outcome;         // "Successful", "Failed", "Partial Success"
 
     private int duration;           // in minutes

@@ -1,5 +1,5 @@
 <%--
-Author: Yap Yu Xin
+Author: Chia Yu Xin
 Consultation Module
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -54,13 +54,6 @@ Consultation Module
       <div id="scheduleInfo"></div>
     </div>
 
-    <!-- No Queue Message -->
-    <div id="noQueueMessage" class="text-center py-8 hidden">
-      <span class="icon-[tabler--calendar-off] size-16 text-base-content/30 mb-4 block"></span>
-      <h3 class="text-lg font-semibold mb-2">No Queue Today</h3>
-      <p class="text-base-content/70">You don't have any appointments or consultations scheduled for today.</p>
-    </div>
-
     <!-- Refresh Button -->
     <div class="mt-6 flex justify-center">
       <button onclick="loadQueueData()" class="btn btn-primary flex items-center gap-2">
@@ -68,6 +61,17 @@ Consultation Module
         Refresh Queue
       </button>
     </div>
+  </div>
+
+  <!-- No Queue Message -->
+  <div id="noQueueMessage" class="bg-base-100 p-6 rounded-lg shadow-md text-center py-8 hidden">
+    <span class="icon-[tabler--calendar-off] size-16 text-base-content/30 mb-4 block"></span>
+    <h3 class="text-lg font-semibold mb-2">No Queue Today</h3>
+    <p class="text-base-content/70 mb-4">You don't have any appointments or consultations scheduled for today.</p>
+    <button onclick="loadQueueData()" class="btn btn-primary flex items-center gap-2 mx-auto">
+      <span class="icon-[tabler--refresh] size-4"></span>
+      Refresh Queue
+    </button>
   </div>
 
   <!-- Error Alert -->
@@ -100,75 +104,92 @@ Consultation Module
   // Load queue data
   async function loadQueueData() {
     patientId = await getPatientId();
-    
+
     if (!patientId) {
       showError('You must be logged in as a patient to access this page');
       hideLoading();
       return;
     }
-    
+
     try {
       const response = await fetch(API_BASE + '/queue/patient/' + patientId);
-      
+
       if (response.status === 404) {
         // No queue for today
+        console.log('No queue found for patient:', patientId);
+        showNoQueueMessage();
+        hideLoading();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load queue data: ' + response.status);
+      }
+
+      const queueData = await response.json();
+      
+      // Check if queue data is empty or null
+      if (!queueData || (queueData.queuePosition === null && queueData.queuePosition === undefined)) {
+        console.log('Queue data is empty or null');
         showNoQueueMessage();
         hideLoading();
         return;
       }
       
-      if (!response.ok) {
-        throw new Error('Failed to load queue data');
-      }
-      
-      const queueData = await response.json();
       populateQueueData(queueData);
       hideLoading();
     } catch (error) {
       console.error('Error loading queue data:', error);
-      showError('Failed to load queue data: ' + error.message);
+      // If there's an error, it might mean no queue exists, so show no queue message
+      showNoQueueMessage();
       hideLoading();
     }
   }
 
   // Populate queue data
   function populateQueueData(data) {
+    // Check if we have valid queue data
+    if (!data || data.queuePosition === null || data.queuePosition === undefined) {
+      showNoQueueMessage();
+      return;
+    }
+
     // Update queue position
     document.getElementById('queuePosition').textContent = data.queuePosition || 0;
-    
+
     // Update estimated wait time
     document.getElementById('estimatedWaitTime').textContent = data.estimatedWaitTime || 0;
-    
+
     // Show appointment/consultation details
     const appointmentDetails = document.getElementById('appointmentDetails');
     const scheduleInfo = document.getElementById('scheduleInfo');
-    
+
     if (data.appointment || data.consultation) {
       let scheduleHtml = '';
-      
+
       if (data.appointment) {
         const appointmentTime = new Date(data.appointment.appointmentTime);
-        scheduleHtml += 
+        scheduleHtml +=
           '<div class="flex items-center gap-2 mb-2">' +
             '<span class="icon-[tabler--calendar] size-4 text-primary"></span>' +
             '<span><strong>Appointment:</strong> ' + appointmentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + '</span>' +
           '</div>';
       }
-      
+
       if (data.consultation) {
-        scheduleHtml += 
+        scheduleHtml +=
           '<div class="flex items-center gap-2">' +
             '<span class="icon-[tabler--stethoscope] size-4 text-info"></span>' +
             '<span><strong>Consultation Status:</strong> ' + data.consultation.status + '</span>' +
           '</div>';
       }
-      
+
       scheduleInfo.innerHTML = scheduleHtml;
       appointmentDetails.classList.remove('hidden');
     } else {
       appointmentDetails.classList.add('hidden');
     }
-    
+
     // Show queue content
     document.getElementById('queueContent').classList.remove('hidden');
     document.getElementById('noQueueMessage').classList.add('hidden');
@@ -176,8 +197,15 @@ Consultation Module
 
   // Show no queue message
   function showNoQueueMessage() {
+    console.log('Showing no queue message');
+    // Hide loading spinner
+    document.getElementById('loadingSpinner').classList.add('hidden');
+    // Hide queue content
     document.getElementById('queueContent').classList.add('hidden');
+    // Show no queue message
     document.getElementById('noQueueMessage').classList.remove('hidden');
+    // Hide any error alerts
+    document.getElementById('errorAlert').classList.add('hidden');
   }
 
   // Show error message
@@ -188,11 +216,13 @@ Consultation Module
 
   // Hide loading spinner
   function hideLoading() {
+    console.log('Hiding loading spinner');
     document.getElementById('loadingSpinner').classList.add('hidden');
   }
 
   // Initialize queue
   document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing queue');
     loadQueueData();
   });
 </script>

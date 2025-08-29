@@ -16,9 +16,9 @@ Appointment Module
 <main class="ml-64 p-6 space-y-8">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold">Appointment Detail</h1>
-    <button class="btn btn-secondary" onclick="window.history.back()">
+    <button class="btn btn-secondary" onclick="goBack()">
       <span class="icon-[tabler--arrow-left] size-4 mr-2"></span>
-      Back to List
+      <span id="backButtonText">Back to List</span>
     </button>
   </div>
 
@@ -181,8 +181,38 @@ Appointment Module
 
 
 
+  // Smart back navigation function
+  function goBack() {
+    // Check if we came from a specific page via URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    
+    if (fromPage === 'consultation') {
+      // Go back to the consultation detail page
+      window.close(); // Close this window and return to the consultation detail
+    } else {
+      // Default fallback to appointment list
+      window.location.href = '<%= request.getContextPath() %>/views/appointmentList.jsp';
+    }
+  }
+
+  // Set back button text based on where we came from
+  function setBackButtonText() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    
+    if (fromPage === 'consultation') {
+      document.getElementById('backButtonText').textContent = 'Back to Consultation';
+    } else {
+      document.getElementById('backButtonText').textContent = 'Back to List';
+    }
+  }
+
   // Load data when page loads
-  document.addEventListener('DOMContentLoaded', loadAppointmentData);
+  document.addEventListener('DOMContentLoaded', function() {
+    setBackButtonText();
+    loadAppointmentData();
+  });
 </script>
 </body>
 </html>

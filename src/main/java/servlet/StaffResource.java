@@ -81,6 +81,11 @@ public class StaffResource {
         .build();
     }
 
+    // Preserve existing password if new password is null or empty
+    if (staff.getPassword() == null || staff.getPassword().trim().isEmpty()) {
+      staff.setPassword(existingStaff.getPassword());
+    }
+
     staff.setStaffID(id);
     staffRepository.update(id, staff);
     String json = gson.toJson(staff);

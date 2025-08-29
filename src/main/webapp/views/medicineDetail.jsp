@@ -53,7 +53,7 @@ Pharmacy Module
               <label class="label">
                 <span class="label-text">Medicine ID</span>
               </label>
-              <input type="text" id="medicineID" class="input input-bordered" readonly>
+              <input type="text" id="medicineID" class="input input-bordered" disabled>
             </div>
             <div class="form-control">
               <label class="label">
@@ -96,7 +96,7 @@ Pharmacy Module
               <label class="label">
                 <span class="label-text">Total Stock *</span>
               </label>
-              <input type="number" id="totalStock" class="input input-bordered" min="0" required readonly>
+              <input type="number" id="totalStock" class="input input-bordered" min="0" required disabled>
             </div>
             <div class="form-control">
               <label class="label">
@@ -238,14 +238,14 @@ Pharmacy Module
   // Toggle edit mode
   function toggleEditMode() {
     const form = document.getElementById('medicineForm');
-    const inputs = form.querySelectorAll('input, textarea');
+    const inputs = form.querySelectorAll('input, textarea, select');
     const editBtn = document.getElementById('editBtn');
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
 
     // Enable/disable form fields
     inputs.forEach(input => {
-      if (input.id !== 'medicineID' && input.id !== 'totalStock') { // Keep medicine ID and total stock readonly
+      if (input.id !== 'medicineID' && input.id !== 'totalStock') { // Keep medicine ID and total stock disabled
         input.disabled = !input.disabled;
       }
     });

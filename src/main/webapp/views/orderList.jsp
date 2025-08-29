@@ -384,9 +384,29 @@ Pharmacy Module
       { 
         data: 'orderDate', 
         title: 'Order Date',
-        render: function(data) {
-          return data ? new Date(data).toLocaleDateString() : 'N/A';
-        }
+        render: function(data, type, row) {
+          if (!data) return 'N/A';
+          try {
+            const date = new Date(data);
+            if (isNaN(date.getTime())) return 'N/A';
+            
+            // For sorting, return the original date string
+            if (type === 'sort') {
+              return data;
+            }
+            
+            // For display, format as dd/mm/yyyy
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            
+            return day + '/' + month + '/' + year;
+          } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'N/A';
+          }
+        },
+        type: 'date'
       },
       { 
         data: 'orderStatus', 
