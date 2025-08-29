@@ -111,17 +111,6 @@ Author: Kong Ji Yu
           </div>
         </form>
 
-        <!-- Demo Credentials -->
-        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 class="text-sm font-medium text-gray-900 mb-2">Login Instructions:</h4>
-          <div class="text-xs text-gray-600 space-y-1">
-            <div><strong>Staff:</strong> Use your Staff ID (e.g., ST0001) and password</div>
-            <div><strong>Patient:</strong> Use your Student ID and password</div>
-            <div class="mt-2 text-xs text-gray-500">
-              <em>Note: Passwords are stored in the database. Contact administrator if you need to reset your password.</em>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

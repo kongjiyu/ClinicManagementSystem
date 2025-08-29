@@ -217,7 +217,7 @@ def generate_patient_sql(n=100):
         emergencyContactNumber = f"01{random.randint(0, 9)}-{random.randint(1000000, 9999999)}"
         allergies = random.choice(["None", "Penicillin", "Peanuts", "Latex", "Pollen"])
         bloodType = random.choice(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
-        password = fake.password(length=8)
+        password = "Password123!"
 
         # The following fields are omitted from the schema per your instructions (if present in the model, add here):
         # chronicDiseases, password, registrationDate
